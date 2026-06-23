@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { generateBusinessAssessment } from "@/lib/ai/assessment";
+import { emailAssessmentComplete, emailProUpgrade } from "@/lib/email/actions";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -56,6 +57,16 @@ export async function upgradeToProPlan() {
 
   if (error) return { error: error.message };
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, email")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.email) {
+    await emailProUpgrade(profile.email, profile.display_name ?? "there");
+  }
+
   revalidatePath("/", "layout");
   redirect("/pro");
 }
@@ -105,6 +116,20 @@ export async function runAiAssessment(input: {
       .single();
 
     if (error) return { error: error.message };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name, email")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.email) {
+      await emailAssessmentComplete(
+        profile.email,
+        profile.display_name ?? "there",
+        result.overallScore,
+      );
+    }
 
     revalidatePath("/pro/assessment");
     return { success: true, assessment: { ...result, id: data.id } };

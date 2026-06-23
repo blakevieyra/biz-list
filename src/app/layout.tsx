@@ -9,9 +9,21 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://all-connect-seven.vercel.app",
+  ),
   title: "AllConnect — Local Business Directory & Community",
   description:
     "Discover local businesses and organizations, join forums, collaborate on joint ventures, and build your profile from scratch.",
+  icons: {
+    icon: "/allconnect-logo.png",
+    apple: "/allconnect-logo.png",
+  },
+  openGraph: {
+    title: "AllConnect",
+    description: "Connect. Discover. Collaborate.",
+    images: ["/allconnect-logo.png"],
+  },
 };
 
 export default function RootLayout({

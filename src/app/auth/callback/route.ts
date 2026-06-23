@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { emailWelcome } from "@/lib/email/actions";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -11,6 +12,17 @@ export async function GET(request: Request) {
     if (supabase) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (!error) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user?.email) {
+          const displayName =
+            (user.user_metadata?.display_name as string | undefined) ??
+            user.email.split("@")[0];
+          await emailWelcome(user.email, displayName);
+        }
+
         return NextResponse.redirect(`${origin}${next}`);
       }
     }

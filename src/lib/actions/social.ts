@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { BusinessIntent, ForumCategory, UserRole } from "@/lib/types";
+import {
+  emailCollaborationPublished,
+  emailForumPostPublished,
+  emailNotificationToUser,
+  emailProfileComplete,
+} from "@/lib/email/actions";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -26,6 +32,9 @@ async function createNotification(
     title: string;
     body: string;
     link: string;
+    actorName?: string;
+    businessName?: string;
+    postTitle?: string;
   },
 ) {
   await supabase.from("notifications").insert({
@@ -35,6 +44,15 @@ async function createNotification(
     body: params.body,
     link: params.link,
   });
+
+  if (params.type !== "collaboration" && params.actorName) {
+    await emailNotificationToUser(params.userId, params.type, {
+      actorName: params.actorName,
+      businessName: params.businessName,
+      postTitle: params.postTitle,
+      link: params.link,
+    });
+  }
 }
 
 export async function saveProfile(input: {
@@ -101,6 +119,11 @@ export async function saveProfile(input: {
     }
 
     revalidatePath("/", "layout");
+
+    if (user.email) {
+      await emailProfileComplete(user.email, input.displayName || "there");
+    }
+
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to save profile." };
@@ -149,6 +172,8 @@ export async function toggleFollowBusiness(businessId: string) {
           title: "New follower",
           body: `${follower?.display_name ?? "Someone"} followed ${business.name}`,
           link: `/directory/${businessId}`,
+          actorName: follower?.display_name ?? "Someone",
+          businessName: business.name,
         });
       }
     }
@@ -202,6 +227,8 @@ export async function requestConnection(businessId: string) {
       title: "Connection request",
       body: `${requester?.display_name ?? "Someone"} wants to connect with ${business.name}`,
       link: `/directory/${businessId}`,
+      actorName: requester?.display_name ?? "Someone",
+      businessName: business.name,
     });
 
     revalidatePath(`/directory/${businessId}`);
@@ -235,6 +262,21 @@ export async function createForumPost(input: {
       .single();
 
     if (error) return { error: error.message };
+
+    const { data: author } = await supabase
+      .from("profiles")
+      .select("display_name, email")
+      .eq("id", user.id)
+      .single();
+
+    if (author?.email) {
+      await emailForumPostPublished(
+        author.email,
+        author.display_name ?? "there",
+        input.title,
+        `/forum/${data.id}`,
+      );
+    }
 
     revalidatePath("/forum");
     return { success: true, id: data.id };
@@ -278,6 +320,8 @@ export async function createComment(postId: string, body: string) {
         title: "New comment on your post",
         body: `${commenter?.display_name ?? "Someone"} commented on "${post.title}"`,
         link: `/forum/${postId}`,
+        actorName: commenter?.display_name ?? "Someone",
+        postTitle: post.title,
       });
     }
 
@@ -312,6 +356,20 @@ export async function createCollaboration(input: {
     });
 
     if (error) return { error: error.message };
+
+    const { data: author } = await supabase
+      .from("profiles")
+      .select("display_name, email")
+      .eq("id", user.id)
+      .single();
+
+    if (author?.email) {
+      await emailCollaborationPublished(
+        author.email,
+        author.display_name ?? "there",
+        input.title,
+      );
+    }
 
     revalidatePath("/collaborate");
     return { success: true };
@@ -438,6 +496,7 @@ export async function sendMessage(conversationId: string, body: string) {
         title: "New message",
         body: `${sender?.display_name ?? "Someone"} sent you a message`,
         link: `/messages/${conversationId}`,
+        actorName: sender?.display_name ?? "Someone",
       });
     }
 

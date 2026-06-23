@@ -6,6 +6,7 @@ import {
 } from "@/lib/data";
 import { getAuthUserId, signOut } from "@/lib/actions/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { Logo } from "@/components/logo";
 
 const links = [
   { href: "/directory", label: "Directory" },
@@ -26,12 +27,7 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm text-white">
-            AC
-          </span>
-          <span>AllConnect</span>
-        </Link>
+        <Logo size="md" />
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
           {links.map((link) => (
             <Link
@@ -54,7 +50,7 @@ export async function SiteHeader() {
               {profile.planTier === "pro" && (
                 <Link
                   href="/pro"
-                  className="hidden rounded-full bg-teal-100 px-3 py-2 text-sm font-medium text-teal-800 sm:inline-flex"
+                  className="hidden rounded-full bg-blue-50 px-3 py-2 text-sm font-medium text-accent sm:inline-flex"
                 >
                   Pro
                 </Link>
@@ -124,8 +120,8 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-semibold">AllConnect</p>
-            <p className="mt-1 text-sm text-muted">
+            <Logo size="sm" href="/" />
+            <p className="mt-3 text-sm text-muted">
               Local businesses and organizations — discover, connect, collaborate.
             </p>
           </div>

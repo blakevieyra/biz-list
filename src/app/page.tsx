@@ -44,7 +44,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b border-border bg-gradient-to-b from-teal-50 to-background">
+      <section className="border-b border-border bg-gradient-to-b from-blue-50 to-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-wide text-accent">

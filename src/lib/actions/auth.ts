@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { emailWelcome } from "@/lib/email/actions";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -41,9 +42,25 @@ export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) return { error: error.message };
+
+  const user = data.user;
+  const displayName =
+    (user.user_metadata?.display_name as string | undefined) ??
+    user.email?.split("@")[0] ??
+    "there";
+
+  const createdAt = new Date(user.created_at).getTime();
+  const lastSignIn = user.last_sign_in_at
+    ? new Date(user.last_sign_in_at).getTime()
+    : createdAt;
+  const isFirstLogin = Math.abs(lastSignIn - createdAt) < 60_000;
+
+  if (user.email && isFirstLogin) {
+    await emailWelcome(user.email, displayName);
+  }
 
   redirect("/directory");
 }
