@@ -7,6 +7,7 @@ import type {
   ForumPost,
   UserProfile,
   UserRole,
+  PlanTier,
 } from "@/lib/types";
 
 type ProfileRow = {
@@ -14,10 +15,12 @@ type ProfileRow = {
   display_name: string;
   email: string;
   role: UserRole;
+  plan_tier?: PlanTier;
   bio: string;
   city: string;
   state: string;
   forum_interests: ForumCategory[];
+  interest_tags?: string[];
   created_at: string;
 };
 
@@ -81,9 +84,11 @@ export function mapProfile(row: ProfileRow): UserProfile {
     displayName: row.display_name,
     email: row.email,
     role: row.role,
+    planTier: row.plan_tier ?? "free",
     bio: row.bio,
     city: row.city,
     state: row.state,
+    interestTags: row.interest_tags ?? [],
     createdAt: row.created_at,
   };
 }

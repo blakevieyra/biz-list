@@ -11,6 +11,7 @@ const links = [
   { href: "/directory", label: "Directory" },
   { href: "/forum", label: "Forum" },
   { href: "/collaborate", label: "Collaborate" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/messages", label: "Messages" },
 ];
 
@@ -50,6 +51,14 @@ export async function SiteHeader() {
           )}
           {userId && profile ? (
             <>
+              {profile.planTier === "pro" && (
+                <Link
+                  href="/pro"
+                  className="hidden rounded-full bg-teal-100 px-3 py-2 text-sm font-medium text-teal-800 sm:inline-flex"
+                >
+                  Pro
+                </Link>
+              )}
               <Link
                 href="/notifications"
                 className="relative rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40"
@@ -129,6 +138,9 @@ export function SiteFooter() {
             </Link>
             <Link href="/collaborate" className="hover:text-foreground">
               Collaborate
+            </Link>
+            <Link href="/pricing" className="hover:text-foreground">
+              Pricing
             </Link>
             <Link href="/messages" className="hover:text-foreground">
               Messages

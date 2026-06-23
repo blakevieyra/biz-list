@@ -1,3 +1,5 @@
+export type PlanTier = "free" | "pro";
+
 export type UserRole = "business" | "organization" | "customer";
 
 export type BusinessIntent =
@@ -18,9 +20,11 @@ export interface UserProfile {
   displayName: string;
   email: string;
   role: UserRole;
+  planTier: PlanTier;
   bio: string;
   city: string;
   state: string;
+  interestTags: string[];
   createdAt: string;
 }
 
@@ -113,6 +117,41 @@ export interface BusinessConnectionState {
   followerCount: number;
   followingCount: number;
 }
+
+export interface AiAssessment {
+  id: string;
+  userId: string;
+  businessId?: string;
+  websiteUrl: string;
+  businessName: string;
+  category: string;
+  overallScore: number;
+  seoScore: number;
+  onlinePresenceScore: number;
+  businessClarityScore: number;
+  summary: string;
+  recommendations: string[];
+  createdAt: string;
+}
+
+export interface LocalLead {
+  id: string;
+  displayName: string;
+  city: string;
+  state: string;
+  bio: string;
+  interestTags: string[];
+  forumInterests: ForumCategory[];
+  matchScore: number;
+  matchReasons: string[];
+}
+
+export const PLAN_LABELS: Record<PlanTier, string> = {
+  free: "Free",
+  pro: "Pro",
+};
+
+export const PRO_PLAN_PRICE = 29;
 
 export const FORUM_CATEGORY_LABELS: Record<ForumCategory, string> = {
   general: "General",

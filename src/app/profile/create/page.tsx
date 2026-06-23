@@ -33,6 +33,7 @@ export default function CreateProfilePage() {
     bio: "",
     city: "",
     state: "",
+    interestTags: [] as string[],
     businessName: "",
     tagline: "",
     description: "",
@@ -239,6 +240,25 @@ export default function CreateProfilePage() {
             )}
             <fieldset className="mt-4">
               <legend className="text-sm font-medium">
+                Local interests (helps businesses find you as a lead)
+              </legend>
+              <input
+                value={form.interestTags.join(", ")}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    interestTags: e.target.value
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder="e.g. bakery, catering, local food"
+                className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
+              />
+            </fieldset>
+            <fieldset className="mt-4">
+              <legend className="text-sm font-medium">
                 Forum interests (including legal lessons & local topics)
               </legend>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -323,6 +343,7 @@ export default function CreateProfilePage() {
                     city: form.city,
                     state: form.state,
                     forumInterests: form.forumInterests,
+                    interestTags: form.interestTags,
                     businessName: form.businessName,
                     tagline: form.tagline,
                     description: form.description,

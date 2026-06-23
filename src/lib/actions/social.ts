@@ -44,6 +44,7 @@ export async function saveProfile(input: {
   city: string;
   state: string;
   forumInterests: ForumCategory[];
+  interestTags?: string[];
   businessName?: string;
   tagline?: string;
   description?: string;
@@ -66,6 +67,7 @@ export async function saveProfile(input: {
         city: input.city,
         state: input.state,
         forum_interests: input.forumInterests,
+        interest_tags: input.interestTags ?? [],
       })
       .eq("id", user.id);
 
