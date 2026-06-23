@@ -1,6 +1,11 @@
 # AllConnect
 
+**Live app:** https://all-connect-seven.vercel.app  
+**GitHub:** https://github.com/blakevieyra/all-connect
+
 A local business and organization community platform — directory, forum, collaboration, messaging, and profiles.
+
+> **Setup guide:** See [SETUP.md](./SETUP.md) for Vercel + Supabase configuration.
 
 ## Features
 
