@@ -323,7 +323,7 @@ export default async function ListingsPage({
             <BusinessListingCard
               key={business.id}
               business={business}
-              latestPost={latestPosts.get(business.id) ?? null}
+              latestPosts={latestPosts.get(business.id) ?? []}
               currentUserId={userId}
             />
           ))}

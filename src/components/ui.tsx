@@ -100,3 +100,41 @@ export function formatDate(iso: string) {
     year: "numeric",
   });
 }
+
+export function formatPostDateTime(iso: string) {
+  return new Date(iso).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+export function StarRating({
+  rating,
+  count,
+  size = "sm",
+}: {
+  rating: number;
+  count?: number;
+  size?: "sm" | "md";
+}) {
+  const filled = Math.min(5, Math.max(0, Math.round(rating)));
+  const textSize = size === "md" ? "text-base" : "text-sm";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-800 ${textSize}`}
+      aria-label={`${rating.toFixed(1)} out of 5 stars${count ? `, ${count} reviews` : ""}`}
+    >
+      <span aria-hidden className="tracking-tight">
+        {"★".repeat(filled)}
+        {"☆".repeat(5 - filled)}
+      </span>
+      {count !== undefined && count > 0 ? (
+        <span className="text-xs font-medium">({count})</span>
+      ) : null}
+    </span>
+  );
+}

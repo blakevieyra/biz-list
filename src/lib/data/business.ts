@@ -192,15 +192,16 @@ export async function getTrendingBusinessPosts(limit = 10): Promise<BusinessPost
 
 export async function getLatestPostsForBusinessIds(
   businessIds: string[],
-): Promise<Map<string, BusinessPost>> {
-  const map = new Map<string, BusinessPost>();
+  limitPerBusiness = 3,
+): Promise<Map<string, BusinessPost[]>> {
+  const map = new Map<string, BusinessPost[]>();
   if (!businessIds.length) return map;
 
   const supabase = await createClient();
   if (!supabase) {
     for (const id of businessIds) {
-      const posts = getBusinessPostsForBusiness(id);
-      if (posts[0]) map.set(id, posts[0]);
+      const posts = getBusinessPostsForBusiness(id).slice(0, limitPerBusiness);
+      if (posts.length) map.set(id, posts);
     }
     return map;
   }
@@ -211,16 +212,39 @@ export async function getLatestPostsForBusinessIds(
     .in("business_id", businessIds)
     .order("created_at", { ascending: false });
 
+  const selectedRows: BusinessPostRow[] = [];
+  const perBusinessCount = new Map<string, number>();
+
   for (const row of (rows as BusinessPostRow[] | null) ?? []) {
-    if (!map.has(row.business_id)) {
-      map.set(row.business_id, mapPostRow(row));
-    }
+    const count = perBusinessCount.get(row.business_id) ?? 0;
+    if (count >= limitPerBusiness) continue;
+    selectedRows.push(row);
+    perBusinessCount.set(row.business_id, count + 1);
   }
 
-  const postIds = [...map.values()].map((p) => p.id);
+  if (!selectedRows.length) return map;
+
+  const postIds = selectedRows.map((r) => r.id);
+  const { data: comments } = await supabase
+    .from("business_post_comments")
+    .select("post_id")
+    .in("post_id", postIds);
+
+  const commentCountMap = new Map<string, number>();
+  for (const c of comments ?? []) {
+    commentCountMap.set(c.post_id, (commentCountMap.get(c.post_id) ?? 0) + 1);
+  }
+
   const likeCounts = await getPostLikeCounts(postIds);
-  for (const [businessId, post] of map) {
-    map.set(businessId, { ...post, likeCount: likeCounts.get(post.id) ?? 0 });
+
+  for (const row of selectedRows) {
+    const post = mapPostRow(row, {
+      commentCount: commentCountMap.get(row.id) ?? 0,
+      likeCount: likeCounts.get(row.id) ?? 0,
+    });
+    const list = map.get(row.business_id) ?? [];
+    list.push(post);
+    map.set(row.business_id, list);
   }
 
   return map;
