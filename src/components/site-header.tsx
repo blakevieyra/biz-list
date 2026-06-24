@@ -11,8 +11,8 @@ import { MobileNav } from "@/components/mobile-nav";
 import { isBusinessPlan, PLAN_LABELS } from "@/lib/plans";
 
 const links = [
-  { href: "/feed", label: "Feed" },
-  { href: "/listings", label: "Listings" },
+  { href: "/feed", label: "Post" },
+  { href: "/listings", label: "Listing" },
   { href: "/partnerships", label: "Collaboration" },
 ];
 
@@ -142,11 +142,11 @@ export function SiteFooter() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-muted sm:grid-cols-3">
-            <Link href="/listings" className="min-h-10 leading-10 hover:text-foreground">
-              Listings
-            </Link>
             <Link href="/feed" className="min-h-10 leading-10 hover:text-foreground">
-              Feed
+              Post
+            </Link>
+            <Link href="/listings" className="min-h-10 leading-10 hover:text-foreground">
+              Listing
             </Link>
             <Link href="/partnerships" className="min-h-10 leading-10 hover:text-foreground">
               Collaboration

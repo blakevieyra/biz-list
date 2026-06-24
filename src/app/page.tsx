@@ -10,9 +10,15 @@ import {
   getForumPosts,
 } from "@/lib/data";
 import { getTrendingBusinessPosts } from "@/lib/data/business";
-import { DEFAULT_DISCOVERY_RADIUS, resolveAreaScope } from "@/lib/feed/location-scope";
+import { resolveAreaScope } from "@/lib/feed/location-scope";
 
 const features = [
+  {
+    title: "Posts",
+    description:
+      "Follow business updates, open jobs, sales, deals, and community discussions in one scrollable feed.",
+    href: "/feed",
+  },
   {
     title: "Listings",
     description:
@@ -20,13 +26,7 @@ const features = [
     href: "/listings",
   },
   {
-    title: "Feed",
-    description:
-      "Follow business updates, open jobs, sales, deals, and community discussions in one scrollable feed.",
-    href: "/feed",
-  },
-  {
-    title: "Partnerships",
+    title: "Collaboration",
     description:
       "Create B2B deals, joint ventures, work groups, sales events, and organized partnership opportunities.",
     href: "/partnerships",
@@ -52,7 +52,7 @@ export default async function HomePage() {
     getBusinesses({ areaScope, viewer }),
     getForumPosts(),
     getCollaborations(),
-    getTrendingBusinessPosts(4),
+    getTrendingBusinessPosts(3),
   ]);
 
   return (
@@ -61,7 +61,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-              listings. feed . collaboration
+              Posts. Listings. Collaboration.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
               BizList helps local businesses get discovered, share updates and deals, hire talent,
@@ -78,7 +78,7 @@ export default async function HomePage() {
                 href="/feed"
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition hover:border-accent/40"
               >
-                Explore feed
+                Explore posts
               </Link>
             </div>
           </div>
@@ -100,14 +100,6 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
-
-      {trendingPosts.length > 0 && (
-        <section className="border-t border-border bg-card">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-            <BusinessPostFeed posts={trendingPosts} />
-          </div>
-        </section>
-      )}
 
       <section className="border-t border-border bg-card">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
@@ -133,11 +125,35 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="grid gap-10 lg:grid-cols-3">
           <div>
             <div className="flex items-end justify-between gap-4">
-              <h2 className="text-2xl font-bold">Latest from the feed</h2>
-              <Link href="/feed?tab=discussions" className="text-sm font-medium text-accent hover:underline">
+              <div>
+                <h2 className="text-xl font-bold sm:text-2xl">Local business updates</h2>
+                <p className="mt-1 text-sm text-muted">
+                  Updates, jobs, and deals from nearby businesses.
+                </p>
+              </div>
+              <Link href="/feed" className="shrink-0 text-sm font-medium text-accent hover:underline">
+                View all
+              </Link>
+            </div>
+            <div className="mt-6">
+              {trendingPosts.length > 0 ? (
+                <BusinessPostFeed posts={trendingPosts} embedded />
+              ) : (
+                <p className="text-sm text-muted">No business updates yet.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-xl font-bold sm:text-2xl">Latest from the feed</h2>
+              <Link
+                href="/feed?tab=discussions"
+                className="shrink-0 text-sm font-medium text-accent hover:underline"
+              >
                 View feed
               </Link>
             </div>
@@ -147,12 +163,13 @@ export default async function HomePage() {
               ))}
             </div>
           </div>
+
           <div>
             <div className="flex items-end justify-between gap-4">
-              <h2 className="text-2xl font-bold">Collaboration ideas</h2>
+              <h2 className="text-xl font-bold sm:text-2xl">Collaboration ideas</h2>
               <Link
                 href="/partnerships"
-                className="text-sm font-medium text-accent hover:underline"
+                className="shrink-0 text-sm font-medium text-accent hover:underline"
               >
                 View all
               </Link>
