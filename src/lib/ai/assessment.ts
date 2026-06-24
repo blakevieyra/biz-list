@@ -82,7 +82,7 @@ function scoreClarity(input: AssessmentInput): { score: number; notes: string[] 
   if (input.description.length < 120) {
     notes.push("Clarify services, service area, hours, and how customers should contact you.");
   }
-  notes.push("Make your offer obvious above the fold on your website and AllConnect profile.");
+  notes.push("Make your offer obvious above the fold on your website and BizList profile.");
 
   return { score: Math.min(score, 100), notes };
 }

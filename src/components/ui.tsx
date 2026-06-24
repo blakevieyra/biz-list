@@ -48,13 +48,13 @@ export function PageHeader({
 }) {
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
         {description && (
-          <p className="mt-2 max-w-2xl text-muted">{description}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">{description}</p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
@@ -68,7 +68,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}
+      className={`rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 ${className}`}
     >
       {children}
     </div>

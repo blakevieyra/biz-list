@@ -1,76 +1,84 @@
 import Link from "next/link";
 import { BusinessCard } from "@/components/business-card";
+import { BusinessPostFeed } from "@/components/business-post-feed";
 import { CollaborationCard } from "@/components/collaboration-card";
 import { ForumPostCard } from "@/components/forum-post-card";
 import {
   getBusinesses,
   getCollaborations,
+  getCurrentProfile,
   getForumPosts,
 } from "@/lib/data";
+import { getTrendingBusinessPosts } from "@/lib/data/business";
+import { DEFAULT_DISCOVERY_RADIUS } from "@/lib/feed/location-scope";
 
 const features = [
   {
-    title: "Business Directory",
+    title: "Listings",
     description:
-      "List your business or organization so customers and partners can find you by location, category, and what you need.",
-    href: "/directory",
+      "Browse local businesses by location and industry. Expand your radius when you need more options.",
+    href: "/listings",
   },
   {
-    title: "Connect & Follow",
+    title: "Feed",
     description:
-      "Follow other businesses, build your network, and stay updated on local organizations hiring or seeking customers.",
-    href: "/directory",
+      "Follow business updates, open jobs, sales, deals, and community discussions in one scrollable feed.",
+    href: "/feed",
   },
   {
-    title: "Community Forum",
+    title: "Partnerships",
     description:
-      "Ask questions, share legal lessons learned, discuss local issues, and comment on posts from peers.",
-    href: "/forum",
-  },
-  {
-    title: "Joint Ventures",
-    description:
-      "Propose collaboration ideas and find partners for co-marketing, pop-ups, shared services, and more.",
-    href: "/collaborate",
+      "Create B2B deals, joint ventures, work groups, sales events, and organized partnership opportunities.",
+    href: "/partnerships",
   },
 ];
 
 export default async function HomePage() {
-  const [businesses, posts, collaborations] = await Promise.all([
-    getBusinesses(),
+  const profile = await getCurrentProfile();
+  const viewer = profile
+    ? {
+        city: profile.city,
+        state: profile.state,
+        zipCode: profile.zipCode,
+        industryInterests: profile.industryInterests,
+      }
+    : null;
+  const scope = profile?.discoveryRadius ?? profile?.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
+
+  const [businesses, posts, collaborations, trendingPosts] = await Promise.all([
+    getBusinesses({ scope, viewer }),
     getForumPosts(),
     getCollaborations(),
+    getTrendingBusinessPosts(4),
   ]);
 
   return (
     <>
       <section className="border-b border-border bg-gradient-to-b from-blue-50 to-background">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-              Local business community
+              bizlist.app
             </p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-              Connect. Discover. Collaborate.
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
+              Listings. Feed. Partnerships.
             </h1>
-            <p className="mt-6 text-lg text-muted">
-              AllConnect is a directory and community for local businesses and
-              organizations — whether you&apos;re hiring, looking for customers,
-              seeking advice, or exploring joint ventures with neighbors who get
-              it.
+            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+              BizList helps local businesses get discovered, share updates and deals, hire talent,
+              and build B2B partnerships — all from your business location outward.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href="/auth/signup"
-                className="rounded-full bg-accent px-6 py-3 text-sm font-medium text-white transition hover:bg-accent-hover"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-medium text-white transition hover:bg-accent-hover"
               >
                 Create your profile
               </Link>
               <Link
-                href="/directory"
-                className="rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition hover:border-accent/40"
+                href="/feed"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition hover:border-accent/40"
               >
-                Browse directory
+                Explore feed
               </Link>
             </div>
           </div>
@@ -78,8 +86,8 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-bold">What you can do on AllConnect</h2>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2">
+        <h2 className="text-2xl font-bold">What you can do on BizList</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
           {features.map((feature) => (
             <Link
               key={feature.title}
@@ -93,20 +101,30 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {trendingPosts.length > 0 && (
+        <section className="border-t border-border bg-card">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+            <BusinessPostFeed posts={trendingPosts} />
+          </div>
+        </section>
+      )}
+
       <section className="border-t border-border bg-card">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold">Featured businesses</h2>
               <p className="mt-2 text-muted">
-                Organizations hiring, seeking customers, or open to partnerships.
+                {viewer
+                  ? `Near your zip code and matching your interests in your ${scope} area.`
+                  : "Organizations hiring, seeking customers, or open to partnerships."}
               </p>
             </div>
-            <Link href="/directory" className="text-sm font-medium text-accent hover:underline">
+            <Link href="/listings" className="text-sm font-medium text-accent hover:underline">
               View all
             </Link>
           </div>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid auto-rows-fr gap-6 md:grid-cols-3">
             {businesses.slice(0, 3).map((business) => (
               <BusinessCard key={business.id} business={business} />
             ))}
@@ -118,9 +136,9 @@ export default async function HomePage() {
         <div className="grid gap-12 lg:grid-cols-2">
           <div>
             <div className="flex items-end justify-between gap-4">
-              <h2 className="text-2xl font-bold">Latest forum posts</h2>
-              <Link href="/forum" className="text-sm font-medium text-accent hover:underline">
-                View forum
+              <h2 className="text-2xl font-bold">Latest from the feed</h2>
+              <Link href="/feed?tab=discussions" className="text-sm font-medium text-accent hover:underline">
+                View feed
               </Link>
             </div>
             <div className="mt-6 space-y-4">
@@ -133,7 +151,7 @@ export default async function HomePage() {
             <div className="flex items-end justify-between gap-4">
               <h2 className="text-2xl font-bold">Collaboration ideas</h2>
               <Link
-                href="/collaborate"
+                href="/partnerships"
                 className="text-sm font-medium text-accent hover:underline"
               >
                 View all

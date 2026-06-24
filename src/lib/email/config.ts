@@ -9,13 +9,13 @@ export function getAppUrl(): string {
 }
 
 export function getEmailFrom(): string {
-  return process.env.EMAIL_FROM ?? "AllConnect <onboarding@resend.dev>";
+  return process.env.EMAIL_FROM ?? "BizList <hello@allconnect.app>";
 }
 
 export function isEmailConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY);
+  return Boolean(process.env.SENDGRID_API_KEY);
 }
 
 export function getLogoUrl(): string {
-  return `${getAppUrl()}/allconnect-logo.png`;
+  return `${getAppUrl()}/bizlist-logo.png`;
 }

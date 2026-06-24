@@ -15,6 +15,14 @@ async function getProfileEmail(userId: string) {
   return data;
 }
 
+export async function emailSignupVerification(
+  to: string,
+  name: string,
+  verifyUrl: string,
+) {
+  await sendTemplateEmail(to, emailTemplates.emailVerification(name, verifyUrl));
+}
+
 export async function emailWelcome(to: string, name: string) {
   await sendTemplateEmail(to, emailTemplates.welcome(name));
 }
@@ -27,8 +35,8 @@ export async function emailProfileComplete(to: string, name: string) {
   await sendTemplateEmail(to, emailTemplates.profileComplete(name));
 }
 
-export async function emailProUpgrade(to: string, name: string) {
-  await sendTemplateEmail(to, emailTemplates.proUpgrade(name));
+export async function emailProUpgrade(to: string, name: string, tier = "Pro") {
+  await sendTemplateEmail(to, emailTemplates.proUpgrade(name, tier));
 }
 
 export async function emailAssessmentComplete(to: string, name: string, score: number) {

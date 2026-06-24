@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import sgMail from "@sendgrid/mail";
 import { getEmailFrom, isEmailConfigured } from "./config";
 import { buildBrandedEmailHtml } from "./templates";
 
@@ -19,7 +19,7 @@ export async function sendAppEmail(input: SendEmailInput): Promise<void> {
   const html = buildBrandedEmailHtml(input);
 
   if (!isEmailConfigured()) {
-    console.info("[AllConnect email preview]", {
+    console.info("[BizList email preview]", {
       to: input.to,
       subject: input.subject,
       title: input.title,
@@ -27,8 +27,8 @@ export async function sendAppEmail(input: SendEmailInput): Promise<void> {
     return;
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+  await sgMail.send({
     from: getEmailFrom(),
     to: input.to,
     subject: input.subject,

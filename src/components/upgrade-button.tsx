@@ -1,21 +1,55 @@
 "use client";
 
-import { upgradeToProPlan } from "@/lib/actions/pro";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { startCheckout } from "@/lib/actions/billing";
+import type { BillingInterval, PaidPlanTier } from "@/lib/types";
+import { PLAN_LABELS } from "@/lib/plans";
 
-export function UpgradeButton() {
+export function UpgradeButton({
+  tier,
+  interval,
+  label,
+  className,
+}: {
+  tier: PaidPlanTier;
+  interval: BillingInterval;
+  label?: string;
+  className?: string;
+}) {
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(
+    searchParams.get("canceled") ? "Checkout canceled. You can try again anytime." : null,
+  );
+
+  useEffect(() => {
+    if (searchParams.get("canceled")) {
+      setError("Checkout canceled. You can try again anytime.");
+    }
+  }, [searchParams]);
+
   return (
-    <form
-      action={async () => {
-        await upgradeToProPlan();
-      }}
-      className="w-full"
-    >
-      <button
-        type="submit"
-        className="w-full rounded-full bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-hover"
+    <div className="w-full">
+      <form
+        action={async () => {
+          setError(null);
+          const result = await startCheckout(tier, interval);
+          if (result?.error) setError(result.error);
+        }}
+        className="w-full"
       >
-        Upgrade to Pro
-      </button>
-    </form>
+        <button
+          type="submit"
+          className={
+            className ??
+            "w-full rounded-full bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-hover"
+          }
+        >
+          {label ?? `Upgrade to ${PLAN_LABELS[tier]}`}
+        </button>
+      </form>
+      {error && <p className="mt-2 text-center text-sm text-red-600">{error}</p>}
+    </div>
   );
 }

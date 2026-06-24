@@ -4,6 +4,7 @@ import { markAllNotificationsRead, markNotificationRead } from "@/lib/actions/so
 import { Card, PageHeader, formatDate } from "@/components/ui";
 import { getNotifications } from "@/lib/data";
 import { getAuthUserId } from "@/lib/actions/auth";
+import { getSafeAppLink } from "@/lib/security/safe-link";
 
 export default async function NotificationsPage() {
   const userId = await getAuthUserId();
@@ -36,7 +37,9 @@ export default async function NotificationsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {notifications.map((notification) => (
+          {notifications.map((notification) => {
+            const safeLink = getSafeAppLink(notification.link);
+            return (
             <Card
               key={notification.id}
               className={notification.read ? "opacity-70" : "border-accent/30"}
@@ -57,16 +60,17 @@ export default async function NotificationsPage() {
                   </form>
                 )}
               </div>
-              {notification.link && (
+              {safeLink && (
                 <Link
-                  href={notification.link}
+                  href={safeLink}
                   className="mt-3 inline-block text-sm text-accent hover:underline"
                 >
                   View
                 </Link>
               )}
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

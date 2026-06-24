@@ -7,6 +7,7 @@ import {
   startMessageWithBusinessOwner,
   toggleFollowBusiness,
 } from "@/lib/actions/social";
+import { toggleLikeBusiness } from "@/lib/actions/business";
 import type { BusinessConnectionState } from "@/lib/types";
 
 export function BusinessActions({
@@ -46,6 +47,24 @@ export function BusinessActions({
           ? prev.followerCount - 1
           : prev.followerCount + 1,
       }));
+      router.refresh();
+    });
+  }
+
+  function handleLike() {
+    if (!currentUserId) {
+      router.push("/auth/login");
+      return;
+    }
+
+    startTransition(async () => {
+      setError(null);
+      const result = await toggleLikeBusiness(businessId);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setState((prev) => ({ ...prev, isLiked: !prev.isLiked }));
       router.refresh();
     });
   }
@@ -99,6 +118,18 @@ export function BusinessActions({
       <div className="flex flex-wrap gap-2">
         {!isOwner && (
           <>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={handleLike}
+              className={`rounded-full border px-4 py-2 text-sm font-medium disabled:opacity-50 ${
+                state.isLiked
+                  ? "border-accent bg-teal-50 text-accent"
+                  : "border-border bg-card hover:border-accent/40"
+              }`}
+            >
+              {state.isLiked ? "Liked" : "Like"}
+            </button>
             <button
               type="button"
               disabled={pending}

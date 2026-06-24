@@ -41,7 +41,7 @@ export default async function MessagesPage() {
             chatting.
           </p>
           <Link
-            href="/directory"
+            href="/listings"
             className="mt-4 inline-block text-sm text-accent hover:underline"
           >
             Browse directory

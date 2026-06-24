@@ -18,6 +18,14 @@ import type {
   UserProfile,
 } from "@/lib/types";
 import {
+  businessDiscoveryScore,
+  matchesFeedScope,
+  type DiscoveryViewer,
+  type FeedScope,
+  type LocationProfile,
+  DEFAULT_DISCOVERY_RADIUS,
+} from "@/lib/feed/location-scope";
+import {
   mapBusiness,
   mapCollaboration,
   mapComment,
@@ -60,13 +68,131 @@ export async function getProfileById(id: string): Promise<UserProfile | null> {
   return data ? mapProfile(data as ProfileRow) : null;
 }
 
+export async function getBusinessByOwnerId(ownerId: string): Promise<BusinessProfile | null> {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return SEED_BUSINESSES.find((b) => b.ownerId === ownerId) ?? null;
+  }
+
+  const { data: row } = await supabase
+    .from("businesses")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (!row) return null;
+
+  const { data: follows } = await supabase
+    .from("business_follows")
+    .select("follower_id")
+    .eq("business_id", row.id);
+
+  const followerIds = (follows ?? []).map((f) => f.follower_id);
+  return mapBusiness(row as BusinessRow, followerIds, []);
+}
+
+export async function getListingsMembers(filters?: {
+  query?: string;
+  seekingWork?: boolean;
+  scope?: FeedScope;
+  viewer?: LocationProfile | null;
+}): Promise<UserProfile[]> {
+  const supabase = await getSupabase();
+  const scope = filters?.scope ?? DEFAULT_DISCOVERY_RADIUS;
+  const viewer = filters?.viewer;
+
+  if (!supabase) {
+    return SEED_USERS.filter((u) => {
+      if (u.role !== "customer") return false;
+      if (filters?.seekingWork && !u.isSeekingWork) return false;
+      if (viewer && !matchesFeedScope(viewer, u, scope)) return false;
+      const q = filters?.query?.toLowerCase() ?? "";
+      if (!q) return true;
+      return (
+        u.displayName.toLowerCase().includes(q) ||
+        u.bio.toLowerCase().includes(q) ||
+        u.headline.toLowerCase().includes(q) ||
+        u.city.toLowerCase().includes(q) ||
+        u.skills.some((s) => s.toLowerCase().includes(q))
+      );
+    }).sort((a, b) => {
+      const scoreA = (a.isSeekingWork ? 10 : 0) + a.skills.length * 2;
+      const scoreB = (b.isSeekingWork ? 10 : 0) + b.skills.length * 2;
+      return scoreB - scoreA;
+    });
+  }
+
+  let query = supabase
+    .from("profiles")
+    .select("*")
+    .eq("role", "customer")
+    .neq("display_name", "")
+    .order("created_at", { ascending: false });
+
+  if (filters?.seekingWork) {
+    query = query.eq("is_seeking_work", true);
+  }
+
+  const { data: rows } = await query;
+  if (!rows?.length) return [];
+
+  let result = (rows as ProfileRow[]).map(mapProfile);
+
+  if (filters?.query) {
+    const q = filters.query.toLowerCase();
+    result = result.filter(
+      (u) =>
+        u.displayName.toLowerCase().includes(q) ||
+        u.bio.toLowerCase().includes(q) ||
+        u.headline.toLowerCase().includes(q) ||
+        u.city.toLowerCase().includes(q) ||
+        u.skills.some((s) => s.toLowerCase().includes(q)),
+    );
+  }
+
+  if (viewer) {
+    result = result.filter((u) => matchesFeedScope(viewer, u, scope));
+  }
+
+  return result.sort((a, b) => {
+    const scoreA = (a.isSeekingWork ? 10 : 0) + a.skills.length * 2 + (a.headline ? 3 : 0);
+    const scoreB = (b.isSeekingWork ? 10 : 0) + b.skills.length * 2 + (b.headline ? 3 : 0);
+    return scoreB - scoreA;
+  });
+}
+
+export async function getCommunityBusinesses(filters?: {
+  query?: string;
+  scope?: FeedScope;
+  viewer?: DiscoveryViewer | null;
+  hiringOnly?: boolean;
+}): Promise<BusinessProfile[]> {
+  const businesses = await getBusinesses({ query: filters?.query, viewer: filters?.viewer });
+  const scope = filters?.scope ?? DEFAULT_DISCOVERY_RADIUS;
+  const viewer = filters?.viewer;
+
+  let result = businesses;
+  if (filters?.hiringOnly) {
+    result = result.filter((b) => b.isHiring);
+  }
+  if (viewer) {
+    result = result.filter((b) => matchesFeedScope(viewer, b, scope));
+  }
+
+  return result.sort(
+    (a, b) => businessDiscoveryScore(b, viewer) - businessDiscoveryScore(a, viewer),
+  );
+}
+
 export async function getBusinesses(filters?: {
   intent?: BusinessIntent;
   query?: string;
+  scope?: FeedScope;
+  viewer?: DiscoveryViewer | null;
 }): Promise<BusinessProfile[]> {
   const supabase = await getSupabase();
   if (!supabase) {
-    return SEED_BUSINESSES.filter((b) => {
+    let result = SEED_BUSINESSES.filter((b) => {
       const matchesIntent = !filters?.intent || b.intents.includes(filters.intent);
       const q = filters?.query?.toLowerCase() ?? "";
       const matchesQuery =
@@ -74,9 +200,22 @@ export async function getBusinesses(filters?: {
         b.name.toLowerCase().includes(q) ||
         b.description.toLowerCase().includes(q) ||
         b.city.toLowerCase().includes(q) ||
+        b.zipCode.includes(q) ||
         b.category.toLowerCase().includes(q);
       return matchesIntent && matchesQuery;
     });
+
+    const scope = filters?.scope;
+    const viewer = filters?.viewer;
+    if (viewer && scope && scope !== "nationwide") {
+      result = result.filter((b) => matchesFeedScope(viewer, b, scope));
+    }
+    if (viewer) {
+      result = result.sort(
+        (a, b) => businessDiscoveryScore(b, viewer) - businessDiscoveryScore(a, viewer),
+      );
+    }
+    return result;
   }
 
   let query = supabase.from("businesses").select("*").order("created_at", { ascending: false });
@@ -114,7 +253,20 @@ export async function getBusinesses(filters?: {
         b.name.toLowerCase().includes(q) ||
         b.description.toLowerCase().includes(q) ||
         b.city.toLowerCase().includes(q) ||
+        b.zipCode.includes(q) ||
         b.category.toLowerCase().includes(q),
+    );
+  }
+
+  const scope = filters?.scope;
+  const viewer = filters?.viewer;
+  if (viewer && scope && scope !== "nationwide") {
+    result = result.filter((b) => matchesFeedScope(viewer, b, scope));
+  }
+
+  if (viewer) {
+    result = result.sort(
+      (a, b) => businessDiscoveryScore(b, viewer) - businessDiscoveryScore(a, viewer),
     );
   }
 
@@ -148,6 +300,7 @@ export async function getBusinessConnectionState(
   if (!userId) {
     return {
       isFollowing: false,
+      isLiked: false,
       connectionStatus: "none",
       followerCount,
       followingCount: 0,
@@ -158,19 +311,26 @@ export async function getBusinessConnectionState(
   if (!supabase) {
     return {
       isFollowing: business?.followerIds.includes(userId) ?? false,
+      isLiked: false,
       connectionStatus: "none",
       followerCount,
       followingCount: 0,
     };
   }
 
-  const [{ data: follow }, { data: connection }, { count: followingCount }] =
+  const [{ data: follow }, { data: like }, { data: connection }, { count: followingCount }] =
     await Promise.all([
       supabase
         .from("business_follows")
         .select("id")
         .eq("business_id", businessId)
         .eq("follower_id", userId)
+        .maybeSingle(),
+      supabase
+        .from("business_likes")
+        .select("id")
+        .eq("business_id", businessId)
+        .eq("user_id", userId)
         .maybeSingle(),
       supabase
         .from("business_connections")
@@ -186,6 +346,7 @@ export async function getBusinessConnectionState(
 
   return {
     isFollowing: Boolean(follow),
+    isLiked: Boolean(like),
     connectionStatus: connection?.status ?? "none",
     followerCount,
     followingCount: followingCount ?? 0,

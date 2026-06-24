@@ -7,57 +7,65 @@ import {
 import { getAuthUserId, signOut } from "@/lib/actions/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Logo } from "@/components/logo";
+import { MobileNav } from "@/components/mobile-nav";
+import { isBusinessPlan, PLAN_LABELS } from "@/lib/plans";
 
 const links = [
-  { href: "/directory", label: "Directory" },
-  { href: "/forum", label: "Forum" },
-  { href: "/collaborate", label: "Collaborate" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/messages", label: "Messages" },
+  { href: "/listings", label: "Listings" },
+  { href: "/feed", label: "Feed" },
+  { href: "/partnerships", label: "Partnerships" },
 ];
 
 export async function SiteHeader() {
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
-  const notificationCount = userId
-    ? await getUnreadNotificationCount(userId)
-    : 0;
+  const notificationCount = userId ? await getUnreadNotificationCount(userId) : 0;
+  const profileHref =
+    profile?.role === "customer" ? "/profile/edit" : "/dashboard/profile";
   const messageCount = userId ? await getUnreadMessageCount(userId) : 0;
+  const showPlansLink = Boolean(profile && profile.role !== "customer");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Logo size="md" />
-        <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
+    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <Logo size="md" />
+          <MobileNav
+            userId={userId}
+            displayName={profile?.displayName}
+            profileRole={profile?.role}
+            showPlansLink={showPlansLink}
+          />
+        </div>
+
+        <nav className="hidden items-center gap-5 text-sm font-medium text-muted lg:flex">
           {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="transition hover:text-foreground"
-            >
+            <Link key={link.href} href={link.href} className="transition hover:text-foreground">
               {link.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
+
+        <div className="flex shrink-0 items-center gap-2">
           {!isSupabaseConfigured() && (
-            <span className="hidden text-xs text-amber-700 lg:inline">
-              Demo mode
-            </span>
+            <span className="hidden text-xs text-amber-700 xl:inline">Demo mode</span>
           )}
+
           {userId && profile ? (
             <>
-              {profile.planTier === "pro" && (
+              {profile.role !== "customer" && (
                 <Link
-                  href="/pro"
+                  href="/dashboard"
                   className="hidden rounded-full bg-blue-50 px-3 py-2 text-sm font-medium text-accent sm:inline-flex"
                 >
-                  Pro
+                  {isBusinessPlan(profile.planTier) ? PLAN_LABELS[profile.planTier] : "Dashboard"}
                 </Link>
               )}
+
               <Link
                 href="/notifications"
-                className="relative rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40"
+                className="relative inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-border px-3 text-sm hover:border-accent/40"
+                aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ""}`}
               >
                 Alerts
                 {notificationCount > 0 && (
@@ -66,9 +74,10 @@ export async function SiteHeader() {
                   </span>
                 )}
               </Link>
+
               <Link
                 href="/messages"
-                className="relative hidden rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40 sm:inline-flex"
+                className="relative inline-flex min-h-10 items-center rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40"
               >
                 Messages
                 {messageCount > 0 && (
@@ -77,16 +86,22 @@ export async function SiteHeader() {
                   </span>
                 )}
               </Link>
-              <Link
-                href="/profile/create"
-                className="hidden max-w-[120px] truncate text-sm font-medium sm:inline"
-              >
-                {profile.displayName}
-              </Link>
+
+              <div className="hidden items-center gap-2 lg:flex">
+                <Link href={profileHref} className="max-w-[120px] truncate text-sm font-medium">
+                  {profile.displayName}
+                </Link>
+                {showPlansLink && (
+                  <Link href="/pricing" className="text-sm text-muted transition hover:text-foreground">
+                    Plans
+                  </Link>
+                )}
+              </div>
+
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40"
+                  className="hidden min-h-10 rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40 sm:inline-flex"
                 >
                   Sign out
                 </button>
@@ -96,15 +111,16 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/auth/login"
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+                className="hidden min-h-10 items-center rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40 sm:inline-flex"
               >
                 Sign in
               </Link>
               <Link
                 href="/auth/signup"
-                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover"
+                className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover"
               >
-                Get Started
+                <span className="hidden sm:inline">Get Started</span>
+                <span className="sm:hidden">Join</span>
               </Link>
             </>
           )}
@@ -118,27 +134,24 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="max-w-sm">
             <Logo size="sm" href="/" />
-            <p className="mt-3 text-sm text-muted">
-              Local businesses and organizations — discover, connect, collaborate.
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              BizList — local business listings, feed, and partnerships.
             </p>
           </div>
-          <div className="flex flex-wrap gap-4 text-sm text-muted">
-            <Link href="/directory" className="hover:text-foreground">
-              Directory
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-muted sm:grid-cols-3">
+            <Link href="/listings" className="min-h-10 leading-10 hover:text-foreground">
+              Listings
             </Link>
-            <Link href="/forum" className="hover:text-foreground">
-              Forum
+            <Link href="/feed" className="min-h-10 leading-10 hover:text-foreground">
+              Feed
             </Link>
-            <Link href="/collaborate" className="hover:text-foreground">
-              Collaborate
+            <Link href="/partnerships" className="min-h-10 leading-10 hover:text-foreground">
+              Partnerships
             </Link>
-            <Link href="/pricing" className="hover:text-foreground">
-              Pricing
-            </Link>
-            <Link href="/messages" className="hover:text-foreground">
+            <Link href="/messages" className="min-h-10 leading-10 hover:text-foreground">
               Messages
             </Link>
           </div>

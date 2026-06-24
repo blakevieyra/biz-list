@@ -9,20 +9,18 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://all-connect-seven.vercel.app",
-  ),
-  title: "AllConnect — Local Business Directory & Community",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://bizlist.app"),
+  title: "BizList — Local Listings, Feed & Partnerships",
   description:
-    "Discover local businesses and organizations, join forums, collaborate on joint ventures, and build your profile from scratch.",
+    "Discover local businesses on BizList. Browse listings, follow the feed for jobs and deals, and create B2B partnerships.",
   icons: {
-    icon: "/allconnect-logo.png",
-    apple: "/allconnect-logo.png",
+    icon: "/bizlist-logo.png",
+    apple: "/bizlist-logo.png",
   },
   openGraph: {
-    title: "AllConnect",
-    description: "Connect. Discover. Collaborate.",
-    images: ["/allconnect-logo.png"],
+    title: "BizList",
+    description: "Listings. Feed. Partnerships.",
+    images: ["/bizlist-logo.png"],
   },
 };
 

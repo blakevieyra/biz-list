@@ -1,10 +1,13 @@
 import type {
   BusinessIntent,
   BusinessProfile,
+  BusinessService,
+  BusinessSocialLinks,
   CollaborationIdea,
   Comment,
   ForumCategory,
   ForumPost,
+  DiscoveryRadius,
   UserProfile,
   UserRole,
   PlanTier,
@@ -19,10 +22,26 @@ type ProfileRow = {
   bio: string;
   city: string;
   state: string;
+  zip_code?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  discovery_radius?: DiscoveryRadius;
   forum_interests: ForumCategory[];
   interest_tags?: string[];
+  industry_interests?: string[];
+  headline?: string;
+  skills?: string[];
+  is_seeking_work?: boolean;
+  feed_scope?: "local" | "state" | "nationwide";
   created_at: string;
 };
+
+function mapDiscoveryRadius(row: ProfileRow): DiscoveryRadius {
+  if (row.discovery_radius) return row.discovery_radius;
+  if (row.feed_scope === "state") return "state";
+  if (row.feed_scope === "nationwide") return "nationwide";
+  return "25";
+}
 
 type BusinessRow = {
   id: string;
@@ -33,7 +52,20 @@ type BusinessRow = {
   category: string;
   city: string;
   state: string;
+  zip_code?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   website: string | null;
+  social_links?: unknown;
+  phone?: string;
+  hours?: string;
+  important_info?: string;
+  is_hiring?: boolean;
+  services?: unknown;
+  media_urls?: string[];
+  like_count?: number;
+  rating_avg?: number;
+  rating_count?: number;
   intents: BusinessIntent[];
   created_at: string;
 };
@@ -88,9 +120,51 @@ export function mapProfile(row: ProfileRow): UserProfile {
     bio: row.bio,
     city: row.city,
     state: row.state,
+    zipCode: row.zip_code ?? "",
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
     interestTags: row.interest_tags ?? [],
+    industryInterests: row.industry_interests ?? [],
+    headline: row.headline ?? "",
+    skills: row.skills ?? [],
+    isSeekingWork: row.is_seeking_work ?? false,
+    forumInterests: row.forum_interests ?? [],
+    discoveryRadius: mapDiscoveryRadius(row),
+    feedScope: mapDiscoveryRadius(row),
     createdAt: row.created_at,
   };
+}
+
+function parseSocialLinks(raw: unknown): BusinessSocialLinks {
+  if (!raw || typeof raw !== "object") return {};
+  const links = raw as Record<string, unknown>;
+  const pick = (key: keyof BusinessSocialLinks) =>
+    typeof links[key] === "string" ? links[key] : undefined;
+  return {
+    instagram: pick("instagram"),
+    facebook: pick("facebook"),
+    linkedin: pick("linkedin"),
+    x: pick("x"),
+    tiktok: pick("tiktok"),
+    youtube: pick("youtube"),
+  };
+}
+
+function parseServices(raw: unknown): BusinessService[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (item): item is BusinessService =>
+        typeof item === "object" &&
+        item !== null &&
+        "name" in item &&
+        typeof (item as BusinessService).name === "string",
+    )
+    .map((item) => ({
+      ...item,
+      actionType:
+        item.actionType ?? (item.actionUrl ? ("link" as const) : undefined),
+    }));
 }
 
 export function mapBusiness(
@@ -107,7 +181,20 @@ export function mapBusiness(
     category: row.category,
     city: row.city,
     state: row.state,
+    zipCode: row.zip_code ?? "",
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
     website: row.website ?? undefined,
+    socialLinks: parseSocialLinks(row.social_links),
+    phone: row.phone ?? "",
+    hours: row.hours ?? "",
+    importantInfo: row.important_info ?? "",
+    isHiring: row.is_hiring ?? false,
+    services: parseServices(row.services),
+    mediaUrls: row.media_urls ?? [],
+    likeCount: row.like_count ?? 0,
+    ratingAvg: Number(row.rating_avg ?? 0),
+    ratingCount: row.rating_count ?? 0,
     intents: row.intents ?? [],
     followerIds,
     followingIds,

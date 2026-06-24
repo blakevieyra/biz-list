@@ -9,7 +9,7 @@ export default function SignUpPage() {
       <LogoMark className="mb-8" />
       <PageHeader
         title="Create your account"
-        description="Sign up to list your business, join forums, message others, and collaborate."
+        description="We'll email you a one-time verification link before your account is created."
       />
       <SignUpForm />
       <p className="mt-6 text-center text-sm text-muted">

@@ -3,7 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { BusinessIntent, ForumCategory, UserRole } from "@/lib/types";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import type { BusinessIntent, BusinessService, BusinessSocialLinks, ForumCategory, UserRole, FeedScope } from "@/lib/types";
+import { sanitizeMediaUrls, getSafeExternalUrl } from "@/lib/security/safe-url";
+import { sanitizeServices, sanitizeSocialLinks } from "@/lib/security/sanitize-business";
+import { moderateMultiple, moderateUserContent } from "@/lib/moderation/content-policy";
+import {
+  validateBusinessCategory,
+  validateIndustryInterests,
+  validateLocationFields,
+} from "@/lib/validation/profile-fields";
+import { geocodeUsZipCode } from "@/lib/geo/geocode";
+import { DEFAULT_DISCOVERY_RADIUS } from "@/lib/feed/location-scope";
 import {
   emailCollaborationPublished,
   emailForumPostPublished,
@@ -25,7 +36,7 @@ async function requireUser() {
 }
 
 async function createNotification(
-  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  _supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
   params: {
     userId: string;
     type: "follow" | "connection" | "comment" | "message" | "collaboration";
@@ -37,13 +48,16 @@ async function createNotification(
     postTitle?: string;
   },
 ) {
-  await supabase.from("notifications").insert({
-    user_id: params.userId,
-    type: params.type,
-    title: params.title,
-    body: params.body,
-    link: params.link,
-  });
+  const admin = getSupabaseAdmin();
+  if (admin) {
+    await admin.from("notifications").insert({
+      user_id: params.userId,
+      type: params.type,
+      title: params.title.slice(0, 200),
+      body: params.body.slice(0, 500),
+      link: params.link.slice(0, 500),
+    });
+  }
 
   if (params.type !== "collaboration" && params.actorName) {
     await emailNotificationToUser(params.userId, params.type, {
@@ -61,13 +75,28 @@ export async function saveProfile(input: {
   bio: string;
   city: string;
   state: string;
+  zipCode?: string;
   forumInterests: ForumCategory[];
   interestTags?: string[];
+  industryInterests?: string[];
+  headline?: string;
+  skills?: string[];
+  isSeekingWork?: boolean;
+  feedScope?: FeedScope;
+  discoveryRadius?: FeedScope;
   businessName?: string;
   tagline?: string;
   description?: string;
   category?: string;
+  website?: string;
+  socialLinks?: BusinessSocialLinks;
+  phone?: string;
+  hours?: string;
+  isHiring?: boolean;
+  services?: BusinessService[];
+  mediaUrls?: string[];
   intents?: BusinessIntent[];
+  introPost?: { title: string; body: string; mediaUrls?: string[] };
 }) {
   if (!isSupabaseConfigured()) {
     return { error: "Supabase is not configured. Profile saved in demo mode only." };
@@ -76,22 +105,62 @@ export async function saveProfile(input: {
   try {
     const { supabase, user } = await requireUser();
 
+    const moderation = moderateMultiple({
+      Name: input.displayName,
+      Bio: input.bio,
+      Description: input.description ?? "",
+      Headline: input.headline ?? "",
+    });
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const location = validateLocationFields({
+      city: input.city,
+      state: input.state,
+      zipCode: input.zipCode ?? "",
+    });
+    if (location.error) return { error: location.error };
+
+    const isBusiness = input.role === "business" || input.role === "organization";
+    let industryInterests = input.industryInterests ?? [];
+    if (!isBusiness) {
+      const industries = validateIndustryInterests(industryInterests);
+      if (industries.error) return { error: industries.error };
+      industryInterests = industries.values;
+    }
+
+    let category = input.category ?? "";
+    if (isBusiness && category) {
+      const validatedCategory = validateBusinessCategory(category);
+      if (validatedCategory.error) return { error: validatedCategory.error };
+      category = validatedCategory.value;
+    }
+
+    const discoveryRadius = input.discoveryRadius ?? input.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
+    const geo = await geocodeUsZipCode(location.zipCode);
+
     const { error: profileError } = await supabase
       .from("profiles")
       .update({
         display_name: input.displayName,
         role: input.role,
         bio: input.bio,
-        city: input.city,
-        state: input.state,
+        city: input.city.trim(),
+        state: input.state.trim(),
+        zip_code: location.zipCode,
+        latitude: geo?.latitude ?? null,
+        longitude: geo?.longitude ?? null,
+        discovery_radius: discoveryRadius,
         forum_interests: input.forumInterests,
         interest_tags: input.interestTags ?? [],
+        industry_interests: industryInterests,
+        headline: input.headline ?? "",
+        skills: input.skills ?? [],
+        is_seeking_work: input.isSeekingWork ?? false,
+        feed_scope: discoveryRadius === "state" || discoveryRadius === "nationwide" ? discoveryRadius : "local",
       })
       .eq("id", user.id);
 
     if (profileError) return { error: profileError.message };
-
-    const isBusiness = input.role === "business" || input.role === "organization";
 
     if (isBusiness && input.businessName) {
       const { data: existing } = await supabase
@@ -105,16 +174,49 @@ export async function saveProfile(input: {
         name: input.businessName,
         tagline: input.tagline ?? "",
         description: input.description ?? "",
-        category: input.category ?? "",
-        city: input.city,
-        state: input.state,
+        category,
+        city: input.city.trim(),
+        state: input.state.trim(),
+        zip_code: location.zipCode,
+        latitude: geo?.latitude ?? null,
+        longitude: geo?.longitude ?? null,
+        website: getSafeExternalUrl(input.website?.trim()) ?? null,
+        social_links: sanitizeSocialLinks(input.socialLinks),
+        phone: input.phone ?? "",
+        hours: input.hours ?? "",
+        is_hiring: input.isHiring ?? false,
+        services: sanitizeServices(input.services),
+        media_urls: sanitizeMediaUrls(input.mediaUrls),
         intents: input.intents ?? [],
       };
+
+      let businessId = existing?.id;
 
       if (existing) {
         await supabase.from("businesses").update(businessPayload).eq("id", existing.id);
       } else {
-        await supabase.from("businesses").insert(businessPayload);
+        const { data: created } = await supabase
+          .from("businesses")
+          .insert(businessPayload)
+          .select("id")
+          .single();
+        businessId = created?.id;
+      }
+
+      if (businessId && input.introPost?.title && input.introPost.body) {
+        const introModeration = moderateMultiple({
+          Title: input.introPost.title,
+          Post: input.introPost.body,
+        });
+        if (!introModeration.ok) return { error: introModeration.reason };
+
+        await supabase.from("business_posts").insert({
+          business_id: businessId,
+          author_id: user.id,
+          title: input.introPost.title.slice(0, 200),
+          body: input.introPost.body.slice(0, 5000),
+          media_urls: sanitizeMediaUrls(input.introPost.mediaUrls),
+        });
       }
     }
 
@@ -127,6 +229,104 @@ export async function saveProfile(input: {
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to save profile." };
+  }
+}
+
+export async function updateUserProfile(input: {
+  displayName: string;
+  bio: string;
+  city: string;
+  state: string;
+  zipCode?: string;
+  headline?: string;
+  skills?: string[];
+  isSeekingWork?: boolean;
+  interestTags?: string[];
+  industryInterests?: string[];
+  forumInterests?: ForumCategory[];
+  feedScope?: FeedScope;
+  discoveryRadius?: FeedScope;
+}) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Supabase is not configured." };
+  }
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    if (!input.displayName.trim()) return { error: "Display name is required." };
+
+    const moderation = moderateMultiple({
+      Name: input.displayName,
+      Bio: input.bio,
+      Headline: input.headline ?? "",
+    });
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const location = validateLocationFields({
+      city: input.city,
+      state: input.state,
+      zipCode: input.zipCode ?? "",
+    });
+    if (location.error) return { error: location.error };
+
+    const industries = validateIndustryInterests(input.industryInterests ?? []);
+    if (industries.error) return { error: industries.error };
+
+    const discoveryRadius = input.discoveryRadius ?? input.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
+    const geo = await geocodeUsZipCode(location.zipCode);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        display_name: input.displayName.trim(),
+        bio: input.bio.trim(),
+        city: input.city.trim(),
+        state: input.state.trim(),
+        zip_code: location.zipCode,
+        latitude: geo?.latitude ?? null,
+        longitude: geo?.longitude ?? null,
+        discovery_radius: discoveryRadius,
+        headline: input.headline?.trim() ?? "",
+        skills: input.skills ?? [],
+        is_seeking_work: input.isSeekingWork ?? false,
+        interest_tags: input.interestTags ?? [],
+        industry_interests: industries.values,
+        forum_interests: input.forumInterests ?? [],
+        feed_scope: discoveryRadius === "state" || discoveryRadius === "nationwide" ? discoveryRadius : "local",
+      })
+      .eq("id", user.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/listings");
+    revalidatePath("/feed");
+    revalidatePath("/profile/edit");
+    revalidatePath(`/listings/people/${user.id}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update profile." };
+  }
+}
+
+export async function startMessageWithUser(otherUserId: string) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Connect Supabase to send messages." };
+  }
+
+  try {
+    const { user } = await requireUser();
+    if (otherUserId === user.id) {
+      return { error: "You cannot message yourself." };
+    }
+
+    const result = await getOrCreateConversation(otherUserId);
+    if ("error" in result && result.error) return { error: result.error };
+    if (!result.conversationId) return { error: "Could not create conversation." };
+
+    return { conversationId: result.conversationId };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to start conversation." };
   }
 }
 
@@ -171,14 +371,14 @@ export async function toggleFollowBusiness(businessId: string) {
           type: "follow",
           title: "New follower",
           body: `${follower?.display_name ?? "Someone"} followed ${business.name}`,
-          link: `/directory/${businessId}`,
+          link: `/listings/${businessId}`,
           actorName: follower?.display_name ?? "Someone",
           businessName: business.name,
         });
       }
     }
 
-    revalidatePath(`/directory/${businessId}`);
+    revalidatePath(`/listings/${businessId}`);
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update follow." };
@@ -226,12 +426,12 @@ export async function requestConnection(businessId: string) {
       type: "connection",
       title: "Connection request",
       body: `${requester?.display_name ?? "Someone"} wants to connect with ${business.name}`,
-      link: `/directory/${businessId}`,
+      link: `/listings/${businessId}`,
       actorName: requester?.display_name ?? "Someone",
       businessName: business.name,
     });
 
-    revalidatePath(`/directory/${businessId}`);
+    revalidatePath(`/listings/${businessId}`);
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to request connection." };
@@ -249,6 +449,9 @@ export async function createForumPost(input: {
 
   try {
     const { supabase, user } = await requireUser();
+
+    const moderation = moderateMultiple({ Title: input.title, Post: input.body });
+    if (!moderation.ok) return { error: moderation.reason };
 
     const { data, error } = await supabase
       .from("forum_posts")
@@ -292,11 +495,16 @@ export async function createComment(postId: string, body: string) {
 
   try {
     const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 2000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+
+    const moderation = moderateUserContent(trimmed, "Comment");
+    if (!moderation.ok) return { error: moderation.reason };
 
     const { error } = await supabase.from("forum_comments").insert({
       post_id: postId,
       author_id: user.id,
-      body,
+      body: trimmed,
     });
 
     if (error) return { error: error.message };
@@ -346,13 +554,21 @@ export async function createCollaboration(input: {
   try {
     const { supabase, user } = await requireUser();
 
+    const moderation = moderateMultiple({
+      Title: input.title,
+      Summary: input.summary,
+      "Looking for": input.lookingFor,
+      Location: input.location,
+    });
+    if (!moderation.ok) return { error: moderation.reason };
+
     const { error } = await supabase.from("collaborations").insert({
       author_id: user.id,
       business_id: input.businessId ?? null,
-      title: input.title,
-      summary: input.summary,
-      looking_for: input.lookingFor,
-      location: input.location,
+      title: input.title.trim().slice(0, 200),
+      summary: input.summary.trim().slice(0, 2000),
+      looking_for: input.lookingFor.trim().slice(0, 500),
+      location: input.location.trim().slice(0, 200),
     });
 
     if (error) return { error: error.message };
@@ -371,7 +587,7 @@ export async function createCollaboration(input: {
       );
     }
 
-    revalidatePath("/collaborate");
+    revalidatePath("/partnerships");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to create collaboration." };
@@ -464,19 +680,33 @@ export async function sendMessage(conversationId: string, body: string) {
   try {
     const { supabase, user } = await requireUser();
 
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      body,
-    });
+    const trimmed = body.trim().slice(0, 5000);
+    if (!trimmed) return { error: "Message cannot be empty." };
 
-    if (error) return { error: error.message };
+    const moderation = moderateUserContent(trimmed, "Message");
+    if (!moderation.ok) return { error: moderation.reason };
 
     const { data: conversation } = await supabase
       .from("conversations")
       .select("participant_a, participant_b")
       .eq("id", conversationId)
       .single();
+
+    if (!conversation) return { error: "Conversation not found." };
+
+    const isParticipant =
+      conversation.participant_a === user.id ||
+      conversation.participant_b === user.id;
+
+    if (!isParticipant) return { error: "You are not part of this conversation." };
+
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      body: trimmed,
+    });
+
+    if (error) return { error: error.message };
 
     if (conversation) {
       const recipientId =

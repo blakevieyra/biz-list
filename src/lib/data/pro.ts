@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AiAssessment, ForumCategory, LocalLead } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
+import { canAccess } from "@/lib/plans";
 import { getCurrentProfile } from "./index";
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -80,17 +81,12 @@ function scoreLeadMatch(
   return { score: Math.min(score, 100), reasons: [...new Set(reasons)] };
 }
 
-export async function isProUser(userId: string): Promise<boolean> {
-  const profile = await getCurrentProfile();
-  return profile?.id === userId && profile.planTier === "pro";
-}
-
 export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
   const supabase = await createClient();
   if (!supabase) return getMockLeads();
 
   const profile = await getCurrentProfile();
-  if (!profile || profile.planTier !== "pro") return [];
+  if (!profile || !canAccess(profile.planTier, "localLeads")) return [];
   if (profile.role === "customer") return [];
 
   const { data: business } = await supabase
@@ -152,6 +148,21 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
     })
     .filter((lead) => lead.matchScore >= 35)
     .sort((a, b) => b.matchScore - a.matchScore);
+}
+
+export async function isEligibleLead(
+  businessUserId: string,
+  leadUserId: string,
+): Promise<boolean> {
+  if (businessUserId === leadUserId) return false;
+
+  const leads = await getLocalLeads(businessUserId);
+  return leads.some((lead) => lead.id === leadUserId);
+}
+
+export async function isProUser(userId: string): Promise<boolean> {
+  const profile = await getCurrentProfile();
+  return profile?.id === userId && canAccess(profile.planTier, "localLeads");
 }
 
 export async function getAiAssessments(userId: string): Promise<AiAssessment[]> {

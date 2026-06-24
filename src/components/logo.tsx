@@ -10,21 +10,17 @@ export function Logo({
   showText?: boolean;
   href?: string;
 }) {
-  const heights = { sm: 28, md: 36, lg: 48 };
-  const h = heights[size];
+  const heights = { sm: 28, md: 36, lg: 44 };
 
   const content = (
-    <span className="inline-flex items-center gap-2">
-      <Image
-        src="/allconnect-logo.png"
-        alt="AllConnect"
-        width={Math.round(h * 2.2)}
-        height={h}
-        className="h-auto w-auto object-contain"
-        priority
-      />
-      {!showText && <span className="sr-only">AllConnect</span>}
-    </span>
+    <Image
+      src="/bizlist-logo.png"
+      alt={showText ? "BizList" : "BizList home"}
+      width={160}
+      height={heights[size]}
+      className="h-auto w-auto max-w-[140px] object-contain sm:max-w-[160px]"
+      priority={size === "md"}
+    />
   );
 
   if (href) {
@@ -40,13 +36,14 @@ export function Logo({
 
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
-    <Image
-      src="/allconnect-logo.png"
-      alt="AllConnect"
-      width={160}
-      height={72}
-      className={`mx-auto h-auto w-40 max-w-full object-contain ${className}`}
-      priority
-    />
+    <div className={`text-center ${className}`}>
+      <Image
+        src="/bizlist-logo.png"
+        alt="BizList"
+        width={180}
+        height={120}
+        className="mx-auto h-auto w-[140px] object-contain"
+      />
+    </div>
   );
 }
