@@ -161,7 +161,7 @@ export const emailTemplates = {
     greeting: `Hi ${name},`,
     body: `Your AI business assessment is ready with an overall score of ${score}/100. Review SEO, online presence, and clarity recommendations in your Pro dashboard.`,
     ctaLabel: "View assessment",
-    ctaUrl: `${getAppUrl()}/pro/assessment`,
+    ctaUrl: `${getAppUrl()}/dashboard/assessment`,
   }),
 
   followDigest: (name: string, frequency: string, summary: string) => ({

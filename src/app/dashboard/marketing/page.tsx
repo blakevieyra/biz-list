@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createMarketingCampaign } from "@/lib/actions/pro";
+import { createMarketingCampaign, generatePlatinumMarketingDraft } from "@/lib/actions/pro";
 import { Card, PageHeader } from "@/components/ui";
 import { getMarketingCampaigns } from "@/lib/data/business";
 import { getCurrentProfile } from "@/lib/data";
@@ -25,6 +25,23 @@ export default async function MarketingPage() {
 
       <Card>
         <h2 className="font-semibold">Create campaign</h2>
+        <p className="mt-1 text-sm text-muted">
+          Draft campaigns manually or generate one from your business profile with AI.
+        </p>
+        <form
+          action={async () => {
+            "use server";
+            await generatePlatinumMarketingDraft("email");
+          }}
+          className="mt-3"
+        >
+          <button
+            type="submit"
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+          >
+            Generate email campaign from profile
+          </button>
+        </form>
         <form
           action={async (formData) => {
             "use server";

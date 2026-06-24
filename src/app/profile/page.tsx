@@ -9,6 +9,7 @@ import {
   type HubTab,
 } from "@/components/profile-hub-sections";
 import { ProfilePreferencesPanel } from "@/components/profile-preferences-panel";
+import { BusinessGrowthHub } from "@/components/business-growth-hub";
 import { PageHeader, Card } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import {
@@ -19,9 +20,18 @@ import {
   getUnreadNotificationCount,
 } from "@/lib/data";
 import { getJobApplicationsForApplicant } from "@/lib/data/business";
+import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
 import { getConversations } from "@/lib/data/messages";
+import { canAccess } from "@/lib/plans";
 
-const validTabs = new Set<HubTab>(["overview", "following", "applications", "messages", "alerts"]);
+const validTabs = new Set<HubTab>([
+  "overview",
+  "following",
+  "applications",
+  "messages",
+  "alerts",
+  "growth",
+]);
 
 export default async function ProfileHubPage({
   searchParams,
@@ -37,7 +47,10 @@ export default async function ProfileHubPage({
   const profile = await getCurrentProfile();
   if (!profile) redirect("/profile/create");
 
-  const [following, applications, conversations, notifications, unreadMessages, unreadAlerts] =
+  const isBusinessAccount =
+    profile.role === "business" || profile.role === "organization";
+
+  const [following, applications, conversations, notifications, unreadMessages, unreadAlerts, latestAudit, leads] =
     await Promise.all([
       getFollowedBusinesses(userId),
       profile.role === "customer" ? getJobApplicationsForApplicant(userId) : Promise.resolve([]),
@@ -45,6 +58,12 @@ export default async function ProfileHubPage({
       getNotifications(userId),
       getUnreadMessageCount(userId),
       getUnreadNotificationCount(userId),
+      isBusinessAccount && canAccess(profile.planTier, "aiAudit")
+        ? getLatestAiAssessment(userId)
+        : Promise.resolve(null),
+      isBusinessAccount && canAccess(profile.planTier, "localLeads")
+        ? getLocalLeads(userId)
+        : Promise.resolve([]),
     ]);
 
   return (
@@ -53,12 +72,12 @@ export default async function ProfileHubPage({
         title="My profile"
         description="Manage preferences, businesses you follow, applications, messages, and alerts."
         action={
-          profile.role === "business" || profile.role === "organization" ? (
+          isBusinessAccount ? (
             <Link
               href="/dashboard/profile"
               className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
             >
-              Business listing
+              Edit listing
             </Link>
           ) : undefined
         }
@@ -70,6 +89,8 @@ export default async function ProfileHubPage({
         applicationCount={applications.length}
         unreadMessages={unreadMessages}
         unreadAlerts={unreadAlerts}
+        showGrowthTab={isBusinessAccount}
+        leadCount={leads.length}
       />
 
       {tab === "overview" && (
@@ -85,6 +106,11 @@ export default async function ProfileHubPage({
                   {applications.length} applications
                 </Link>
               )}
+              {isBusinessAccount && (
+                <Link href="/profile?tab=growth" className="text-accent hover:underline">
+                  Growth tools{leads.length > 0 ? ` · ${leads.length} leads` : ""}
+                </Link>
+              )}
               <Link href="/profile?tab=messages" className="text-accent hover:underline">
                 Messages{unreadMessages > 0 ? ` (${unreadMessages} unread)` : ""}
               </Link>
@@ -93,9 +119,22 @@ export default async function ProfileHubPage({
               </Link>
             </div>
           </Card>
-          <ProfilePreferencesPanel profile={profile} />
+          {isBusinessAccount ? (
+            <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
+          ) : (
+            <ProfilePreferencesPanel profile={profile} />
+          )}
         </div>
       )}
+
+      {tab === "growth" &&
+        (isBusinessAccount ? (
+          <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
+        ) : (
+          <Card>
+            <p className="text-sm text-muted">Growth tools are available on business accounts.</p>
+          </Card>
+        ))}
 
       {tab === "following" && <FollowingList businesses={following} />}
       {tab === "applications" &&

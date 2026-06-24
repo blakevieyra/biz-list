@@ -18,13 +18,14 @@ type ConversationPreview = {
 
 const tabs = [
   { id: "overview", label: "Overview" },
+  { id: "growth", label: "Growth", businessOnly: true },
   { id: "following", label: "Following" },
-  { id: "applications", label: "Applications" },
+  { id: "applications", label: "Applications", customerOnly: true },
   { id: "messages", label: "Messages" },
   { id: "alerts", label: "Alerts" },
 ] as const;
 
-type HubTab = (typeof tabs)[number]["id"];
+type HubTab = (typeof tabs)[number]["id"] | "growth";
 
 export function ProfileHubNav({
   active,
@@ -32,36 +33,47 @@ export function ProfileHubNav({
   applicationCount,
   unreadMessages,
   unreadAlerts,
+  showGrowthTab = false,
+  leadCount = 0,
 }: {
   active: HubTab;
   followingCount: number;
   applicationCount: number;
   unreadMessages: number;
   unreadAlerts: number;
+  showGrowthTab?: boolean;
+  leadCount?: number;
 }) {
-  const counts: Partial<Record<HubTab, number>> = {
+  const counts: Partial<Record<string, number>> = {
     following: followingCount,
     applications: applicationCount,
     messages: unreadMessages,
     alerts: unreadAlerts,
+    growth: leadCount,
   };
 
   return (
     <div className="mb-6 flex flex-wrap gap-2">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.id}
-          href={tab.id === "overview" ? "/profile" : `/profile?tab=${tab.id}`}
-          className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
-            active === tab.id
-              ? "bg-accent text-white"
-              : "border border-border bg-card text-muted hover:text-foreground"
-          }`}
-        >
-          {tab.label}
-          {(counts[tab.id] ?? 0) > 0 ? ` (${counts[tab.id]})` : ""}
-        </Link>
-      ))}
+      {tabs
+        .filter((tab) => {
+          if (tab.id === "growth" && !showGrowthTab) return false;
+          if ("customerOnly" in tab && tab.customerOnly && showGrowthTab) return false;
+          return true;
+        })
+        .map((tab) => (
+          <Link
+            key={tab.id}
+            href={tab.id === "overview" ? "/profile" : `/profile?tab=${tab.id}`}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
+              active === tab.id
+                ? "bg-accent text-white"
+                : "border border-border bg-card text-muted hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+            {(counts[tab.id] ?? 0) > 0 ? ` (${counts[tab.id]})` : ""}
+          </Link>
+        ))}
     </div>
   );
 }

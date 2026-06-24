@@ -15,6 +15,8 @@ export default function DashboardAssessmentPage() {
     seoScore: number;
     onlinePresenceScore: number;
     businessClarityScore: number;
+    websiteScore?: number;
+    profileScore?: number;
     summary: string;
     recommendations: string[];
   } | null>(null);
@@ -85,10 +87,12 @@ export default function DashboardAssessmentPage() {
           <Card>
             <h2 className="text-lg font-semibold">Overall score: {result.overallScore}/100</h2>
             <p className="mt-2 text-sm text-muted">{result.summary}</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              <Score label="Website" value={result.websiteScore ?? result.seoScore} />
               <Score label="SEO" value={result.seoScore} />
               <Score label="Online presence" value={result.onlinePresenceScore} />
-              <Score label="Business clarity" value={result.businessClarityScore} />
+              <Score label="Clarity" value={result.businessClarityScore} />
+              <Score label="BizList profile" value={result.profileScore ?? result.businessClarityScore} />
             </div>
           </Card>
           <Card>

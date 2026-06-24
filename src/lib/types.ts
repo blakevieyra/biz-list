@@ -304,6 +304,8 @@ export interface AiAssessment {
   seoScore: number;
   onlinePresenceScore: number;
   businessClarityScore: number;
+  websiteScore?: number;
+  profileScore?: number;
   summary: string;
   recommendations: string[];
   createdAt: string;
@@ -316,9 +318,13 @@ export interface LocalLead {
   state: string;
   bio: string;
   interestTags: string[];
+  industryInterests?: string[];
   forumInterests: ForumCategory[];
   matchScore: number;
   matchReasons: string[];
+  leadSource?: "follower" | "interest" | "seeking" | "local";
+  isFollower?: boolean;
+  isSeekingWork?: boolean;
 }
 
 export const FORUM_CATEGORY_LABELS: Record<ForumCategory, string> = {

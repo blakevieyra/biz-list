@@ -16,16 +16,16 @@ const communityFeatures = [
 
 const proFeatures = [
   "Everything in Community",
-  "Local lead matching in your area",
-  "AI business audit — SEO, presence, clarity",
+  "AI online presence audit with website & profile scores",
+  "Lead generation from followers, interests, and job seekers",
   "Trending post boost for high engagement",
 ];
 
 const platinumFeatures = [
   "Everything in Pro",
-  "Automated marketing campaigns",
-  "Virtual agent trained on your business",
-  "Priority growth tools (coming soon)",
+  "Automated marketing campaigns & content posting",
+  "AI agent for outreach, onboarding, and customer replies",
+  "One-click welcome messages for new followers",
 ];
 
 export function PricingPlans() {

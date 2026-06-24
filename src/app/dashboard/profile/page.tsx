@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BusinessGrowthHub } from "@/components/business-growth-hub";
 import { BusinessProfileEditor } from "@/components/business-profile-editor";
 import { PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessByOwnerId, getCurrentProfile } from "@/lib/data";
+import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
+import { canAccess } from "@/lib/plans";
 
 export default async function DashboardProfilePage() {
   const userId = await getAuthUserId();
@@ -32,11 +35,16 @@ export default async function DashboardProfilePage() {
     );
   }
 
+  const [latestAudit, leads] = await Promise.all([
+    canAccess(profile.planTier, "aiAudit") ? getLatestAiAssessment(userId) : Promise.resolve(null),
+    canAccess(profile.planTier, "localLeads") ? getLocalLeads(userId) : Promise.resolve([]),
+  ]);
+
   return (
     <>
       <PageHeader
         title="Business profile"
-        description="Update your directory listing, products & services, photos, and contact details."
+        description="Your listing, growth tools, AI audit scores, and matched leads."
         action={
           <Link
             href="/pricing"
@@ -46,6 +54,11 @@ export default async function DashboardProfilePage() {
           </Link>
         }
       />
+
+      <div className="mb-8">
+        <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
+      </div>
+
       <BusinessProfileEditor business={business} displayName={profile.displayName} />
     </>
   );

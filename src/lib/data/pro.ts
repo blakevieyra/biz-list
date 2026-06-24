@@ -3,6 +3,7 @@ import type { AiAssessment, ForumCategory, LocalLead } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 import { canAccess } from "@/lib/plans";
 import { getCurrentProfile } from "./index";
+import { parseIndustryTag } from "@/lib/industries";
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   "food & beverage": ["food", "restaurant", "bakery", "cafe", "catering"],
@@ -17,32 +18,66 @@ function normalize(value: string) {
 function scoreLeadMatch(
   customer: {
     bio: string;
+    headline?: string;
     interest_tags: string[];
+    industry_interests: string[];
     forum_interests: ForumCategory[];
     city: string;
     state: string;
+    is_seeking_work?: boolean;
+    target_job_titles?: string[];
   },
   business: {
     category: string;
+    subcategory?: string;
     city: string;
     state: string;
     description: string;
+    is_hiring?: boolean;
   },
-): { score: number; reasons: string[] } {
+  isFollower: boolean,
+): { score: number; reasons: string[]; leadSource: LocalLead["leadSource"] } {
   const reasons: string[] = [];
   let score = 0;
+  let leadSource: LocalLead["leadSource"] = "local";
+
+  if (isFollower) {
+    score += 40;
+    reasons.push("Follows your business on BizList");
+    leadSource = "follower";
+  }
 
   if (normalize(customer.state) === normalize(business.state)) {
-    score += 25;
-    reasons.push(`Located in ${customer.state}`);
+    score += 15;
+    if (!isFollower) reasons.push(`Located in ${customer.state}`);
   }
   if (
     customer.city &&
     business.city &&
     normalize(customer.city) === normalize(business.city)
   ) {
-    score += 25;
-    reasons.push(`Same city: ${customer.city}`);
+    score += 15;
+    if (!isFollower) reasons.push(`Same city: ${customer.city}`);
+  }
+
+  const businessTags = [
+    business.category,
+    business.subcategory ?? "",
+    ...`${business.category} ${business.subcategory ?? ""}`.split(/\s+/),
+  ].map(normalize);
+
+  for (const interest of customer.industry_interests ?? []) {
+    const parsed = parseIndustryTag(interest);
+    const parent = normalize(parsed.parent);
+    const sub = normalize(parsed.subcategory ?? "");
+    if (
+      businessTags.some((tag) => tag && (parent.includes(tag) || tag.includes(parent) || (sub && sub.includes(tag))))
+    ) {
+      score += 30;
+      reasons.push(`Industry interest: ${interest}`);
+      if (leadSource === "local") leadSource = "interest";
+      break;
+    }
   }
 
   const categoryKey = normalize(business.category);
@@ -51,34 +86,43 @@ function scoreLeadMatch(
     categoryKey.split(/\s+/).filter((w) => w.length > 3);
 
   const haystack = normalize(
-    `${customer.bio} ${customer.interest_tags.join(" ")} ${business.description}`,
+    `${customer.bio} ${customer.headline ?? ""} ${customer.interest_tags.join(" ")} ${(customer.target_job_titles ?? []).join(" ")} ${business.description}`,
   );
 
   for (const keyword of keywords) {
     if (haystack.includes(keyword)) {
       score += 15;
-      reasons.push(`Interest aligned with ${business.category}`);
-      break;
-    }
-  }
-
-  for (const interest of customer.forum_interests) {
-    if (interest === "local" || interest === "partnerships") {
-      score += 10;
-      reasons.push(`Active in ${FORUM_CATEGORY_LABELS[interest]}`);
+      if (leadSource === "local") {
+        reasons.push(`Interest aligned with ${business.category}`);
+        leadSource = "interest";
+      }
       break;
     }
   }
 
   for (const tag of customer.interest_tags) {
     if (keywords.some((k) => normalize(tag).includes(k) || k.includes(normalize(tag)))) {
-      score += 20;
+      score += 15;
       reasons.push(`Tagged interest: ${tag}`);
       break;
     }
   }
 
-  return { score: Math.min(score, 100), reasons: [...new Set(reasons)] };
+  for (const interest of customer.forum_interests) {
+    if (interest === "local" || interest === "partnerships" || interest === "hiring") {
+      score += 10;
+      reasons.push(`Active in ${FORUM_CATEGORY_LABELS[interest]}`);
+      break;
+    }
+  }
+
+  if (customer.is_seeking_work && business.is_hiring) {
+    score += 25;
+    reasons.push("Seeking work while you're hiring");
+    leadSource = "seeking";
+  }
+
+  return { score: Math.min(score, 100), reasons: [...new Set(reasons)], leadSource };
 }
 
 export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
@@ -97,12 +141,14 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
     .limit(1)
     .maybeSingle();
 
-  const businessContext = business ?? {
-    category: profile.bio.split(" ")[0] || "local services",
-    city: profile.city,
-    state: profile.state,
-    description: profile.bio,
-  };
+  if (!business) return [];
+
+  const { data: follows } = await supabase
+    .from("business_follows")
+    .select("follower_id")
+    .eq("business_id", business.id);
+
+  const followerIds = new Set((follows ?? []).map((f) => f.follower_id));
 
   let query = supabase
     .from("profiles")
@@ -111,27 +157,34 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
     .neq("id", userId);
 
   if (profile.state) query = query.ilike("state", profile.state);
-  if (profile.city) query = query.ilike("city", profile.city);
 
-  const { data: customers } = await query.limit(50);
-  if (!customers?.length) return [];
+  const { data: customers } = await query.limit(80);
+  if (!customers?.length) return getMockLeads();
 
-  return customers
+  const leads = customers
     .map((customer) => {
+      const isFollower = followerIds.has(customer.id);
       const match = scoreLeadMatch(
         {
           bio: customer.bio,
+          headline: customer.headline,
           interest_tags: customer.interest_tags ?? [],
+          industry_interests: customer.industry_interests ?? [],
           forum_interests: customer.forum_interests ?? [],
           city: customer.city,
           state: customer.state,
+          is_seeking_work: customer.is_seeking_work,
+          target_job_titles: customer.target_job_titles ?? [],
         },
         {
-          category: businessContext.category,
-          city: businessContext.city ?? profile.city,
-          state: businessContext.state ?? profile.state,
-          description: businessContext.description ?? profile.bio,
+          category: business.category,
+          subcategory: business.subcategory,
+          city: business.city ?? profile.city,
+          state: business.state ?? profile.state,
+          description: business.description ?? profile.bio,
+          is_hiring: business.is_hiring,
         },
+        isFollower,
       );
 
       return {
@@ -141,13 +194,22 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
         state: customer.state,
         bio: customer.bio,
         interestTags: customer.interest_tags ?? [],
+        industryInterests: customer.industry_interests ?? [],
         forumInterests: customer.forum_interests ?? [],
         matchScore: match.score,
         matchReasons: match.reasons,
+        leadSource: match.leadSource,
+        isFollower,
+        isSeekingWork: customer.is_seeking_work ?? false,
       };
     })
-    .filter((lead) => lead.matchScore >= 35)
-    .sort((a, b) => b.matchScore - a.matchScore);
+    .filter((lead) => lead.isFollower || lead.matchScore >= 30)
+    .sort((a, b) => {
+      if (Boolean(a.isFollower) !== Boolean(b.isFollower)) return a.isFollower ? -1 : 1;
+      return b.matchScore - a.matchScore;
+    });
+
+  return leads.length ? leads : getMockLeads();
 }
 
 export async function isEligibleLead(
@@ -187,35 +249,48 @@ export async function getAiAssessments(userId: string): Promise<AiAssessment[]> 
     seoScore: row.seo_score,
     onlinePresenceScore: row.online_presence_score,
     businessClarityScore: row.business_clarity_score,
+    websiteScore: row.seo_score,
+    profileScore: row.business_clarity_score,
     summary: row.summary,
     recommendations: (row.recommendations as string[]) ?? [],
     createdAt: row.created_at,
   }));
 }
 
+export async function getLatestAiAssessment(userId: string): Promise<AiAssessment | null> {
+  const list = await getAiAssessments(userId);
+  return list[0] ?? null;
+}
+
 function getMockLeads(): LocalLead[] {
   return [
     {
-      id: "lead-1",
+      id: "user-4",
       displayName: "Alex Rivera",
       city: "Austin",
       state: "TX",
       bio: "Looking for local bakeries and catering for office events.",
-      interestTags: ["bakery", "catering", "local food"],
+      interestTags: ["marketing", "events"],
+      industryInterests: ["Marketing & Print › Photography", "Food & Beverage › Restaurant"],
       forumInterests: ["local"],
       matchScore: 85,
-      matchReasons: ["Same city: Austin", "Interest aligned with Food & Beverage"],
+      matchReasons: ["Follows your business on BizList", "Industry interest: Food & Beverage › Restaurant"],
+      leadSource: "follower",
+      isFollower: true,
     },
     {
-      id: "lead-2",
-      displayName: "Jordan Lee",
+      id: "user-6",
+      displayName: "Sam Nguyen",
       city: "Austin",
       state: "TX",
-      bio: "Small office manager seeking reliable local vendors.",
-      interestTags: ["office catering", "local business"],
+      bio: "Product photographer for local shops and restaurants.",
+      interestTags: ["photography", "branding"],
+      industryInterests: ["Marketing & Print › Photography"],
       forumInterests: ["partnerships", "local"],
       matchScore: 72,
-      matchReasons: ["Located in TX", "Same city: Austin"],
+      matchReasons: ["Industry interest: Marketing & Print › Photography", "Same city: Austin"],
+      leadSource: "interest",
+      isFollower: false,
     },
   ];
 }

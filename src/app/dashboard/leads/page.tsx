@@ -20,8 +20,8 @@ export default async function DashboardLeadsPage() {
   return (
     <>
       <PageHeader
-        title="Local Leads"
-        description="Customers in your area with interests that match your business category and local activity."
+        title="Local leads"
+        description="Potential customers from followers, shared industry interests, job seekers, and local profiles."
       />
 
       {leads.length === 0 ? (
@@ -42,6 +42,16 @@ export default async function DashboardLeadsPage() {
                     <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
                       {lead.matchScore}% match
                     </span>
+                    {lead.isFollower && (
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-accent">
+                        Follows you
+                      </span>
+                    )}
+                    {lead.leadSource && !lead.isFollower && (
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-muted capitalize">
+                        {lead.leadSource} match
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 text-sm text-muted">
                     {lead.city}, {lead.state}

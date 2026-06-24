@@ -49,8 +49,20 @@ export default function VirtualAgentClient({
     <>
       <PageHeader
         title="Virtual Agent"
-        description="A customer-facing agent trained on your business profile, services, and hiring status."
+        description="Preview customer replies, then use Growth tools to automate outreach and onboarding messages."
       />
+
+      <div className="mb-4 rounded-xl border border-teal-200 bg-teal-50/80 px-4 py-3 text-sm text-teal-900">
+        Platinum automations live on your{" "}
+        <a href="/profile?tab=growth" className="font-medium underline">
+          profile Growth tab
+        </a>{" "}
+        and{" "}
+        <a href="/dashboard/marketing" className="font-medium underline">
+          Marketing
+        </a>{" "}
+        — auto-posts, lead outreach, and welcome messages for new followers.
+      </div>
 
       <Card>
         <div className="mb-4 rounded-xl bg-teal-50 p-4 text-sm">
