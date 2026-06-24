@@ -17,10 +17,23 @@ import {
 } from "@/lib/industries";
 import type { DiscoveryRadius } from "@/lib/types";
 
+const SEARCH_TYPES = [
+  { value: "all", label: "All" },
+  { value: "products", label: "Products & services" },
+] as const;
+
+type SearchType = (typeof SEARCH_TYPES)[number]["value"];
+
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; subcategory?: string; q?: string; scope?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    subcategory?: string;
+    q?: string;
+    scope?: string;
+    searchType?: string;
+  }>;
 }) {
   const params = await searchParams;
   const profile = await getCurrentProfile();
@@ -33,6 +46,7 @@ export default async function ListingsPage({
       ? params.subcategory
       : undefined;
   const query = params.q ?? "";
+  const searchType: SearchType = params.searchType === "products" ? "products" : "all";
   const scope = resolveDiscoveryRadius(
     params.scope,
     profile?.discoveryRadius ?? profile?.feedScope,
@@ -42,6 +56,7 @@ export default async function ListingsPage({
     ? {
         city: profile.city,
         state: profile.state,
+        county: profile.county,
         zipCode: profile.zipCode,
         latitude: profile.latitude,
         longitude: profile.longitude,
@@ -53,6 +68,7 @@ export default async function ListingsPage({
     category: categoryFilter,
     subcategory: subcategoryFilter,
     query: query || undefined,
+    searchType,
     scope,
     viewer,
   });
@@ -65,6 +81,7 @@ export default async function ListingsPage({
       category: categoryFilter,
       subcategory: subcategoryFilter,
       scope: scope !== DEFAULT_DISCOVERY_RADIUS ? scope : undefined,
+      searchType: searchType !== "all" ? searchType : undefined,
       ...next,
     };
     const search = new URLSearchParams();
@@ -81,7 +98,7 @@ export default async function ListingsPage({
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Listings"
-        description="Browse local businesses ranked nearest and most relevant to you. Filter by distance, industry, and specific business type."
+        description="Browse local businesses ranked nearest and most relevant to you. Filter by area, industry, and business type."
         action={
           <Link
             href="/feed"
@@ -102,7 +119,7 @@ export default async function ListingsPage({
       )}
 
       <section className="mb-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Distance</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Area</p>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((s) => (
             <Link
@@ -150,7 +167,7 @@ export default async function ListingsPage({
       </section>
 
       {categoryFilter && subcategories.length > 0 && (
-        <section className="mb-8">
+        <section className="mb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
             Business type · {categoryFilter}
           </p>
@@ -173,7 +190,7 @@ export default async function ListingsPage({
                   subcategoryFilter === sub
                     ? "bg-accent text-white"
                     : "border border-border bg-card text-muted hover:text-foreground"
-                }`}
+              }`}
               >
                 {sub}
               </Link>
@@ -182,14 +199,38 @@ export default async function ListingsPage({
         </section>
       )}
 
+      <section className="mb-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Search by</p>
+        <div className="flex flex-wrap gap-2">
+          {SEARCH_TYPES.map(({ value, label }) => (
+            <Link
+              key={value}
+              href={buildHref({ searchType: value === "all" ? undefined : value })}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                searchType === value
+                  ? "bg-accent text-white"
+                  : "border border-border bg-card text-muted hover:text-foreground"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <form className="mb-8 flex flex-col gap-4 sm:flex-row">
         {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
         {subcategoryFilter && <input type="hidden" name="subcategory" value={subcategoryFilter} />}
         {scope !== DEFAULT_DISCOVERY_RADIUS && <input type="hidden" name="scope" value={scope} />}
+        {searchType !== "all" && <input type="hidden" name="searchType" value={searchType} />}
         <input
           name="q"
           defaultValue={params.q ?? ""}
-          placeholder="Search by name, type, city, or zip..."
+          placeholder={
+            searchType === "products"
+              ? "Search products and services..."
+              : "Search by name, type, city, or zip..."
+          }
           className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
         />
         <button
@@ -202,8 +243,8 @@ export default async function ListingsPage({
 
       {businesses.length === 0 ? (
         <p className="text-muted">
-          No businesses found{scope !== "nationwide" ? " in this area" : ""}. Try expanding your
-          search radius or choosing a different type.
+          No businesses found{scope !== "nation" ? " in this area" : ""}. Try expanding your
+          search area or choosing a different type.
         </p>
       ) : (
         <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

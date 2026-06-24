@@ -3,11 +3,24 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { commentOnBusinessPost } from "@/lib/actions/business";
 import { startMessageWithBusinessOwner, toggleFollowBusiness } from "@/lib/actions/social";
 import { displayCategoryLabel } from "@/lib/industries";
 import type { BusinessPost, BusinessProfile } from "@/lib/types";
 import { Card } from "@/components/ui";
+
+function formatStats(business: BusinessProfile) {
+  const parts: string[] = [];
+  if (business.ratingCount > 0) {
+    parts.push(`${business.ratingAvg.toFixed(1)} ★`);
+  }
+  if (business.likeCount > 0) {
+    parts.push(`${business.likeCount} likes`);
+  }
+  if (business.followerIds.length > 0) {
+    parts.push(`${business.followerIds.length} followers`);
+  }
+  return parts.join(" · ");
+}
 
 export function BusinessListingCard({
   business,
@@ -23,11 +36,11 @@ export function BusinessListingCard({
   const [isFollowing, setIsFollowing] = useState(
     currentUserId ? business.followerIds.includes(currentUserId) : false,
   );
-  const [reply, setReply] = useState("");
   const [error, setError] = useState<string | null>(null);
   const cover = business.mediaUrls[0];
   const topServices = business.services.filter((s) => s.name.trim()).slice(0, 2);
   const isOwner = currentUserId === business.ownerId;
+  const stats = formatStats(business);
 
   function handleFollow(e: React.MouseEvent) {
     e.preventDefault();
@@ -48,7 +61,7 @@ export function BusinessListingCard({
     });
   }
 
-  function handleAsk(e: React.MouseEvent) {
+  function handleMessage(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!currentUserId) {
@@ -63,26 +76,6 @@ export function BusinessListingCard({
         return;
       }
       if (result.conversationId) router.push(`/messages/${result.conversationId}`);
-    });
-  }
-
-  function handleReply(e: React.FormEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!latestPost || !reply.trim()) return;
-    if (!currentUserId) {
-      router.push("/auth/login");
-      return;
-    }
-    startTransition(async () => {
-      setError(null);
-      const result = await commentOnBusinessPost(latestPost.id, reply.trim());
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-      setReply("");
-      router.refresh();
     });
   }
 
@@ -110,50 +103,34 @@ export function BusinessListingCard({
           {business.tagline && (
             <p className="mt-1 line-clamp-1 text-sm text-muted">{business.tagline}</p>
           )}
+          {stats && <p className="mt-1 text-xs text-muted">{stats}</p>}
         </Link>
 
         {topServices.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Top offerings</p>
-            <ul className="mt-1 space-y-1">
-              {topServices.map((service) => (
-                <li key={service.name} className="text-sm">
-                  <span className="font-medium">{service.name}</span>
-                  {service.price ? (
-                    <span className="text-muted"> · {service.price}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="mt-3 space-y-1">
+            {topServices.map((service) => (
+              <li key={service.name} className="text-sm">
+                <span className="font-medium">{service.name}</span>
+                {service.price ? (
+                  <span className="text-muted"> · {service.price}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         )}
 
         {latestPost && (
-          <div
-            className="mt-3 rounded-xl border border-border bg-slate-50/80 p-3"
-            onClick={(e) => e.stopPropagation()}
+          <Link
+            href={`/listings/${business.id}#post-${latestPost.id}`}
+            className="mt-3 block rounded-xl border border-border bg-slate-50/80 p-3 transition hover:border-accent/40"
           >
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest update</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest</p>
             <p className="mt-1 text-sm font-medium">{latestPost.title}</p>
             <p className="mt-1 line-clamp-2 text-xs text-muted">{latestPost.body}</p>
-            {!isOwner && (
-              <form onSubmit={handleReply} className="mt-2 flex gap-2">
-                <input
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  placeholder="Reply to this post..."
-                  className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1.5 text-xs"
-                />
-                <button
-                  type="submit"
-                  disabled={pending || !reply.trim()}
-                  className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-                >
-                  Reply
-                </button>
-              </form>
+            {latestPost.likeCount > 0 && (
+              <p className="mt-2 text-xs text-muted">{latestPost.likeCount} likes</p>
             )}
-          </div>
+          </Link>
         )}
 
         {!isOwner && (
@@ -173,7 +150,7 @@ export function BusinessListingCard({
             <button
               type="button"
               disabled={pending}
-              onClick={handleAsk}
+              onClick={handleMessage}
               className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium hover:border-accent/40 disabled:opacity-50"
             >
               Message
@@ -189,7 +166,6 @@ export function BusinessListingCard({
         >
           {business.city}, {business.state}
           {business.zipCode ? ` ${business.zipCode}` : ""}
-          {business.likeCount > 0 ? ` · ${business.likeCount} likes` : ""}
           <span className="ml-1 text-accent">· View listing →</span>
         </Link>
       </div>

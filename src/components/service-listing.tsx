@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitServiceOrder } from "@/lib/actions/business";
 import type { BusinessService } from "@/lib/types";
+import { ContentLikeButton } from "@/components/content-like-button";
 import { SafeExternalLink } from "@/components/safe-external-link";
 
 export function ServiceListing({
@@ -11,48 +12,53 @@ export function ServiceListing({
   businessWebsite,
   currentUserId,
   isOwner,
+  likeCount = 0,
+  liked = false,
 }: {
   service: BusinessService;
   businessId: string;
   businessWebsite?: string;
   currentUserId: string | null;
   isOwner: boolean;
+  likeCount?: number;
+  liked?: boolean;
 }) {
   const actionType =
     service.actionType ?? (service.actionUrl ? "link" : service.actionLabel ? "form" : undefined);
 
-  if (actionType === "link" && service.actionUrl) {
-    return (
-      <SafeExternalLink
-        url={service.actionUrl}
-        label={service.actionLabel || "Buy / order online"}
-        className="mt-3 inline-flex min-h-10 items-center rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-      />
-    );
-  }
-
-  if (actionType === "form" && !isOwner) {
-    return (
-      <ServiceOrderForm
-        businessId={businessId}
-        serviceName={service.name}
-        buttonLabel={service.actionLabel || "Place order"}
-        currentUserId={currentUserId}
-      />
-    );
-  }
-
-  if (businessWebsite && !isOwner) {
-    return (
-      <SafeExternalLink
-        url={businessWebsite}
-        label="Visit website to order"
-        className="mt-3 inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-      />
-    );
-  }
-
-  return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {!isOwner && (
+        <ContentLikeButton
+          businessId={businessId}
+          targetType="service"
+          targetId={service.name}
+          initialCount={likeCount}
+          initialLiked={liked}
+        />
+      )}
+      {actionType === "link" && service.actionUrl ? (
+        <SafeExternalLink
+          url={service.actionUrl}
+          label={service.actionLabel || "Buy / order online"}
+          className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+        />
+      ) : actionType === "form" && !isOwner ? (
+        <ServiceOrderForm
+          businessId={businessId}
+          serviceName={service.name}
+          buttonLabel={service.actionLabel || "Place order"}
+          currentUserId={currentUserId}
+        />
+      ) : businessWebsite && !isOwner ? (
+        <SafeExternalLink
+          url={businessWebsite}
+          label="Visit website to order"
+          className="inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+        />
+      ) : null}
+    </div>
+  );
 }
 
 function ServiceOrderForm({
@@ -100,7 +106,7 @@ function ServiceOrderForm({
 
   if (success) {
     return (
-      <p className="mt-3 text-sm font-medium text-emerald-700">
+      <p className="text-sm font-medium text-emerald-700">
         Order sent. The business will follow up with you on BizList.
       </p>
     );
@@ -111,7 +117,7 @@ function ServiceOrderForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 min-h-10 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+        className="min-h-10 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
       >
         {buttonLabel}
       </button>
@@ -119,7 +125,7 @@ function ServiceOrderForm({
   }
 
   return (
-    <div className="mt-3 space-y-2 rounded-xl border border-border bg-slate-50 p-3">
+    <div className="space-y-2 rounded-xl border border-border bg-slate-50 p-3">
       <input
         value={quantity}
         onChange={(e) => setQuantity(e.target.value)}

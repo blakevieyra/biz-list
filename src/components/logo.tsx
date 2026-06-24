@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 const LOGO_SIZES = {
-  sm: { width: 120, height: 30, className: "h-[30px] w-auto max-w-[120px]" },
-  md: { width: 148, height: 38, className: "h-[38px] w-auto max-w-[148px]" },
-  lg: { width: 176, height: 44, className: "h-[44px] w-auto max-w-[176px]" },
+  sm: { width: 140, height: 36, className: "h-9 w-auto max-w-[140px]" },
+  md: { width: 180, height: 46, className: "h-[46px] w-auto max-w-[180px]" },
+  lg: { width: 220, height: 56, className: "h-14 w-auto max-w-[220px]" },
 } as const;
 
 export function Logo({
@@ -48,7 +48,7 @@ export function LogoMark({ className = "" }: { className?: string }) {
         alt="BizList"
         width={160}
         height={40}
-        className="mx-auto h-[40px] w-auto max-w-[160px] object-contain"
+        className="mx-auto h-12 w-auto max-w-[200px] object-contain"
       />
     </div>
   );

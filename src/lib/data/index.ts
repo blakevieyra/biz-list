@@ -189,6 +189,7 @@ export async function getBusinesses(filters?: {
   category?: string;
   subcategory?: string;
   query?: string;
+  searchType?: "all" | "products";
   scope?: FeedScope;
   viewer?: DiscoveryViewer | null;
 }): Promise<BusinessProfile[]> {
@@ -212,16 +213,28 @@ export async function getBusinesses(filters?: {
       const q = filters?.query?.toLowerCase() ?? "";
       const matchesQuery =
         !q ||
-        b.name.toLowerCase().includes(q) ||
-        b.description.toLowerCase().includes(q) ||
-        b.city.toLowerCase().includes(q) ||
-        b.zipCode.includes(q) ||
-        b.category.toLowerCase().includes(q) ||
-        (b.subcategory?.toLowerCase().includes(q) ?? false);
+        (filters?.searchType === "products"
+          ? b.services.some(
+              (s) =>
+                s.name.toLowerCase().includes(q) ||
+                s.description.toLowerCase().includes(q) ||
+                (s.price?.toLowerCase().includes(q) ?? false),
+            )
+          : b.name.toLowerCase().includes(q) ||
+            b.description.toLowerCase().includes(q) ||
+            b.city.toLowerCase().includes(q) ||
+            b.zipCode.includes(q) ||
+            b.category.toLowerCase().includes(q) ||
+            (b.subcategory?.toLowerCase().includes(q) ?? false) ||
+            b.services.some(
+              (s) =>
+                s.name.toLowerCase().includes(q) ||
+                s.description.toLowerCase().includes(q),
+            ));
       return matchesIntent && matchesCategory && matchesSubcategory && matchesQuery;
     });
 
-    if (viewer && scope && scope !== "nationwide") {
+    if (viewer && scope && scope !== "nation") {
       result = result.filter((b) => matchesFeedScope(viewer, b, scope));
     }
 
@@ -258,14 +271,28 @@ export async function getBusinesses(filters?: {
 
   if (filters?.query) {
     const q = filters.query.toLowerCase();
-    result = result.filter(
-      (b) =>
+    result = result.filter((b) => {
+      if (filters.searchType === "products") {
+        return b.services.some(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            s.description.toLowerCase().includes(q) ||
+            (s.price?.toLowerCase().includes(q) ?? false),
+        );
+      }
+      return (
         b.name.toLowerCase().includes(q) ||
         b.description.toLowerCase().includes(q) ||
         b.city.toLowerCase().includes(q) ||
         b.zipCode.includes(q) ||
-        b.category.toLowerCase().includes(q),
-    );
+        b.category.toLowerCase().includes(q) ||
+        b.services.some(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            s.description.toLowerCase().includes(q),
+        )
+      );
+    });
   }
 
   if (filters?.category) {
@@ -276,7 +303,7 @@ export async function getBusinesses(filters?: {
     result = result.filter((b) => b.subcategory === filters.subcategory);
   }
 
-  if (viewer && scope && scope !== "nationwide") {
+  if (viewer && scope && scope !== "nation") {
     result = result.filter((b) => matchesFeedScope(viewer, b, scope));
   }
 

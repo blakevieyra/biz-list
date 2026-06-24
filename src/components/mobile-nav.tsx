@@ -6,9 +6,9 @@ import { signOut } from "@/lib/actions/auth";
 import type { UserRole } from "@/lib/types";
 
 const publicLinks = [
-  { href: "/listings", label: "Listings" },
   { href: "/feed", label: "Feed" },
-  { href: "/partnerships", label: "Partnerships" },
+  { href: "/listings", label: "Listings" },
+  { href: "/partnerships", label: "Collaboration" },
 ];
 
 const authLinks = [

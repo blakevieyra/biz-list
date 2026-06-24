@@ -159,7 +159,12 @@ export async function saveProfile(input: {
         headline: input.headline ?? "",
         skills: input.skills ?? [],
         is_seeking_work: input.isSeekingWork ?? false,
-        feed_scope: discoveryRadius === "state" || discoveryRadius === "nationwide" ? discoveryRadius : "local",
+        feed_scope:
+          discoveryRadius === "state"
+            ? "state"
+            : discoveryRadius === "nation"
+              ? "nationwide"
+              : "local",
       })
       .eq("id", user.id);
 
@@ -297,7 +302,12 @@ export async function updateUserProfile(input: {
         interest_tags: input.interestTags ?? [],
         industry_interests: industries.values,
         forum_interests: input.forumInterests ?? [],
-        feed_scope: discoveryRadius === "state" || discoveryRadius === "nationwide" ? discoveryRadius : "local",
+        feed_scope:
+          discoveryRadius === "state"
+            ? "state"
+            : discoveryRadius === "nation"
+              ? "nationwide"
+              : "local",
       })
       .eq("id", user.id);
 

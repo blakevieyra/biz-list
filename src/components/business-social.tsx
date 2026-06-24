@@ -3,7 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { commentOnBusinessPost, submitBusinessReview } from "@/lib/actions/business";
+import { ContentLikeButton } from "@/components/content-like-button";
 import { PostMediaGallery, PostTypeBadge } from "@/components/post-media";
+import {
+  contentLikeKey,
+  isContentLiked,
+  type ContentLikeState,
+} from "@/lib/content-likes-types";
 import type { BusinessPost, BusinessReview } from "@/lib/types";
 import { Card } from "@/components/ui";
 
@@ -48,7 +54,7 @@ export function BusinessReviewsSection({
   }
 
   return (
-    <Card>
+    <Card id="reviews">
       <div className="flex items-center justify-between gap-4">
         <h2 className="font-semibold">Reviews & feedback</h2>
         {ratingCount > 0 && (
@@ -113,16 +119,18 @@ export function BusinessReviewsSection({
   );
 }
 
-export function BusinessPostsSection({
+export function BusinessActivitySection({
   businessId,
   posts,
   currentUserId,
   isOwner,
+  contentLikes = { counts: {}, userLiked: [] },
 }: {
   businessId: string;
   posts: BusinessPost[];
   currentUserId: string | null;
   isOwner: boolean;
+  contentLikes?: ContentLikeState;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -145,14 +153,11 @@ export function BusinessPostsSection({
   }
 
   return (
-    <Card>
+    <Card id="activity">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Business posts & threads</h2>
+        <h2 className="font-semibold">Business activity</h2>
         {isOwner && (
-          <a
-            href="/dashboard/posts"
-            className="text-sm text-accent hover:underline"
-          >
+          <a href="/dashboard/posts" className="text-sm text-accent hover:underline">
             Create post →
           </a>
         )}
@@ -161,52 +166,114 @@ export function BusinessPostsSection({
       <ul className="mt-4 space-y-6">
         {posts.length === 0 && (
           <li className="text-sm text-muted">
-            No posts yet. {isOwner ? "Publish updates, jobs, deals, or video from Posts & marketing." : ""}
+            No activity yet.{" "}
+            {isOwner ? "Publish updates, jobs, deals, or video from Posts & marketing." : ""}
           </li>
         )}
-        {posts.map((post) => (
-          <li key={post.id} className="rounded-xl border border-border p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <PostTypeBadge type={post.postType} />
-              <h3 className="font-medium">{post.title}</h3>
-              {post.isTrending && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                  Trending
-                </span>
-              )}
-            </div>
-            <p className="mt-2 text-sm leading-relaxed">{post.body}</p>
-            {post.mediaUrls.length > 0 && (
-              <div className="mt-3">
-                <PostMediaGallery urls={post.mediaUrls} />
+        {posts.map((post) => {
+          const likeKey = contentLikeKey("post", post.id);
+          return (
+            <li
+              key={post.id}
+              id={`post-${post.id}`}
+              className="scroll-mt-24 rounded-xl border border-border p-4"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <PostTypeBadge type={post.postType} />
+                <h3 className="font-medium">{post.title}</h3>
+                {post.isTrending && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    Trending
+                  </span>
+                )}
               </div>
-            )}
-            <p className="mt-2 text-xs text-muted">
-              {post.commentCount} comment{post.commentCount === 1 ? "" : "s"} · score {post.engagementScore}
-            </p>
+              <p className="mt-2 text-sm leading-relaxed">{post.body}</p>
+              {post.mediaUrls.length > 0 && (
+                <div className="mt-3">
+                  <PostMediaGallery urls={post.mediaUrls} />
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <ContentLikeButton
+                  businessId={businessId}
+                  targetType="post"
+                  targetId={post.id}
+                  initialCount={contentLikes.counts[likeKey] ?? post.likeCount}
+                  initialLiked={isContentLiked(contentLikes, "post", post.id)}
+                />
+                <p className="text-xs text-muted">
+                  {post.commentCount} comment{post.commentCount === 1 ? "" : "s"}
+                </p>
+              </div>
 
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={commentBodies[post.id] ?? ""}
-                onChange={(e) =>
-                  setCommentBodies((prev) => ({ ...prev, [post.id]: e.target.value }))
-                }
-                placeholder="Join the thread..."
-                className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => handleComment(post.id)}
-                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-              >
-                Reply
-              </button>
-            </div>
-          </li>
-        ))}
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={commentBodies[post.id] ?? ""}
+                  onChange={(e) =>
+                    setCommentBodies((prev) => ({ ...prev, [post.id]: e.target.value }))
+                  }
+                  placeholder="Join the thread..."
+                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => handleComment(post.id)}
+                  className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  Reply
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
+    </Card>
+  );
+}
+
+/** @deprecated Use BusinessActivitySection */
+export const BusinessPostsSection = BusinessActivitySection;
+
+export function BusinessPhotosSection({
+  businessId,
+  mediaUrls,
+  contentLikes,
+}: {
+  businessId: string;
+  mediaUrls: string[];
+  contentLikes: ContentLikeState;
+}) {
+  if (mediaUrls.length <= 1) return null;
+
+  return (
+    <Card id="photos">
+      <h2 className="font-semibold">Photos</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {mediaUrls.slice(1).map((url, index) => {
+          const likeKey = contentLikeKey("photo", url);
+          return (
+            <div
+              key={`${url}-${index}`}
+              className="overflow-hidden rounded-xl border border-border"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" className="aspect-square w-full object-cover" />
+              <div className="border-t border-border p-2">
+                <ContentLikeButton
+                  businessId={businessId}
+                  targetType="photo"
+                  targetId={url}
+                  initialCount={contentLikes.counts[likeKey] ?? 0}
+                  initialLiked={isContentLiked(contentLikes, "photo", url)}
+                  size="sm"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }

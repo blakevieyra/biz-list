@@ -13,6 +13,7 @@ import type {
   WorkGroup,
 } from "@/lib/types";
 import { parsePostType } from "@/lib/media/post-media";
+import { getPostLikeCounts } from "@/lib/data/content-likes";
 
 
 type BusinessPostRow = {
@@ -45,6 +46,7 @@ function mapPostRow(
     engagementScore: row.engagement_score,
     isTrending: row.is_trending,
     commentCount: extras.commentCount ?? 0,
+    likeCount: extras.likeCount ?? 0,
     createdAt: row.created_at,
     businessName: extras.businessName,
     businessCategory: extras.businessCategory,
@@ -105,8 +107,13 @@ export async function getBusinessPosts(businessId: string): Promise<BusinessPost
     countMap.set(c.post_id, (countMap.get(c.post_id) ?? 0) + 1);
   }
 
+  const likeCounts = await getPostLikeCounts(postIds);
+
   return (rows as BusinessPostRow[]).map((row) =>
-    mapPostRow(row, { commentCount: countMap.get(row.id) ?? 0 }),
+    mapPostRow(row, {
+      commentCount: countMap.get(row.id) ?? 0,
+      likeCount: likeCounts.get(row.id) ?? 0,
+    }),
   );
 }
 
@@ -208,6 +215,12 @@ export async function getLatestPostsForBusinessIds(
     if (!map.has(row.business_id)) {
       map.set(row.business_id, mapPostRow(row));
     }
+  }
+
+  const postIds = [...map.values()].map((p) => p.id);
+  const likeCounts = await getPostLikeCounts(postIds);
+  for (const [businessId, post] of map) {
+    map.set(businessId, { ...post, likeCount: likeCounts.get(post.id) ?? 0 });
   }
 
   return map;

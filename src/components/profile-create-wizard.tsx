@@ -90,7 +90,7 @@ export function ProfileCreateWizard({
     headline: "",
     skills: [],
     isSeekingWork: false,
-    feedScope: "25",
+    feedScope: "city",
     businessName: "",
     tagline: "",
     description: "",

@@ -12,6 +12,7 @@ import type {
   UserRole,
   PlanTier,
 } from "@/lib/types";
+import { normalizeDiscoveryRadius } from "@/lib/feed/location-scope";
 
 type ProfileRow = {
   id: string;
@@ -22,6 +23,7 @@ type ProfileRow = {
   bio: string;
   city: string;
   state: string;
+  county?: string;
   zip_code?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -37,10 +39,9 @@ type ProfileRow = {
 };
 
 function mapDiscoveryRadius(row: ProfileRow): DiscoveryRadius {
-  if (row.discovery_radius) return row.discovery_radius;
-  if (row.feed_scope === "state") return "state";
-  if (row.feed_scope === "nationwide") return "nationwide";
-  return "25";
+  return normalizeDiscoveryRadius(row.discovery_radius) ??
+    normalizeDiscoveryRadius(row.feed_scope) ??
+    "city";
 }
 
 type BusinessRow = {
@@ -53,6 +54,7 @@ type BusinessRow = {
   subcategory?: string;
   city: string;
   state: string;
+  county?: string;
   zip_code?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -121,6 +123,7 @@ export function mapProfile(row: ProfileRow): UserProfile {
     bio: row.bio,
     city: row.city,
     state: row.state,
+    county: row.county ?? "",
     zipCode: row.zip_code ?? "",
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
@@ -183,6 +186,7 @@ export function mapBusiness(
     subcategory: row.subcategory ?? "",
     city: row.city,
     state: row.state,
+    county: row.county ?? "",
     zipCode: row.zip_code ?? "",
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,

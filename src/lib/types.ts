@@ -18,7 +18,7 @@ export type BusinessSocialLinks = {
   youtube?: string;
 };
 
-export type DiscoveryRadius = "5" | "10" | "25" | "50" | "state" | "nationwide";
+export type DiscoveryRadius = "city" | "county" | "state" | "nation";
 export type FeedScope = DiscoveryRadius;
 
 export type PlanTier = "free" | "basic" | "pro" | "platinum";
@@ -47,6 +47,7 @@ export interface UserProfile {
   bio: string;
   city: string;
   state: string;
+  county?: string;
   zipCode: string;
   latitude?: number;
   longitude?: number;
@@ -72,6 +73,7 @@ export interface BusinessProfile {
   subcategory: string;
   city: string;
   state: string;
+  county?: string;
   zipCode: string;
   latitude?: number;
   longitude?: number;
@@ -130,6 +132,7 @@ export interface BusinessPost {
   engagementScore: number;
   isTrending: boolean;
   commentCount: number;
+  likeCount: number;
   createdAt: string;
 }
 

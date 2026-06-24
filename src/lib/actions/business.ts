@@ -76,6 +76,47 @@ export async function toggleLikeBusiness(businessId: string) {
   }
 }
 
+export async function toggleContentLike(input: {
+  businessId: string;
+  targetType: "post" | "service" | "photo";
+  targetId: string;
+}) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to like content." };
+
+  try {
+    const { supabase, user } = await requireUser();
+    const targetId = input.targetId.trim().slice(0, 500);
+    if (!targetId) return { error: "Invalid content." };
+
+    const { data: existing } = await supabase
+      .from("business_content_likes")
+      .select("id")
+      .eq("business_id", input.businessId)
+      .eq("user_id", user.id)
+      .eq("target_type", input.targetType)
+      .eq("target_id", targetId)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("business_content_likes").delete().eq("id", existing.id);
+    } else {
+      await supabase.from("business_content_likes").insert({
+        business_id: input.businessId,
+        user_id: user.id,
+        target_type: input.targetType,
+        target_id: targetId,
+      });
+    }
+
+    revalidatePath(`/listings/${input.businessId}`);
+    revalidatePath("/listings");
+    revalidatePath("/feed");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update like." };
+  }
+}
+
 export async function submitBusinessReview(input: {
   businessId: string;
   rating: number;

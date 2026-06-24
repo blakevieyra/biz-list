@@ -1,50 +1,61 @@
 import { haversineMiles } from "@/lib/geo/geocode";
 import type { UserProfile } from "@/lib/types";
 
-export type DiscoveryRadius = "5" | "10" | "25" | "50" | "state" | "nationwide";
+export type DiscoveryRadius = "city" | "county" | "state" | "nation";
 
 /** @deprecated Use DiscoveryRadius */
 export type FeedScope = DiscoveryRadius;
 
 export type LocationProfile = Pick<
   UserProfile,
-  "city" | "state" | "zipCode" | "latitude" | "longitude"
+  "city" | "state" | "county" | "zipCode" | "latitude" | "longitude"
 >;
 
 export type DiscoveryViewer = Pick<
   UserProfile,
-  "city" | "state" | "zipCode" | "latitude" | "longitude" | "industryInterests"
+  "city" | "state" | "county" | "zipCode" | "latitude" | "longitude" | "industryInterests"
 >;
 
 export const DISCOVERY_RADIUS_LABELS: Record<DiscoveryRadius, string> = {
-  "5": "Within 5 miles",
-  "10": "Within 10 miles",
-  "25": "Within 25 miles",
-  "50": "Within 50 miles",
+  city: "My city",
+  county: "My county",
   state: "My state",
-  nationwide: "Nationwide",
+  nation: "Nationwide",
 };
 
 export const FEED_SCOPE_LABELS = DISCOVERY_RADIUS_LABELS;
 
-export const DEFAULT_DISCOVERY_RADIUS: DiscoveryRadius = "25";
+export const DEFAULT_DISCOVERY_RADIUS: DiscoveryRadius = "city";
 
-export function normalizeZipCode(zip: string): string {
-  return zip.replace(/\D/g, "").slice(0, 5);
+const LEGACY_SCOPE_MAP: Record<string, DiscoveryRadius> = {
+  "5": "city",
+  "10": "city",
+  "25": "city",
+  "50": "city",
+  local: "city",
+  city: "city",
+  county: "county",
+  state: "state",
+  nation: "nation",
+  nationwide: "nation",
+};
+
+export function normalizeDiscoveryRadius(value: string | undefined): DiscoveryRadius | undefined {
+  if (!value) return undefined;
+  return LEGACY_SCOPE_MAP[value.trim().toLowerCase()];
 }
 
 export function resolveDiscoveryRadius(
   urlRadius: string | undefined,
-  profileRadius?: DiscoveryRadius,
+  profileRadius?: DiscoveryRadius | string,
 ): DiscoveryRadius {
-  const allowed: DiscoveryRadius[] = ["5", "10", "25", "50", "state", "nationwide"];
-  if (urlRadius && allowed.includes(urlRadius as DiscoveryRadius)) {
-    return urlRadius as DiscoveryRadius;
-  }
-  if (profileRadius && allowed.includes(profileRadius)) {
-    return profileRadius;
-  }
-  return "25";
+  const fromUrl = normalizeDiscoveryRadius(urlRadius);
+  if (fromUrl) return fromUrl;
+
+  const fromProfile = normalizeDiscoveryRadius(profileRadius);
+  if (fromProfile) return fromProfile;
+
+  return DEFAULT_DISCOVERY_RADIUS;
 }
 
 export const resolveFeedScope = resolveDiscoveryRadius;
@@ -60,40 +71,56 @@ function hasCoordinates(
   );
 }
 
+function normalizeLocation(value: string | undefined): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
 export function matchesDiscoveryRadius(
   viewer: LocationProfile,
   target: LocationProfile,
   radius: DiscoveryRadius,
 ): boolean {
-  if (radius === "nationwide") return true;
+  if (radius === "nation") return true;
 
-  const viewerState = viewer.state.trim().toLowerCase();
-  const targetState = target.state.trim().toLowerCase();
+  const viewerState = normalizeLocation(viewer.state);
+  const targetState = normalizeLocation(target.state);
   if (!viewerState || !targetState) return true;
 
   if (radius === "state") {
     return viewerState === targetState;
   }
 
-  const miles = Number(radius);
+  if (radius === "county") {
+    const viewerCounty = normalizeLocation(viewer.county);
+    const targetCounty = normalizeLocation(target.county);
+    if (viewerCounty && targetCounty) {
+      return viewerCounty === targetCounty && viewerState === targetState;
+    }
+    return viewerState === targetState;
+  }
+
+  const viewerCity = normalizeLocation(viewer.city);
+  const targetCity = normalizeLocation(target.city);
+  if (viewerCity && targetCity) {
+    return viewerCity === targetCity && viewerState === targetState;
+  }
+
   if (hasCoordinates(viewer) && hasCoordinates(target)) {
-    return haversineMiles(viewer, target) <= miles;
+    return haversineMiles(viewer, target) <= 25;
   }
 
   const viewerZip = normalizeZipCode(viewer.zipCode ?? "");
   const targetZip = normalizeZipCode(target.zipCode ?? "");
   if (viewerZip && targetZip && viewerZip === targetZip) return true;
 
-  const viewerCity = viewer.city.trim().toLowerCase();
-  const targetCity = target.city.trim().toLowerCase();
-  if (viewerCity && targetCity) {
-    return viewerCity === targetCity && viewerState === targetState;
-  }
-
   return viewerState === targetState;
 }
 
 export const matchesFeedScope = matchesDiscoveryRadius;
+
+export function normalizeZipCode(zip: string): string {
+  return zip.replace(/\D/g, "").slice(0, 5);
+}
 
 export function businessDiscoveryScore(
   input: {
@@ -129,8 +156,7 @@ export function businessDiscoveryScore(
     }
   }
 
-  if (viewer && radius && radius !== "nationwide" && radius !== "state") {
-    const miles = Number(radius);
+  if (viewer && radius && radius !== "nation") {
     if (
       hasCoordinates(viewer) &&
       typeof input.latitude === "number" &&
@@ -140,7 +166,7 @@ export function businessDiscoveryScore(
         latitude: input.latitude,
         longitude: input.longitude,
       });
-      if (distance <= miles) score += Math.max(0, 20 - Math.floor(distance / 2));
+      score += Math.max(0, 20 - Math.floor(distance / 2));
     } else {
       const viewerZip = normalizeZipCode(viewer.zipCode ?? "");
       const targetZip = normalizeZipCode(input.zipCode ?? "");
