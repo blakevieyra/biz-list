@@ -10,7 +10,14 @@ import {
 } from "@/lib/media/post-media";
 import type { BusinessPostType } from "@/lib/types";
 
-const postTypes: BusinessPostType[] = ["update", "job", "deal", "video"];
+const postTypes: BusinessPostType[] = [
+  "update",
+  "job",
+  "deal",
+  "video",
+  "help_needed",
+  "free",
+];
 
 export function BusinessPostComposer({ businessId }: { businessId: string }) {
   const router = useRouter();

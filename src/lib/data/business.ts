@@ -2,18 +2,28 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getBusinessPostsForBusiness,
   getBusinessReviewsForBusiness,
+  SEED_BUSINESSES,
   SEED_BUSINESS_POSTS,
 } from "@/lib/mock-data";
 import type {
+  AreaScope,
   BusinessPost,
+  BusinessPostComment,
+  BusinessPostType,
   BusinessReview,
   BusinessService,
   JobApplication,
+  MileRadius,
   ServiceOrder,
   WorkGroup,
 } from "@/lib/types";
 import { parsePostType } from "@/lib/media/post-media";
 import { getPostLikeCounts } from "@/lib/data/content-likes";
+import {
+  matchesAreaScope,
+  matchesMileRadius,
+  type DiscoveryViewer,
+} from "@/lib/feed/location-scope";
 
 
 type BusinessPostRow = {
@@ -50,6 +60,13 @@ function mapPostRow(
     createdAt: row.created_at,
     businessName: extras.businessName,
     businessCategory: extras.businessCategory,
+    businessMediaUrl: extras.businessMediaUrl,
+    businessRatingAvg: extras.businessRatingAvg,
+    businessRatingCount: extras.businessRatingCount,
+    businessLikeCount: extras.businessLikeCount,
+    isFollowed: extras.isFollowed,
+    feedBadge: extras.feedBadge,
+    recentComments: extras.recentComments,
   };
 }
 
@@ -188,6 +205,195 @@ export async function getTrendingBusinessPosts(limit = 10): Promise<BusinessPost
       commentCount: 0,
     });
   });
+}
+
+type FeedBusinessMeta = {
+  name: string;
+  category: string;
+  media_urls?: string[];
+  like_count?: number;
+  rating_avg?: number;
+  rating_count?: number;
+  city: string;
+  state: string;
+  zip_code?: string;
+  county?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+function businessMetaFromRow(
+  raw: FeedBusinessMeta | FeedBusinessMeta[] | null | undefined,
+): FeedBusinessMeta | null {
+  if (!raw) return null;
+  return Array.isArray(raw) ? raw[0] ?? null : raw;
+}
+
+function assignFeedBadge(
+  post: BusinessPost,
+  businessLikeCount: number,
+  businessRatingAvg: number,
+  businessRatingCount: number,
+): BusinessPost["feedBadge"] {
+  if (post.isFollowed) return "following";
+  if (post.isTrending) return "trending";
+  if (businessRatingCount >= 3 && businessRatingAvg >= 4.5) return "top-rated";
+  if (businessLikeCount >= 8) return "popular";
+  return undefined;
+}
+
+function sortFeedPosts(posts: BusinessPost[]): BusinessPost[] {
+  return [...posts].sort((a, b) => {
+    if (Boolean(a.isFollowed) !== Boolean(b.isFollowed)) {
+      return a.isFollowed ? -1 : 1;
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
+export async function getFeedBusinessPosts(options: {
+  viewer?: DiscoveryViewer | null;
+  areaScope?: AreaScope;
+  mileRadius?: MileRadius;
+  userId?: string | null;
+  postTypes?: BusinessPostType[];
+  limit?: number;
+}): Promise<BusinessPost[]> {
+  const limit = options.limit ?? 40;
+  const viewer = options.viewer;
+  const areaScope = options.areaScope ?? "city";
+  const mileRadius = options.mileRadius;
+  const typeSet = options.postTypes ? new Set(options.postTypes) : null;
+
+  const supabase = await createClient();
+
+  if (!supabase) {
+    let posts = [...SEED_BUSINESS_POSTS];
+    if (typeSet) posts = posts.filter((p) => typeSet.has(p.postType));
+    posts = posts.map((post) => {
+      const business = SEED_BUSINESSES.find((b) => b.id === post.businessId);
+      if (!business) return post;
+      if (viewer) {
+        if (!matchesAreaScope(viewer, business, areaScope)) return null;
+        if (mileRadius && !matchesMileRadius(viewer, business, mileRadius)) return null;
+      }
+      const isFollowed = options.userId
+        ? business.followerIds.includes(options.userId)
+        : false;
+      const enriched: BusinessPost = {
+        ...post,
+        businessName: business.name,
+        businessCategory: business.category,
+        businessMediaUrl: business.mediaUrls[0],
+        businessRatingAvg: business.ratingAvg,
+        businessRatingCount: business.ratingCount,
+        businessLikeCount: business.likeCount,
+        isFollowed,
+        feedBadge: assignFeedBadge(
+          { ...post, isFollowed },
+          business.likeCount,
+          business.ratingAvg,
+          business.ratingCount,
+        ),
+      };
+      return enriched;
+    }).filter((p): p is BusinessPost => p !== null);
+
+    return sortFeedPosts(posts).slice(0, limit);
+  }
+
+  let followedIds = new Set<string>();
+  if (options.userId) {
+    const { data: follows } = await supabase
+      .from("business_follows")
+      .select("business_id")
+      .eq("follower_id", options.userId);
+    followedIds = new Set((follows ?? []).map((f) => f.business_id));
+  }
+
+  let query = supabase
+    .from("business_posts")
+    .select(
+      "*, profiles(display_name), businesses(name, category, media_urls, like_count, rating_avg, rating_count, city, state, zip_code, county, latitude, longitude)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(Math.max(limit * 3, 60));
+
+  if (typeSet) {
+    query = query.in("post_type", [...typeSet]);
+  }
+
+  const { data: rows } = await query;
+  if (!rows?.length) return sortFeedPosts(SEED_BUSINESS_POSTS.slice(0, limit));
+
+  const filteredRows = (rows as (BusinessPostRow & { businesses?: FeedBusinessMeta | FeedBusinessMeta[] | null })[]).filter(
+    (row) => {
+      const meta = businessMetaFromRow(row.businesses);
+      if (!meta || !viewer) return true;
+      const location = {
+        city: meta.city,
+        state: meta.state,
+        county: meta.county ?? "",
+        zipCode: meta.zip_code ?? "",
+        latitude: meta.latitude ?? undefined,
+        longitude: meta.longitude ?? undefined,
+      };
+      if (!matchesAreaScope(viewer, location, areaScope)) return false;
+      if (mileRadius && !matchesMileRadius(viewer, location, mileRadius)) return false;
+      return true;
+    },
+  );
+
+  const postIds = filteredRows.slice(0, limit).map((r) => r.id);
+  const { data: comments } = await supabase
+    .from("business_post_comments")
+    .select("id, post_id, body, created_at, profiles(display_name)")
+    .in("post_id", postIds)
+    .order("created_at", { ascending: false });
+
+  const commentCountMap = new Map<string, number>();
+  const recentCommentsMap = new Map<string, BusinessPostComment[]>();
+  for (const c of comments ?? []) {
+    commentCountMap.set(c.post_id, (commentCountMap.get(c.post_id) ?? 0) + 1);
+    const list = recentCommentsMap.get(c.post_id) ?? [];
+    if (list.length < 2) {
+      list.push({
+        id: c.id,
+        authorName: authorName(c.profiles),
+        body: c.body,
+        createdAt: c.created_at,
+      });
+      recentCommentsMap.set(c.post_id, list);
+    }
+  }
+
+  const likeCounts = await getPostLikeCounts(postIds);
+
+  const posts = filteredRows.slice(0, limit).map((row) => {
+    const meta = businessMetaFromRow(row.businesses);
+    const isFollowed = followedIds.has(row.business_id);
+    const businessLikeCount = meta?.like_count ?? 0;
+    const businessRatingAvg = Number(meta?.rating_avg ?? 0);
+    const businessRatingCount = meta?.rating_count ?? 0;
+    const base = mapPostRow(row, {
+      businessName: meta?.name,
+      businessCategory: meta?.category,
+      businessMediaUrl: meta?.media_urls?.[0],
+      businessRatingAvg,
+      businessRatingCount,
+      businessLikeCount,
+      commentCount: commentCountMap.get(row.id) ?? 0,
+      likeCount: likeCounts.get(row.id) ?? 0,
+      recentComments: recentCommentsMap.get(row.id) ?? [],
+      isFollowed,
+    });
+    return {
+      ...base,
+      feedBadge: assignFeedBadge(base, businessLikeCount, businessRatingAvg, businessRatingCount),
+    };
+  });
+
+  return sortFeedPosts(posts);
 }
 
 export async function getLatestPostsForBusinessIds(

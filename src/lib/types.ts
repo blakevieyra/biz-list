@@ -127,13 +127,26 @@ export interface ServiceOrder {
   createdAt: string;
 }
 
-export type BusinessPostType = "update" | "job" | "deal" | "video";
+export type BusinessPostType = "update" | "job" | "deal" | "video" | "help_needed" | "free";
+
+export type FeedPostBadge = "following" | "trending" | "top-rated" | "popular";
+
+export interface BusinessPostComment {
+  id: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
 
 export interface BusinessPost {
   id: string;
   businessId: string;
   businessName?: string;
   businessCategory?: string;
+  businessMediaUrl?: string;
+  businessRatingAvg?: number;
+  businessRatingCount?: number;
+  businessLikeCount?: number;
   authorId: string;
   authorName: string;
   postType: BusinessPostType;
@@ -142,8 +155,11 @@ export interface BusinessPost {
   mediaUrls: string[];
   engagementScore: number;
   isTrending: boolean;
+  isFollowed?: boolean;
+  feedBadge?: FeedPostBadge;
   commentCount: number;
   likeCount: number;
+  recentComments?: BusinessPostComment[];
   createdAt: string;
 }
 

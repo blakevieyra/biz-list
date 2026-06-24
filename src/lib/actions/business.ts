@@ -385,6 +385,7 @@ export async function commentOnBusinessPost(postId: string, body: string) {
     if (error) return { error: error.message };
 
     revalidatePath(`/listings/${post.business_id}`);
+    revalidatePath("/feed");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to comment." };

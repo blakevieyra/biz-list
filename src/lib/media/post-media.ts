@@ -7,6 +7,8 @@ export const BUSINESS_POST_TYPE_LABELS: Record<BusinessPostType, string> = {
   job: "Job opening",
   deal: "Sale or deal",
   video: "Video",
+  help_needed: "Help needed",
+  free: "Free",
 };
 
 export const BUSINESS_POST_TYPE_HINTS: Record<BusinessPostType, string> = {
@@ -14,6 +16,8 @@ export const BUSINESS_POST_TYPE_HINTS: Record<BusinessPostType, string> = {
   job: "Post an open role. Your listing will show as hiring and appear in the Jobs feed.",
   deal: "Promote a sale, discount, or limited-time offer for nearby customers.",
   video: "Share a product demo, behind-the-scenes clip, or promo video.",
+  help_needed: "Ask the community for volunteers, referrals, supplies, or other support.",
+  free: "Offer something free — samples, consultations, events, or community giveaways.",
 };
 
 export function youtubeEmbedUrl(url: string): string | null {
@@ -57,6 +61,13 @@ export function isImageUrl(url: string): boolean {
 }
 
 export function parsePostType(value: string | undefined): BusinessPostType {
-  const allowed: BusinessPostType[] = ["update", "job", "deal", "video"];
+  const allowed: BusinessPostType[] = [
+    "update",
+    "job",
+    "deal",
+    "video",
+    "help_needed",
+    "free",
+  ];
   return allowed.includes(value as BusinessPostType) ? (value as BusinessPostType) : "update";
 }

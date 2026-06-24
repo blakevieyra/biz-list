@@ -1,22 +1,21 @@
 import Link from "next/link";
-import { BusinessCard } from "@/components/business-card";
 import { ForumPostCard } from "@/components/forum-post-card";
-import { PageHeader, Card, formatDate } from "@/components/ui";
+import { FeedPostCard } from "@/components/feed-post-card";
+import { PageHeader } from "@/components/ui";
+import { getAuthUserId } from "@/lib/actions/auth";
+import { getCurrentProfile, getForumPosts } from "@/lib/data";
+import { getFeedBusinessPosts } from "@/lib/data/business";
 import {
-  getCommunityBusinesses,
-  getCurrentProfile,
-  getForumPosts,
-} from "@/lib/data";
-import { getTrendingBusinessPosts } from "@/lib/data/business";
-import {
+  AREA_SCOPE_LABELS,
+  AREA_SCOPE_OPTIONS,
   DEFAULT_DISCOVERY_RADIUS,
-  DISCOVERY_RADIUS_LABELS,
-  resolveDiscoveryRadius,
+  DEFAULT_MILE_RADIUS,
+  MILE_RADIUS_LABELS,
+  MILE_RADIUS_OPTIONS,
+  resolveAreaScope,
+  resolveMileRadius,
 } from "@/lib/feed/location-scope";
-import { PostMediaGallery, PostTypeBadge } from "@/components/post-media";
-import { isImageUrl } from "@/lib/media/post-media";
-import type { BusinessPost, DiscoveryRadius, ForumCategory } from "@/lib/types";
-
+import type { BusinessPostType, ForumCategory } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
 const tabs = [
@@ -24,6 +23,8 @@ const tabs = [
   { id: "updates", label: "Updates" },
   { id: "jobs", label: "Jobs" },
   { id: "sales", label: "Sales & deals" },
+  { id: "help", label: "Help needed" },
+  { id: "free", label: "Free" },
   { id: "discussions", label: "Discussions" },
 ] as const;
 
@@ -31,56 +32,13 @@ type FeedTab = (typeof tabs)[number]["id"];
 
 const forumCategories = Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[];
 
-function FeedBusinessPost({ post }: { post: BusinessPost }) {
-  const hero = post.mediaUrls.find(isImageUrl);
-
-  return (
-    <Card className="overflow-hidden p-0">
-      {hero && (
-        <div className="h-40 overflow-hidden border-b border-border bg-slate-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={hero} alt="" className="h-full w-full object-cover" />
-        </div>
-      )}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="mb-1">
-              <PostTypeBadge type={post.postType} />
-            </div>
-            <Link
-              href={`/listings/${post.businessId}`}
-              className="text-sm font-semibold text-accent hover:underline"
-            >
-              {post.businessName ?? "Local business"}
-            </Link>
-            {post.businessCategory && (
-              <p className="text-xs text-muted">{post.businessCategory}</p>
-            )}
-          </div>
-          <span className="shrink-0 text-xs text-muted">{formatDate(post.createdAt)}</span>
-        </div>
-        <h3 className="mt-3 text-lg font-semibold">{post.title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-muted">{post.body}</p>
-        {post.mediaUrls.length > 0 && (
-          <div className="mt-4">
-            <PostMediaGallery urls={post.mediaUrls} />
-          </div>
-        )}
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-          <Link href={`/listings/${post.businessId}`} className="font-medium text-accent hover:underline">
-            View business →
-          </Link>
-          {post.isTrending && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-              Trending
-            </span>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-}
+const tabPostTypes: Partial<Record<FeedTab, BusinessPostType[]>> = {
+  updates: ["update", "video"],
+  jobs: ["job"],
+  sales: ["deal"],
+  help: ["help_needed"],
+  free: ["free"],
+};
 
 export default async function FeedPage({
   searchParams,
@@ -88,26 +46,28 @@ export default async function FeedPage({
   searchParams: Promise<{
     tab?: string;
     scope?: string;
+    miles?: string;
     q?: string;
     category?: string;
   }>;
 }) {
   const params = await searchParams;
   const profile = await getCurrentProfile();
+  const userId = await getAuthUserId();
   const tab: FeedTab = tabs.some((t) => t.id === params.tab)
     ? (params.tab as FeedTab)
     : "all";
-  const radius = resolveDiscoveryRadius(
-    params.scope,
-    profile?.discoveryRadius ?? profile?.feedScope,
-  );
+  const areaScope = resolveAreaScope(params.scope, profile?.discoveryRadius ?? profile?.feedScope);
+  const mileRadius = resolveMileRadius(params.miles) ?? DEFAULT_MILE_RADIUS;
   const query = params.q ?? "";
   const categoryFilter = params.category as ForumCategory | undefined;
+  const isBusinessAccount = profile?.role === "business" || profile?.role === "organization";
 
   const viewer = profile
     ? {
         city: profile.city,
         state: profile.state,
+        county: profile.county,
         zipCode: profile.zipCode,
         latitude: profile.latitude,
         longitude: profile.longitude,
@@ -115,42 +75,42 @@ export default async function FeedPage({
       }
     : null;
 
-  const [businessPosts, forumPosts, hiringBusinesses] = await Promise.all([
-    getTrendingBusinessPosts(24),
+  const [businessPosts, forumPosts] = await Promise.all([
+    tab === "discussions"
+      ? Promise.resolve([])
+      : getFeedBusinessPosts({
+          viewer,
+          areaScope,
+          mileRadius,
+          userId,
+          postTypes: tabPostTypes[tab],
+          limit: 30,
+        }),
     getForumPosts(tab === "discussions" ? categoryFilter : undefined),
-    tab === "jobs" || tab === "all"
-      ? getCommunityBusinesses({ scope: radius, viewer, hiringOnly: true, query: query || undefined })
-      : Promise.resolve([]),
   ]);
 
-  let updates = businessPosts;
-  if (query) {
+  function filterByQuery<T extends { title: string; body: string }>(
+    items: T[],
+    extra?: (item: T) => string,
+  ) {
+    if (!query) return items;
     const q = query.toLowerCase();
-    updates = updates.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.body.toLowerCase().includes(q) ||
-        (p.businessName?.toLowerCase().includes(q) ?? false),
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.body.toLowerCase().includes(q) ||
+        (extra?.(item).toLowerCase().includes(q) ?? false),
     );
   }
 
-  const updatePosts = updates.filter((p) => p.postType === "update" || p.postType === "video");
-  const jobPosts = updates.filter((p) => p.postType === "job");
-  const salesPosts = updates.filter((p) => p.postType === "deal");
-  const discussionPosts = forumPosts.filter((post) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return (
-      post.title.toLowerCase().includes(q) ||
-      post.body.toLowerCase().includes(q) ||
-      post.authorName.toLowerCase().includes(q)
-    );
-  });
+  const posts = filterByQuery(businessPosts, (p) => p.businessName ?? "");
+  const discussionPosts = filterByQuery(forumPosts, (p) => p.authorName);
 
   function buildHref(next: Record<string, string | undefined>) {
     const merged = {
       tab: tab !== "all" ? tab : undefined,
-      scope: radius !== DEFAULT_DISCOVERY_RADIUS ? radius : undefined,
+      scope: areaScope !== DEFAULT_DISCOVERY_RADIUS ? areaScope : undefined,
+      miles: mileRadius !== DEFAULT_MILE_RADIUS ? mileRadius : undefined,
       q: query || undefined,
       category: categoryFilter,
       ...next,
@@ -166,33 +126,42 @@ export default async function FeedPage({
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
-        title="Feed"
-        description="Updates, jobs, sales, and discussions from businesses near you. Expand your radius to see more."
+        title="Posts"
+        description="Latest updates from businesses you follow, plus trending, top-rated, and popular listings near you."
         action={
-          <Link
-            href="/forum/new"
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-          >
-            New post
-          </Link>
+          isBusinessAccount ? (
+            <Link
+              href="/dashboard/posts"
+              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              Create post
+            </Link>
+          ) : (
+            <Link
+              href="/listings"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+            >
+              Browse listings
+            </Link>
+          )
         }
       />
 
       {!profile && (
-        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <Link href="/auth/signup" className="font-medium underline">
             Create a profile
           </Link>{" "}
-          with your business location to personalize your local feed.
+          to follow businesses and personalize your local feed.
         </p>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <Link
             key={t.id}
             href={buildHref({ tab: t.id === "all" ? undefined : t.id, category: undefined })}
-            className={`rounded-full px-4 py-2 text-sm font-medium ${
+            className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
               tab === t.id
                 ? "bg-accent text-white"
                 : "border border-border bg-card text-muted hover:text-foreground"
@@ -203,24 +172,46 @@ export default async function FeedPage({
         ))}
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {(Object.keys(DISCOVERY_RADIUS_LABELS) as DiscoveryRadius[]).map((r) => (
+      <div className="mb-3 flex flex-wrap gap-2">
+        <span className="w-full text-xs font-semibold uppercase tracking-wide text-muted sm:w-auto sm:leading-8">
+          Distance
+        </span>
+        {MILE_RADIUS_OPTIONS.map((m) => (
           <Link
-            key={r}
-            href={buildHref({ scope: r === DEFAULT_DISCOVERY_RADIUS ? undefined : r })}
+            key={m}
+            href={buildHref({ miles: m === DEFAULT_MILE_RADIUS ? undefined : m })}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-              radius === r
+              mileRadius === m
                 ? "bg-accent text-white"
                 : "border border-border bg-card text-muted hover:text-foreground"
             }`}
           >
-            {DISCOVERY_RADIUS_LABELS[r]}
+            {MILE_RADIUS_LABELS[m]}
+          </Link>
+        ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <span className="w-full text-xs font-semibold uppercase tracking-wide text-muted sm:w-auto sm:leading-8">
+          Area
+        </span>
+        {AREA_SCOPE_OPTIONS.map((s) => (
+          <Link
+            key={s}
+            href={buildHref({ scope: s === DEFAULT_DISCOVERY_RADIUS ? undefined : s })}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+              areaScope === s
+                ? "bg-accent text-white"
+                : "border border-border bg-card text-muted hover:text-foreground"
+            }`}
+          >
+            {AREA_SCOPE_LABELS[s]}
           </Link>
         ))}
       </div>
 
       {tab === "discussions" && (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           <Link
             href={buildHref({ category: undefined })}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${
@@ -247,16 +238,21 @@ export default async function FeedPage({
         </div>
       )}
 
-      <form className="mb-8 flex flex-col gap-4 sm:flex-row">
+      <form className="mb-6 flex flex-col gap-3 sm:flex-row">
         {tab !== "all" && <input type="hidden" name="tab" value={tab} />}
-        {radius !== DEFAULT_DISCOVERY_RADIUS && <input type="hidden" name="scope" value={radius} />}
+        {areaScope !== DEFAULT_DISCOVERY_RADIUS && (
+          <input type="hidden" name="scope" value={areaScope} />
+        )}
+        {mileRadius !== DEFAULT_MILE_RADIUS && (
+          <input type="hidden" name="miles" value={mileRadius} />
+        )}
         {categoryFilter && tab === "discussions" && (
           <input type="hidden" name="category" value={categoryFilter} />
         )}
         <input
           name="q"
           defaultValue={query}
-          placeholder="Search updates, jobs, deals, and discussions..."
+          placeholder="Search latest business posts..."
           className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
         />
         <button
@@ -267,57 +263,23 @@ export default async function FeedPage({
         </button>
       </form>
 
-      <div className="mx-auto max-w-2xl space-y-6">
-        {tab === "all" && (
-          <>
-            {updates.slice(0, 6).map((post) => (
-              <FeedBusinessPost key={`post-${post.id}`} post={post} />
-            ))}
-            {discussionPosts.slice(0, 4).map((post) => (
-              <ForumPostCard key={`forum-${post.id}`} post={post} />
-            ))}
-            {hiringBusinesses.slice(0, 3).map((business) => (
-              <BusinessCard key={`job-${business.id}`} business={business} />
-            ))}
-            {!updates.length && !discussionPosts.length && !hiringBusinesses.length && (
-              <p className="text-center text-muted">Nothing in your feed yet. Try expanding your radius.</p>
-            )}
-          </>
-        )}
-
-        {tab === "updates" &&
-          (updatePosts.length ? (
-            updatePosts.map((post) => <FeedBusinessPost key={post.id} post={post} />)
+      <div className="space-y-4">
+        {tab !== "discussions" &&
+          (posts.length ? (
+            posts.map((post) => (
+              <FeedPostCard key={post.id} post={post} currentUserId={userId} />
+            ))
           ) : (
-            <p className="text-center text-muted">No business updates in this area yet.</p>
-          ))}
-
-        {tab === "jobs" &&
-          (jobPosts.length || hiringBusinesses.length ? (
-            <>
-              {jobPosts.map((post) => (
-                <FeedBusinessPost key={`post-${post.id}`} post={post} />
-              ))}
-              {hiringBusinesses.map((business) => (
-                <BusinessCard key={`biz-${business.id}`} business={business} />
-              ))}
-            </>
-          ) : (
-            <p className="text-center text-muted">No open jobs in this area right now.</p>
-          ))}
-
-        {tab === "sales" &&
-          (salesPosts.length ? (
-            salesPosts.map((post) => <FeedBusinessPost key={post.id} post={post} />)
-          ) : (
-            <p className="text-center text-muted">No sales or deals posted nearby yet.</p>
+            <p className="text-center text-muted">
+              No business posts in this area yet. Only businesses can publish posts to listings.
+            </p>
           ))}
 
         {tab === "discussions" &&
           (discussionPosts.length ? (
             discussionPosts.map((post) => <ForumPostCard key={post.id} post={post} />)
           ) : (
-            <p className="text-center text-muted">No discussions yet. Start one with New post.</p>
+            <p className="text-center text-muted">No discussions in this topic yet.</p>
           ))}
       </div>
     </div>
