@@ -186,14 +186,26 @@ export async function getCommunityBusinesses(filters?: {
 
 export async function getBusinesses(filters?: {
   intent?: BusinessIntent;
+  category?: string;
   query?: string;
   scope?: FeedScope;
   viewer?: DiscoveryViewer | null;
 }): Promise<BusinessProfile[]> {
   const supabase = await getSupabase();
+  const scope = filters?.scope;
+  const viewer = filters?.viewer;
+
+  function rankBusinesses(list: BusinessProfile[]): BusinessProfile[] {
+    return [...list].sort(
+      (a, b) =>
+        businessDiscoveryScore(b, viewer, scope) - businessDiscoveryScore(a, viewer, scope),
+    );
+  }
+
   if (!supabase) {
     let result = SEED_BUSINESSES.filter((b) => {
       const matchesIntent = !filters?.intent || b.intents.includes(filters.intent);
+      const matchesCategory = !filters?.category || b.category === filters.category;
       const q = filters?.query?.toLowerCase() ?? "";
       const matchesQuery =
         !q ||
@@ -202,20 +214,14 @@ export async function getBusinesses(filters?: {
         b.city.toLowerCase().includes(q) ||
         b.zipCode.includes(q) ||
         b.category.toLowerCase().includes(q);
-      return matchesIntent && matchesQuery;
+      return matchesIntent && matchesCategory && matchesQuery;
     });
 
-    const scope = filters?.scope;
-    const viewer = filters?.viewer;
     if (viewer && scope && scope !== "nationwide") {
       result = result.filter((b) => matchesFeedScope(viewer, b, scope));
     }
-    if (viewer) {
-      result = result.sort(
-        (a, b) => businessDiscoveryScore(b, viewer) - businessDiscoveryScore(a, viewer),
-      );
-    }
-    return result;
+
+    return rankBusinesses(result);
   }
 
   let query = supabase.from("businesses").select("*").order("created_at", { ascending: false });
@@ -258,19 +264,15 @@ export async function getBusinesses(filters?: {
     );
   }
 
-  const scope = filters?.scope;
-  const viewer = filters?.viewer;
+  if (filters?.category) {
+    result = result.filter((b) => b.category === filters.category);
+  }
+
   if (viewer && scope && scope !== "nationwide") {
     result = result.filter((b) => matchesFeedScope(viewer, b, scope));
   }
 
-  if (viewer) {
-    result = result.sort(
-      (a, b) => businessDiscoveryScore(b, viewer) - businessDiscoveryScore(a, viewer),
-    );
-  }
-
-  return result;
+  return rankBusinesses(result);
 }
 
 export async function getBusinessById(id: string): Promise<BusinessProfile | null> {

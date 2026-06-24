@@ -37,19 +37,19 @@ export function BusinessCard({ business }: { business: BusinessProfile }) {
 
   return (
     <Link href={`/listings/${business.id}`} className="block h-full">
-      <Card className="flex h-full min-h-[420px] flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
+      <Card className="flex h-full min-h-[340px] flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
         {cover ? (
-          <div className="h-[33%] min-h-[140px] shrink-0 overflow-hidden border-b border-border bg-slate-100">
+          <div className="aspect-[3/1] max-h-[120px] shrink-0 overflow-hidden border-b border-border bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={cover} alt="" className="h-full w-full object-cover" />
           </div>
         ) : (
-          <div className="flex h-[33%] min-h-[140px] shrink-0 items-center justify-center border-b border-border bg-gradient-to-br from-blue-50 to-slate-50">
-            <span className="text-4xl font-bold text-accent/30">{business.name.charAt(0)}</span>
+          <div className="flex aspect-[3/1] max-h-[120px] shrink-0 items-center justify-center border-b border-border bg-gradient-to-br from-blue-50 to-slate-50">
+            <span className="text-3xl font-bold text-accent/30">{business.name.charAt(0)}</span>
           </div>
         )}
 
-        <div className="flex flex-1 flex-col p-5">
+        <div className="flex flex-1 flex-col p-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted">
               {business.category}

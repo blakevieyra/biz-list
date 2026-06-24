@@ -7,24 +7,21 @@ import {
   FEED_SCOPE_LABELS,
   resolveDiscoveryRadius,
 } from "@/lib/feed/location-scope";
-import type { BusinessIntent, DiscoveryRadius } from "@/lib/types";
-import { INTENT_LABELS } from "@/lib/types";
-
-const intents: BusinessIntent[] = [
-  "hiring",
-  "seeking_customers",
-  "seeking_advice",
-  "open_to_partnerships",
-];
+import { INDUSTRY_OPTIONS } from "@/lib/industries";
+import type { DiscoveryRadius } from "@/lib/types";
 
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ intent?: string; q?: string; scope?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; scope?: string }>;
 }) {
   const params = await searchParams;
   const profile = await getCurrentProfile();
-  const intentFilter = params.intent as BusinessIntent | undefined;
+  const categoryFilter = INDUSTRY_OPTIONS.includes(
+    params.category as (typeof INDUSTRY_OPTIONS)[number],
+  )
+    ? params.category
+    : undefined;
   const query = params.q ?? "";
   const scope = resolveDiscoveryRadius(
     params.scope,
@@ -43,7 +40,7 @@ export default async function ListingsPage({
     : null;
 
   const businesses = await getBusinesses({
-    intent: intentFilter,
+    category: categoryFilter,
     query: query || undefined,
     scope,
     viewer,
@@ -52,7 +49,7 @@ export default async function ListingsPage({
   function buildHref(next: Record<string, string | undefined>) {
     const merged = {
       q: query || undefined,
-      intent: intentFilter,
+      category: categoryFilter,
       scope: scope !== DEFAULT_DISCOVERY_RADIUS ? scope : undefined,
       ...next,
     };
@@ -68,7 +65,7 @@ export default async function ListingsPage({
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Listings"
-        description="Browse local businesses near you. Results are ranked by your location, industry interests, and reviews — expand your radius when you need more options."
+        description="Browse local businesses ranked nearest and most relevant to you. Filter by distance, then by business type."
         action={
           <Link
             href="/feed"
@@ -88,24 +85,58 @@ export default async function ListingsPage({
         </p>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((s) => (
+      <section className="mb-6">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Distance</p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((s) => (
+            <Link
+              key={s}
+              href={buildHref({ scope: s === DEFAULT_DISCOVERY_RADIUS ? undefined : s })}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                scope === s
+                  ? "bg-accent text-white"
+                  : "border border-border bg-card text-muted hover:text-foreground"
+              }`}
+            >
+              {FEED_SCOPE_LABELS[s]}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+          Business type
+        </p>
+        <div className="flex flex-wrap gap-2">
           <Link
-            key={s}
-            href={buildHref({ scope: s === DEFAULT_DISCOVERY_RADIUS ? undefined : s })}
+            href={buildHref({ category: undefined })}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-              scope === s
+              !categoryFilter
                 ? "bg-accent text-white"
                 : "border border-border bg-card text-muted hover:text-foreground"
             }`}
           >
-            {FEED_SCOPE_LABELS[s]}
+            All types
           </Link>
-        ))}
-      </div>
+          {INDUSTRY_OPTIONS.map((category) => (
+            <Link
+              key={category}
+              href={buildHref({ category })}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                categoryFilter === category
+                  ? "bg-accent text-white"
+                  : "border border-border bg-card text-muted hover:text-foreground"
+              }`}
+            >
+              {category}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <form className="mb-8 flex flex-col gap-4 sm:flex-row">
-        {intentFilter && <input type="hidden" name="intent" value={intentFilter} />}
+        {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
         {scope !== DEFAULT_DISCOVERY_RADIUS && <input type="hidden" name="scope" value={scope} />}
         <input
           name="q"
@@ -121,38 +152,13 @@ export default async function ListingsPage({
         </button>
       </form>
 
-      <div className="mb-8 flex flex-wrap gap-2">
-        <Link
-          href={buildHref({ intent: undefined })}
-          className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-            !intentFilter
-              ? "bg-accent text-white"
-              : "border border-border bg-card text-muted hover:text-foreground"
-          }`}
-        >
-          All
-        </Link>
-        {intents.map((intent) => (
-          <Link
-            key={intent}
-            href={buildHref({ intent })}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-              intentFilter === intent
-                ? "bg-accent text-white"
-                : "border border-border bg-card text-muted hover:text-foreground"
-            }`}
-          >
-            {INTENT_LABELS[intent]}
-          </Link>
-        ))}
-      </div>
-
       {businesses.length === 0 ? (
         <p className="text-muted">
-          No businesses found{scope !== "nationwide" ? " in this area" : ""}. Try expanding your search radius.
+          No businesses found{scope !== "nationwide" ? " in this area" : ""}. Try expanding your
+          search radius or choosing a different business type.
         </p>
       ) : (
-        <div className="mx-auto max-w-2xl space-y-6">
+        <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {businesses.map((business) => (
             <BusinessCard key={business.id} business={business} />
           ))}

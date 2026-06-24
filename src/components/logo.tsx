@@ -1,6 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const LOGO_SIZES = {
+  sm: { width: 72, height: 18, className: "h-[18px] w-auto max-w-[72px]" },
+  md: { width: 88, height: 22, className: "h-[22px] w-auto max-w-[88px]" },
+  lg: { width: 104, height: 26, className: "h-[26px] w-auto max-w-[104px]" },
+} as const;
+
 export function Logo({
   size = "md",
   showText = true,
@@ -10,15 +16,15 @@ export function Logo({
   showText?: boolean;
   href?: string;
 }) {
-  const heights = { sm: 28, md: 36, lg: 44 };
+  const dims = LOGO_SIZES[size];
 
   const content = (
     <Image
       src="/bizlist-logo.png"
       alt={showText ? "BizList" : "BizList home"}
-      width={160}
-      height={heights[size]}
-      className="h-auto w-auto max-w-[140px] object-contain sm:max-w-[160px]"
+      width={dims.width}
+      height={dims.height}
+      className={`object-contain ${dims.className}`}
       priority={size === "md"}
     />
   );
@@ -40,9 +46,9 @@ export function LogoMark({ className = "" }: { className?: string }) {
       <Image
         src="/bizlist-logo.png"
         alt="BizList"
-        width={180}
-        height={120}
-        className="mx-auto h-auto w-[140px] object-contain"
+        width={96}
+        height={24}
+        className="mx-auto h-[24px] w-auto max-w-[96px] object-contain"
       />
     </div>
   );
