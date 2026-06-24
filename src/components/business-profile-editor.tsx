@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveBusinessDashboardProfile } from "@/lib/actions/business";
-import { IndustryPicker } from "@/components/industry-picker";
+import { CategoryPicker, parseStoredCategory } from "@/components/industry-picker";
 import { ImageUpload } from "@/components/image-upload";
 import { SocialLinksEditor } from "@/components/social-links-editor";
 import { ServicesEditor } from "@/components/services-editor";
@@ -30,12 +30,14 @@ export function BusinessProfileEditor({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const parsedCategory = parseStoredCategory(business.category, business.subcategory);
   const [form, setForm] = useState({
     displayName,
     name: business.name,
     tagline: business.tagline,
     description: business.description,
-    category: business.category,
+    category: parsedCategory.category,
+    subcategory: parsedCategory.subcategory,
     city: business.city,
     state: business.state,
     zipCode: business.zipCode,
@@ -72,6 +74,7 @@ export function BusinessProfileEditor({
         tagline: form.tagline,
         description: form.description,
         category: form.category,
+        subcategory: form.subcategory,
         city: form.city,
         state: form.state,
         zipCode: form.zipCode,
@@ -120,12 +123,12 @@ export function BusinessProfileEditor({
             onChange={(v) => setForm({ ...form, tagline: v })}
             placeholder="One-line summary"
           />
-          <IndustryPicker
-            selected={form.category ? [form.category] : []}
-            onChange={(industries) => setForm({ ...form, category: industries[0] ?? "" })}
-            multiple={false}
-            label="Industry"
-            hint="Select the industry customers use to find your business."
+          <CategoryPicker
+            category={form.category}
+            subcategory={form.subcategory}
+            onChange={({ category, subcategory }) => setForm({ ...form, category, subcategory })}
+            label="Business category"
+            hint="Choose your industry and the specific type of business you run."
           />
           <label className="block text-sm">
             <span className="font-medium">Description</span>

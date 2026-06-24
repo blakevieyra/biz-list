@@ -50,6 +50,7 @@ type BusinessRow = {
   tagline: string;
   description: string;
   category: string;
+  subcategory?: string;
   city: string;
   state: string;
   zip_code?: string;
@@ -179,6 +180,7 @@ export function mapBusiness(
     tagline: row.tagline,
     description: row.description,
     category: row.category,
+    subcategory: row.subcategory ?? "",
     city: row.city,
     state: row.state,
     zipCode: row.zip_code ?? "",

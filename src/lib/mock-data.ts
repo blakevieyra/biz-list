@@ -81,7 +81,7 @@ export const SEED_USERS: UserProfile[] = [
     state: "TX",
     zipCode: "78701",
     interestTags: ["marketing", "events"],
-    industryInterests: ["Marketing & Print","Entertainment & Events"],
+    industryInterests: ["Marketing & Print › Photography", "Entertainment & Events › Event Planning"],
     headline: "Open to local marketing and content projects",
     skills: ["Social media", "Content writing", "Email campaigns"],
     isSeekingWork: true,
@@ -101,7 +101,7 @@ export const SEED_USERS: UserProfile[] = [
     state: "TX",
     zipCode: "78664",
     interestTags: ["food", "local"],
-    industryInterests: ["Food & Beverage","Retail & Community"],
+    industryInterests: ["Food & Beverage › Restaurant", "Retail & Community › Maker & Craft"],
     headline: "",
     skills: [],
     isSeekingWork: false,
@@ -121,7 +121,7 @@ export const SEED_USERS: UserProfile[] = [
     state: "TX",
     zipCode: "78704",
     interestTags: ["photography", "branding"],
-    industryInterests: ["Marketing & Print","Entertainment & Events"],
+    industryInterests: ["Marketing & Print › Photography", "Entertainment & Events › Event Planning"],
     headline: "Available for local product & storefront shoots",
     skills: ["Product photography", "Lightroom", "Brand storytelling"],
     isSeekingWork: true,
@@ -201,6 +201,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     description:
       "Neighborhood bakery offering wholesale loaves to cafés and catering for local events. Looking to partner with coffee shops and farmers markets.",
     category: "Food & Beverage",
+    subcategory: "Bakery & Pastry",
     city: "Austin",
     state: "TX",
     zipCode: "78704",
@@ -231,6 +232,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     description:
       "Flat-fee contract reviews, lease negotiations, and compliance checklists for startups and local shops.",
     category: "Professional Services",
+    subcategory: "Legal",
     city: "Austin",
     state: "TX",
     zipCode: "78701",
@@ -260,6 +262,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     description:
       "Rotating storefront space, shared marketing, and vendor events. Always looking for new makers and community sponsors.",
     category: "Retail & Community",
+    subcategory: "Maker & Craft",
     city: "Round Rock",
     state: "TX",
     zipCode: "78664",
@@ -289,6 +292,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     description:
       "Boutique gym offering small-group training, corporate wellness packages, and pop-up classes at local businesses.",
     category: "Health & Wellness",
+    subcategory: "Fitness & Gym",
     city: "Cedar Park",
     state: "TX",
     zipCode: "78613",
@@ -319,6 +323,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     description:
       "Fast turnaround on menus, yard signs, event banners, and branded merch for Austin-area small businesses.",
     category: "Marketing & Print",
+    subcategory: "Print & Signage",
     city: "Cedar Park",
     state: "TX",
     zipCode: "78613",

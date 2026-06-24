@@ -142,7 +142,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
             selected={form.industryInterests}
             onChange={(industryInterests) => setForm({ ...form, industryInterests })}
             label="Interests"
-            hint="Select all industries you care about. Matching businesses appear first in your feed."
+            hint="Pick the specific business types you want to see in your feed and listings."
           />
         </div>
       </Card>

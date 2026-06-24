@@ -183,6 +183,36 @@ export async function getTrendingBusinessPosts(limit = 10): Promise<BusinessPost
   });
 }
 
+export async function getLatestPostsForBusinessIds(
+  businessIds: string[],
+): Promise<Map<string, BusinessPost>> {
+  const map = new Map<string, BusinessPost>();
+  if (!businessIds.length) return map;
+
+  const supabase = await createClient();
+  if (!supabase) {
+    for (const id of businessIds) {
+      const posts = getBusinessPostsForBusiness(id);
+      if (posts[0]) map.set(id, posts[0]);
+    }
+    return map;
+  }
+
+  const { data: rows } = await supabase
+    .from("business_posts")
+    .select("*, profiles(display_name)")
+    .in("business_id", businessIds)
+    .order("created_at", { ascending: false });
+
+  for (const row of (rows as BusinessPostRow[] | null) ?? []) {
+    if (!map.has(row.business_id)) {
+      map.set(row.business_id, mapPostRow(row));
+    }
+  }
+
+  return map;
+}
+
 type JobApplicationRow = {
   id: string;
   business_id: string;

@@ -88,6 +88,7 @@ export async function saveProfile(input: {
   tagline?: string;
   description?: string;
   category?: string;
+  subcategory?: string;
   website?: string;
   socialLinks?: BusinessSocialLinks;
   phone?: string;
@@ -129,10 +130,12 @@ export async function saveProfile(input: {
     }
 
     let category = input.category ?? "";
+    let subcategory = input.subcategory ?? "";
     if (isBusiness && category) {
-      const validatedCategory = validateBusinessCategory(category);
+      const validatedCategory = validateBusinessCategory(category, subcategory);
       if (validatedCategory.error) return { error: validatedCategory.error };
-      category = validatedCategory.value;
+      category = validatedCategory.category;
+      subcategory = validatedCategory.subcategory;
     }
 
     const discoveryRadius = input.discoveryRadius ?? input.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
@@ -175,6 +178,7 @@ export async function saveProfile(input: {
         tagline: input.tagline ?? "",
         description: input.description ?? "",
         category,
+        subcategory,
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,

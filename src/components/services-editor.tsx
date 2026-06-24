@@ -6,6 +6,7 @@ const emptyService = (): BusinessService => ({
   name: "",
   description: "",
   price: "",
+  imageUrl: "",
   actionType: "form",
   actionUrl: "",
   actionLabel: "Place order",
@@ -60,6 +61,12 @@ export function ServicesEditor({
               value={service.price ?? ""}
               onChange={(e) => update(index, { price: e.target.value })}
               placeholder="Price (optional) e.g. $25 / From $99"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+            />
+            <input
+              value={service.imageUrl ?? ""}
+              onChange={(e) => update(index, { imageUrl: e.target.value })}
+              placeholder="Product image URL (optional, https://...)"
               className="w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
 

@@ -29,6 +29,7 @@ export function sanitizeServices(services: BusinessService[] | undefined, max = 
         name: s.name.trim().slice(0, 120),
         description: s.description.trim().slice(0, 500),
         price: s.price?.trim().slice(0, 80),
+        imageUrl: getSafeExternalUrl(s.imageUrl) ?? undefined,
         actionType: actionType === "form" ? "form" : actionType === "link" ? "link" : undefined,
         actionUrl: actionType === "link" ? safeUrl ?? undefined : undefined,
         actionLabel: s.actionLabel?.trim().slice(0, 40) || undefined,

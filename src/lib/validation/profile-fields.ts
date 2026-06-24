@@ -1,7 +1,9 @@
 import { normalizeZipCode } from "@/lib/feed/location-scope";
-import { INDUSTRY_OPTIONS, type IndustryOption } from "@/lib/industries";
-
-const INDUSTRY_SET = new Set<string>(INDUSTRY_OPTIONS);
+import {
+  isIndustryOption,
+  isValidIndustryInterest,
+  isValidSubcategory,
+} from "@/lib/industries";
 
 export function validateZipCode(zip: string): string | null {
   const normalized = normalizeZipCode(zip);
@@ -31,25 +33,32 @@ export function validateIndustryInterests(interests: string[]): {
   values: string[];
   error: string | null;
 } {
-  const values = interests.filter((item): item is IndustryOption =>
-    INDUSTRY_SET.has(item),
-  );
+  const values = interests.filter((item) => isValidIndustryInterest(item));
   if (interests.length > 0 && values.length === 0) {
-    return { values: [], error: "Pick industries from the provided list." };
+    return { values: [], error: "Pick specific business types from the provided list." };
   }
   return { values, error: null };
 }
 
-export function validateBusinessCategory(category: string): {
-  value: string;
+export function validateBusinessCategory(
+  category: string,
+  subcategory?: string,
+): {
+  category: string;
+  subcategory: string;
   error: string | null;
 } {
   const trimmed = category.trim();
-  if (!trimmed) {
-    return { value: "", error: "Industry is required." };
+  if (!trimmed || !isIndustryOption(trimmed)) {
+    return { category: "", subcategory: "", error: "Pick an industry from the provided list." };
   }
-  if (!INDUSTRY_SET.has(trimmed)) {
-    return { value: "", error: "Pick an industry from the provided list." };
+  const sub = (subcategory ?? "").trim();
+  if (!sub || !isValidSubcategory(trimmed, sub)) {
+    return {
+      category: "",
+      subcategory: "",
+      error: "Pick a specific business type under your industry.",
+    };
   }
-  return { value: trimmed, error: null };
+  return { category: trimmed, subcategory: sub, error: null };
 }

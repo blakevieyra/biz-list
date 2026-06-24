@@ -2,6 +2,7 @@ export type BusinessService = {
   name: string;
   description: string;
   price?: string;
+  imageUrl?: string;
   /** External purchase link, or in-app order form when actionType is "form". */
   actionType?: "link" | "form";
   actionUrl?: string;
@@ -68,6 +69,7 @@ export interface BusinessProfile {
   tagline: string;
   description: string;
   category: string;
+  subcategory: string;
   city: string;
   state: string;
   zipCode: string;

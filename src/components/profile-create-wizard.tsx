@@ -7,7 +7,7 @@ import { saveProfile } from "@/lib/actions/social";
 import { ImageUpload } from "@/components/image-upload";
 import { SocialLinksEditor } from "@/components/social-links-editor";
 import { ServicesEditor } from "@/components/services-editor";
-import { IndustryPicker } from "@/components/industry-picker";
+import { CategoryPicker, IndustryPicker } from "@/components/industry-picker";
 import { Card, PageHeader } from "@/components/ui";
 import type { BusinessIntent, BusinessService, BusinessSocialLinks, FeedScope, ForumCategory, UserRole } from "@/lib/types";
 import { FEED_SCOPE_LABELS } from "@/lib/feed/location-scope";
@@ -51,6 +51,7 @@ type FormState = {
   tagline: string;
   description: string;
   category: string;
+  subcategory: string;
   website: string;
   socialLinks: BusinessSocialLinks;
   phone: string;
@@ -94,6 +95,7 @@ export function ProfileCreateWizard({
     tagline: "",
     description: "",
     category: "",
+    subcategory: "",
     website: "",
     socialLinks: {},
     phone: "",
@@ -157,7 +159,9 @@ export function ProfileCreateWizard({
     }
     if (step === "role" && isBusiness) {
       if (!form.businessName.trim()) return "Business name is required.";
-      if (!form.category.trim()) return "Pick an industry so customers can find you.";
+      if (!form.category.trim() || !form.subcategory.trim()) {
+        return "Pick your industry and specific business type.";
+      }
       if (!form.description.trim()) return "Describe what your business offers.";
     }
     if (step === "role" && !isBusiness) {
@@ -218,6 +222,7 @@ export function ProfileCreateWizard({
         tagline: isBusiness ? form.tagline.trim() : undefined,
         description: isBusiness ? form.description.trim() : undefined,
         category: isBusiness ? form.category.trim() : undefined,
+        subcategory: isBusiness ? form.subcategory.trim() : undefined,
         website: isBusiness ? form.website.trim() : undefined,
         socialLinks: isBusiness ? form.socialLinks : undefined,
         phone: isBusiness ? form.phone.trim() : undefined,
@@ -353,11 +358,11 @@ export function ProfileCreateWizard({
           <StepBlock title="Business details">
             <Field label="Business name" value={form.businessName} onChange={(v) => setForm({ ...form, businessName: v })} />
             <Field label="Tagline" value={form.tagline} onChange={(v) => setForm({ ...form, tagline: v })} placeholder="One line that describes you" />
-            <IndustryPicker
-              selected={form.category ? [form.category] : []}
-              onChange={(industries) => setForm({ ...form, category: industries[0] ?? "" })}
-              multiple={false}
-              label="Industry"
+            <CategoryPicker
+              category={form.category}
+              subcategory={form.subcategory}
+              onChange={({ category, subcategory }) => setForm({ ...form, category, subcategory })}
+              label="Business category"
               hint="Select the industry that best describes your products or services."
             />
             <TextArea label="Description" value={form.description} onChange={(v) => setForm({ ...form, description: v })} />
@@ -491,7 +496,10 @@ export function ProfileCreateWizard({
               {isBusiness ? (
                 <>
                   <ReviewRow label="Business" value={form.businessName} />
-                  <ReviewRow label="Industry" value={form.category} />
+                  <ReviewRow
+                    label="Category"
+                    value={form.subcategory ? `${form.category} › ${form.subcategory}` : form.category}
+                  />
                   <ReviewRow label="Services" value={`${form.services.filter((s) => s.name.trim()).length} listed`} />
                   <ReviewRow label="Photos" value={`${form.mediaUrls.length} uploaded`} />
                   <ReviewRow label="Intro post" value={form.introPostTitle || "Skipped"} />

@@ -187,6 +187,7 @@ export async function getCommunityBusinesses(filters?: {
 export async function getBusinesses(filters?: {
   intent?: BusinessIntent;
   category?: string;
+  subcategory?: string;
   query?: string;
   scope?: FeedScope;
   viewer?: DiscoveryViewer | null;
@@ -206,6 +207,8 @@ export async function getBusinesses(filters?: {
     let result = SEED_BUSINESSES.filter((b) => {
       const matchesIntent = !filters?.intent || b.intents.includes(filters.intent);
       const matchesCategory = !filters?.category || b.category === filters.category;
+      const matchesSubcategory =
+        !filters?.subcategory || b.subcategory === filters.subcategory;
       const q = filters?.query?.toLowerCase() ?? "";
       const matchesQuery =
         !q ||
@@ -213,8 +216,9 @@ export async function getBusinesses(filters?: {
         b.description.toLowerCase().includes(q) ||
         b.city.toLowerCase().includes(q) ||
         b.zipCode.includes(q) ||
-        b.category.toLowerCase().includes(q);
-      return matchesIntent && matchesCategory && matchesQuery;
+        b.category.toLowerCase().includes(q) ||
+        (b.subcategory?.toLowerCase().includes(q) ?? false);
+      return matchesIntent && matchesCategory && matchesSubcategory && matchesQuery;
     });
 
     if (viewer && scope && scope !== "nationwide") {
@@ -266,6 +270,10 @@ export async function getBusinesses(filters?: {
 
   if (filters?.category) {
     result = result.filter((b) => b.category === filters.category);
+  }
+
+  if (filters?.subcategory) {
+    result = result.filter((b) => b.subcategory === filters.subcategory);
   }
 
   if (viewer && scope && scope !== "nationwide") {

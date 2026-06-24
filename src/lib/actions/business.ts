@@ -169,6 +169,7 @@ export async function saveBusinessDashboardProfile(input: {
   tagline: string;
   description: string;
   category: string;
+  subcategory: string;
   city: string;
   state: string;
   zipCode: string;
@@ -207,7 +208,7 @@ export async function saveBusinessDashboardProfile(input: {
     });
     if (location.error) return { error: location.error };
 
-    const validatedCategory = validateBusinessCategory(input.category);
+    const validatedCategory = validateBusinessCategory(input.category, input.subcategory);
     if (validatedCategory.error) return { error: validatedCategory.error };
 
     const { error: profileError } = await supabase
@@ -232,7 +233,8 @@ export async function saveBusinessDashboardProfile(input: {
         name: input.name.trim(),
         tagline: input.tagline.trim(),
         description: input.description.trim(),
-        category: validatedCategory.value,
+        category: validatedCategory.category,
+        subcategory: validatedCategory.subcategory,
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,

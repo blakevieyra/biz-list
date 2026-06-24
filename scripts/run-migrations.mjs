@@ -35,6 +35,7 @@ const MIGRATIONS = [
   "supabase/migrations/20260624220000_service_orders.sql",
   "supabase/migrations/20260624230000_geo_radius.sql",
   "supabase/migrations/20260624240000_business_post_types.sql",
+  "supabase/migrations/20260624250000_business_subcategory.sql",
 ];
 
 const POOLER_REGIONS = [

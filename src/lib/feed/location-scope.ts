@@ -102,6 +102,7 @@ export function businessDiscoveryScore(
     ratingCount: number;
     isHiring?: boolean;
     category?: string;
+    subcategory?: string;
     zipCode?: string;
     city?: string;
     state?: string;
@@ -117,7 +118,13 @@ export function businessDiscoveryScore(
     (input.isHiring ? 3 : 0);
 
   if (viewer?.industryInterests?.length && input.category) {
-    if (viewer.industryInterests.includes(input.category)) {
+    const fullTag = input.subcategory
+      ? `${input.category} › ${input.subcategory}`
+      : input.category;
+    if (
+      viewer.industryInterests.includes(fullTag) ||
+      viewer.industryInterests.includes(input.category)
+    ) {
       score += 25;
     }
   }
