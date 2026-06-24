@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { BusinessIntent, BusinessService, BusinessSocialLinks, ForumCategory, UserRole, FeedScope } from "@/lib/types";
+import type { BusinessIntent, BusinessService, BusinessSocialLinks, ForumCategory, UserRole, FeedScope, FollowDigestFrequency } from "@/lib/types";
+import { isValidJobTitle } from "@/lib/job-titles";
 import { sanitizeMediaUrls, getSafeExternalUrl } from "@/lib/security/safe-url";
 import { sanitizeServices, sanitizeSocialLinks } from "@/lib/security/sanitize-business";
 import { moderateMultiple, moderateUserContent } from "@/lib/moderation/content-policy";
@@ -320,6 +321,67 @@ export async function updateUserProfile(input: {
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update profile." };
+  }
+}
+
+export async function updateProfilePreferences(input: {
+  followDigestFrequency?: FollowDigestFrequency;
+  jobAlertOptIn?: boolean;
+  isSeekingWork?: boolean;
+  experienceText?: string;
+  resumeText?: string;
+  targetJobTitles?: string[];
+  industryInterests?: string[];
+  headline?: string;
+  skills?: string[];
+}) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Supabase is not configured." };
+  }
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    const moderation = moderateMultiple({
+      Experience: input.experienceText ?? "",
+      Resume: input.resumeText ?? "",
+      Headline: input.headline ?? "",
+    });
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const industries = validateIndustryInterests(input.industryInterests ?? []);
+    if (industries.error) return { error: industries.error };
+
+    const titles = (input.targetJobTitles ?? []).filter(isValidJobTitle).slice(0, 8);
+    const digest = input.followDigestFrequency ?? "none";
+    const allowedDigest: FollowDigestFrequency[] = ["none", "daily", "weekly", "monthly"];
+    if (!allowedDigest.includes(digest)) {
+      return { error: "Invalid digest frequency." };
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        follow_digest_frequency: digest,
+        job_alert_opt_in: input.jobAlertOptIn ?? false,
+        is_seeking_work: input.isSeekingWork ?? false,
+        experience_text: input.experienceText?.trim().slice(0, 4000) ?? "",
+        resume_text: input.resumeText?.trim().slice(0, 4000) ?? "",
+        target_job_titles: titles,
+        industry_interests: industries.values,
+        headline: input.headline?.trim().slice(0, 200) ?? "",
+        skills: (input.skills ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 20),
+      })
+      .eq("id", user.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/profile");
+    revalidatePath("/profile/edit");
+    revalidatePath(`/listings/people/${user.id}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to save preferences." };
   }
 }
 

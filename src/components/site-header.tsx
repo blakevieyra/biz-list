@@ -20,8 +20,7 @@ export async function SiteHeader() {
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const notificationCount = userId ? await getUnreadNotificationCount(userId) : 0;
-  const profileHref =
-    profile?.role === "customer" ? "/profile/edit" : "/dashboard/profile";
+  const profileHref = profile ? "/profile" : "/profile/create";
   const messageCount = userId ? await getUnreadMessageCount(userId) : 0;
   const showPlansLink = Boolean(profile && profile.role !== "customer");
 

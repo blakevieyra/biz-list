@@ -38,6 +38,7 @@ const MIGRATIONS = [
   "supabase/migrations/20260624250000_business_subcategory.sql",
   "supabase/migrations/20260624260000_county_and_content_likes.sql",
   "supabase/migrations/20260624270000_post_types_help_free.sql",
+  "supabase/migrations/20260624280000_profile_hub_and_applications.sql",
 ];
 
 const POOLER_REGIONS = [

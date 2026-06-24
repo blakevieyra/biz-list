@@ -28,8 +28,7 @@ export function MobileNav({
   profileRole?: UserRole | null;
   showPlansLink?: boolean;
 }) {
-  const profileHref =
-    profileRole === "customer" ? "/profile/edit" : "/dashboard/profile";
+  const profileHref = profileRole ? "/profile" : "/profile/create";
   const [open, setOpen] = useState(false);
 
   useEffect(() => {

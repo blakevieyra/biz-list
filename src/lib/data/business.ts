@@ -14,6 +14,7 @@ import type {
   BusinessReview,
   BusinessService,
   JobApplication,
+  JobApplicationComment,
   MileRadius,
   ServiceOrder,
   WorkGroup,
@@ -515,10 +516,48 @@ type JobApplicationRow = {
   business_id: string;
   applicant_id: string;
   message: string;
+  cover_letter?: string;
+  resume_snapshot?: string;
   status: JobApplication["status"];
   created_at: string;
   profiles?: { display_name: string } | { display_name: string }[] | null;
+  businesses?: { name: string; owner_id: string } | { name: string; owner_id: string }[] | null;
 };
+
+function mapJobApplicationRow(row: JobApplicationRow): JobApplication {
+  const business = row.businesses;
+  const businessMeta = Array.isArray(business) ? business[0] : business;
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    businessName: businessMeta?.name,
+    applicantId: row.applicant_id,
+    applicantName: authorName(row.profiles),
+    message: row.message,
+    coverLetter: row.cover_letter ?? "",
+    resumeSnapshot: row.resume_snapshot ?? "",
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
+
+export async function getExistingJobApplication(
+  businessId: string,
+  applicantId: string,
+): Promise<JobApplication | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+
+  const { data: row } = await supabase
+    .from("job_applications")
+    .select("*, profiles(display_name), businesses(name, owner_id)")
+    .eq("business_id", businessId)
+    .eq("applicant_id", applicantId)
+    .maybeSingle();
+
+  if (!row) return null;
+  return mapJobApplicationRow(row as JobApplicationRow);
+}
 
 export async function getJobApplicationsForBusiness(
   businessId: string,
@@ -537,18 +576,81 @@ export async function getJobApplicationsForBusiness(
 
   const { data: rows } = await supabase
     .from("job_applications")
-    .select("*, profiles(display_name)")
+    .select("*, profiles(display_name), businesses(name, owner_id)")
     .eq("business_id", businessId)
     .order("created_at", { ascending: false });
 
-  return ((rows as JobApplicationRow[] | null) ?? []).map((row) => ({
+  return ((rows as JobApplicationRow[] | null) ?? []).map(mapJobApplicationRow);
+}
+
+export async function getJobApplicationsForApplicant(
+  applicantId: string,
+): Promise<JobApplication[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+
+  const { data: rows } = await supabase
+    .from("job_applications")
+    .select("*, profiles(display_name), businesses(name, owner_id)")
+    .eq("applicant_id", applicantId)
+    .order("created_at", { ascending: false });
+
+  return ((rows as JobApplicationRow[] | null) ?? []).map(mapJobApplicationRow);
+}
+
+export async function getJobApplicationById(
+  applicationId: string,
+  userId: string,
+): Promise<(JobApplication & { ownerId: string }) | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+
+  const { data: row } = await supabase
+    .from("job_applications")
+    .select("*, profiles(display_name), businesses(name, owner_id)")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (!row) return null;
+
+  const typed = row as JobApplicationRow;
+  const business = typed.businesses;
+  const businessMeta = Array.isArray(business) ? business[0] : business;
+  const ownerId = businessMeta?.owner_id ?? "";
+  if (typed.applicant_id !== userId && ownerId !== userId) return null;
+
+  return { ...mapJobApplicationRow(typed), ownerId };
+}
+
+type JobApplicationCommentRow = {
+  id: string;
+  application_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  profiles?: { display_name: string } | { display_name: string }[] | null;
+};
+
+export async function getJobApplicationComments(
+  applicationId: string,
+  ownerId: string,
+): Promise<JobApplicationComment[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+
+  const { data: rows } = await supabase
+    .from("job_application_comments")
+    .select("id, application_id, author_id, body, created_at, profiles(display_name)")
+    .eq("application_id", applicationId)
+    .order("created_at", { ascending: true });
+
+  return ((rows as JobApplicationCommentRow[] | null) ?? []).map((row) => ({
     id: row.id,
-    businessId: row.business_id,
-    applicantId: row.applicant_id,
-    applicantName: authorName(row.profiles),
-    message: row.message,
-    status: row.status,
+    authorId: row.author_id,
+    authorName: authorName(row.profiles),
+    body: row.body,
     createdAt: row.created_at,
+    isOwnerReply: row.author_id === ownerId,
   }));
 }
 

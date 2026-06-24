@@ -35,6 +35,11 @@ type ProfileRow = {
   headline?: string;
   skills?: string[];
   is_seeking_work?: boolean;
+  experience_text?: string;
+  resume_text?: string;
+  target_job_titles?: string[];
+  job_alert_opt_in?: boolean;
+  follow_digest_frequency?: "none" | "daily" | "weekly" | "monthly";
   feed_scope?: "local" | "state" | "nationwide";
   created_at: string;
 };
@@ -131,6 +136,11 @@ export function mapProfile(row: ProfileRow): UserProfile {
     headline: row.headline ?? "",
     skills: row.skills ?? [],
     isSeekingWork: row.is_seeking_work ?? false,
+    experienceText: row.experience_text ?? "",
+    resumeText: row.resume_text ?? "",
+    targetJobTitles: row.target_job_titles ?? [],
+    jobAlertOptIn: row.job_alert_opt_in ?? false,
+    followDigestFrequency: row.follow_digest_frequency ?? "none",
     forumInterests: row.forum_interests ?? [],
     discoveryRadius: mapDiscoveryRadius(row),
     feedScope: mapDiscoveryRadius(row),

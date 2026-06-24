@@ -99,3 +99,16 @@ export async function emailNotificationToUser(
     );
   }
 }
+
+export async function emailFollowDigest(
+  to: string,
+  name: string,
+  frequency: "daily" | "weekly" | "monthly",
+  lines: string[],
+) {
+  const summary =
+    lines.length > 0
+      ? lines.join("\n\n")
+      : "No new posts from businesses you follow in this period. Browse Listings to discover more local businesses.";
+  await sendTemplateEmail(to, emailTemplates.followDigest(name, frequency, summary));
+}

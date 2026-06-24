@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateJobApplicationStatus } from "@/lib/actions/business";
-import { Card } from "@/components/ui";
+import { Card, formatPostDateTime } from "@/components/ui";
 import type { JobApplication } from "@/lib/types";
-import Link from "next/link";
 
 const STATUS_LABELS: Record<JobApplication["status"], string> = {
   pending: "Pending",
@@ -52,7 +52,7 @@ export function JobApplicationsPanel({
   return (
     <Card>
       <h2 className="font-semibold">Job applications ({applications.length})</h2>
-      <p className="mt-1 text-sm text-muted">Review candidates who applied from your public listing.</p>
+      <p className="mt-1 text-sm text-muted">Review candidates and discuss each application in its thread.</p>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       <ul className="mt-4 space-y-4">
         {applications.map((application) => (
@@ -65,27 +65,37 @@ export function JobApplicationsPanel({
                 >
                   {application.applicantName}
                 </Link>
-                <p className="mt-1 text-xs text-muted">{STATUS_LABELS[application.status]}</p>
+                <p className="mt-1 text-xs text-muted">
+                  {STATUS_LABELS[application.status]} · Applied {formatPostDateTime(application.createdAt)}
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {(["reviewed", "accepted", "declined"] as const).map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    disabled={pending || application.status === status}
-                    onClick={() => handleStatus(application.id, status)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium disabled:opacity-50 ${
-                      application.status === status
-                        ? "bg-accent text-white"
-                        : "border border-border text-muted hover:text-foreground"
-                    }`}
-                  >
-                    {STATUS_LABELS[status]}
-                  </button>
-                ))}
-              </div>
+              <Link
+                href={`/applications/${application.id}`}
+                className="text-sm font-medium text-accent hover:underline"
+              >
+                Open thread →
+              </Link>
             </div>
-            <p className="mt-3 whitespace-pre-wrap text-sm text-muted">{application.message}</p>
+            <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm text-muted">
+              {application.coverLetter || application.message}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(["reviewed", "accepted", "declined"] as const).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  disabled={pending || application.status === status}
+                  onClick={() => handleStatus(application.id, status)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium disabled:opacity-50 ${
+                    application.status === status
+                      ? "bg-accent text-white"
+                      : "border border-border text-muted hover:text-foreground"
+                  }`}
+                >
+                  {STATUS_LABELS[status]}
+                </button>
+              ))}
+            </div>
           </li>
         ))}
       </ul>

@@ -163,4 +163,14 @@ export const emailTemplates = {
     ctaLabel: "View assessment",
     ctaUrl: `${getAppUrl()}/pro/assessment`,
   }),
+
+  followDigest: (name: string, frequency: string, summary: string) => ({
+    subject: `Your ${frequency} BizList follow digest`,
+    title: `What's new from businesses you follow`,
+    greeting: `Hi ${name},`,
+    body: summary,
+    ctaLabel: "Open Posts feed",
+    ctaUrl: `${getAppUrl()}/feed`,
+    footerNote: "Manage digest frequency in My profile on BizList.",
+  }),
 };

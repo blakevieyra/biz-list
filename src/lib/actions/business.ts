@@ -13,6 +13,8 @@ import {
 } from "@/lib/validation/profile-fields";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { BusinessIntent, BusinessService, BusinessSocialLinks, PlanTier, BusinessPostType } from "@/lib/types";
+import { mapProfile } from "@/lib/data/mappers";
+import { buildResumeSnapshot } from "@/lib/resume";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -425,26 +427,31 @@ export async function createWorkGroup(input: {
   }
 }
 
-export async function submitJobApplication(input: { businessId: string; message: string }) {
+export async function submitJobApplication(input: {
+  businessId: string;
+  coverLetter: string;
+}) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to apply." };
 
   try {
     const { supabase, user } = await requireUser();
-    const message = input.message.trim().slice(0, 2000);
-    if (!message) return { error: "Tell the business why you're a good fit." };
+    const coverLetter = input.coverLetter.trim().slice(0, 2000);
+    if (!coverLetter) return { error: "Add a short cover letter before applying." };
 
-    const moderation = moderateUserContent(message, "Application");
+    const moderation = moderateUserContent(coverLetter, "Cover letter");
     if (!moderation.ok) return { error: moderation.reason };
 
-    const { data: profile } = await supabase
+    const { data: profileRow } = await supabase
       .from("profiles")
-      .select("role")
+      .select("*")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "customer") {
+    if (profileRow?.role !== "customer") {
       return { error: "Only customer profiles can apply for jobs." };
     }
+
+    const profile = mapProfile(profileRow);
 
     const { data: business } = await supabase
       .from("businesses")
@@ -455,23 +462,36 @@ export async function submitJobApplication(input: { businessId: string; message:
     if (!business?.is_hiring) return { error: "This business is not accepting applications." };
     if (business.owner_id === user.id) return { error: "You cannot apply to your own business." };
 
-    const { error } = await supabase.from("job_applications").upsert(
-      {
+    const { data: existing } = await supabase
+      .from("job_applications")
+      .select("id, created_at")
+      .eq("business_id", input.businessId)
+      .eq("applicant_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      return {
+        error: `You already applied on ${new Date(existing.created_at).toLocaleDateString()}.`,
+        applicationId: existing.id,
+      };
+    }
+
+    const resumeSnapshot = buildResumeSnapshot(profile);
+
+    const { data: inserted, error } = await supabase
+      .from("job_applications")
+      .insert({
         business_id: input.businessId,
         applicant_id: user.id,
-        message,
+        message: coverLetter,
+        cover_letter: coverLetter,
+        resume_snapshot: resumeSnapshot,
         status: "pending",
-      },
-      { onConflict: "business_id,applicant_id" },
-    );
+      })
+      .select("id")
+      .single();
 
     if (error) return { error: error.message };
-
-    const { data: applicant } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .single();
 
     const admin = getSupabaseAdmin();
     if (admin) {
@@ -479,16 +499,66 @@ export async function submitJobApplication(input: { businessId: string; message:
         user_id: business.owner_id,
         type: "message",
         title: "New job application",
-        body: `${applicant?.display_name ?? "Someone"} applied to ${business.name}`,
-        link: "/dashboard/applications",
+        body: `${profile.displayName} applied to ${business.name}`,
+        link: `/applications/${inserted.id}`,
+      });
+      await admin.from("notifications").insert({
+        user_id: user.id,
+        type: "message",
+        title: "Application submitted",
+        body: `Your application to ${business.name} was sent.`,
+        link: `/applications/${inserted.id}`,
       });
     }
 
     revalidatePath(`/listings/${input.businessId}`);
     revalidatePath("/dashboard/applications");
-    return { success: true };
+    revalidatePath("/profile");
+    return { success: true, applicationId: inserted.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to submit application." };
+  }
+}
+
+export async function commentOnJobApplication(applicationId: string, body: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to comment." };
+
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 2000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+
+    const moderation = moderateUserContent(trimmed, "Comment");
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const { data: application } = await supabase
+      .from("job_applications")
+      .select("id, applicant_id, business_id, businesses(owner_id)")
+      .eq("id", applicationId)
+      .single();
+
+    if (!application) return { error: "Application not found." };
+
+    const businesses = application.businesses as { owner_id: string } | { owner_id: string }[] | null;
+    const ownerId = Array.isArray(businesses) ? businesses[0]?.owner_id : businesses?.owner_id;
+    if (application.applicant_id !== user.id && ownerId !== user.id) {
+      return { error: "You cannot comment on this application." };
+    }
+
+    const { error } = await supabase.from("job_application_comments").insert({
+      application_id: applicationId,
+      author_id: user.id,
+      body: trimmed,
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/applications/${applicationId}`);
+    revalidatePath("/dashboard/applications");
+    revalidatePath("/profile");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to comment." };
   }
 }
 
@@ -511,7 +581,7 @@ export async function updateJobApplicationStatus(input: {
     if (error) return { error: error.message };
 
     revalidatePath("/dashboard/applications");
-    revalidatePath("/dashboard");
+    revalidatePath(`/applications/${input.applicationId}`);
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update application." };

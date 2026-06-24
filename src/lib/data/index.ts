@@ -15,6 +15,7 @@ import type {
   ForumCategory,
   ForumPost,
   Notification,
+  FollowedBusiness,
   UserProfile,
 } from "@/lib/types";
 import {
@@ -558,4 +559,46 @@ export async function getUnreadMessageCount(userId: string): Promise<number> {
     .eq("read", false);
 
   return count ?? 0;
+}
+
+export async function getFollowedBusinesses(userId: string): Promise<FollowedBusiness[]> {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return SEED_BUSINESSES.filter((b) => b.followerIds.includes(userId)).map((b) => ({
+      id: b.id,
+      name: b.name,
+      category: b.category,
+      subcategory: b.subcategory,
+      city: b.city,
+      state: b.state,
+      isHiring: b.isHiring,
+      followedAt: b.createdAt,
+    }));
+  }
+
+  const { data: rows } = await supabase
+    .from("business_follows")
+    .select(
+      "created_at, businesses(id, name, category, subcategory, city, state, is_hiring)",
+    )
+    .eq("follower_id", userId)
+    .order("created_at", { ascending: false });
+
+  const results: FollowedBusiness[] = [];
+  for (const row of rows ?? []) {
+    const business = row.businesses;
+    const meta = Array.isArray(business) ? business[0] : business;
+    if (!meta) continue;
+    results.push({
+      id: meta.id,
+      name: meta.name,
+      category: meta.category,
+      subcategory: meta.subcategory ?? "",
+      city: meta.city,
+      state: meta.state,
+      isHiring: meta.is_hiring ?? false,
+      followedAt: row.created_at,
+    });
+  }
+  return results;
 }

@@ -34,11 +34,13 @@ import {
 
 } from "@/lib/data";
 
-import { getBusinessPosts, getBusinessReviews } from "@/lib/data/business";
+import { getBusinessPosts, getBusinessReviews, getExistingJobApplication } from "@/lib/data/business";
 
 import { getBusinessContentLikeState } from "@/lib/data/content-likes";
 
 import { getAuthUserId } from "@/lib/actions/auth";
+
+import { buildResumeSnapshot } from "@/lib/resume";
 
 import { contentLikeKey, isContentLiked } from "@/lib/content-likes-types";
 
@@ -109,6 +111,16 @@ export default async function BusinessDetailPage({
 
 
   const isOwner = userId === business.ownerId;
+  const customerProfile =
+    userId && !isOwner ? await getProfileById(userId) : null;
+  const existingApplication =
+    userId && !isOwner && business.isHiring
+      ? await getExistingJobApplication(business.id, userId)
+      : null;
+  const resumePreview =
+    customerProfile && customerProfile.role === "customer"
+      ? buildResumeSnapshot(customerProfile)
+      : undefined;
 
   const socialEntries = Object.entries(business.socialLinks).filter(([, url]) => url);
 
@@ -409,6 +421,10 @@ export default async function BusinessDetailPage({
               currentUserId={userId}
 
               isOwner={isOwner}
+
+              resumePreview={resumePreview}
+
+              existingApplication={existingApplication}
 
             />
 

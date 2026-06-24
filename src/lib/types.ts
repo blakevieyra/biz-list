@@ -49,6 +49,8 @@ export type ForumCategory =
   | "hiring"
   | "partnerships";
 
+export type FollowDigestFrequency = "none" | "daily" | "weekly" | "monthly";
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -67,6 +69,11 @@ export interface UserProfile {
   headline: string;
   skills: string[];
   isSeekingWork: boolean;
+  experienceText: string;
+  resumeText: string;
+  targetJobTitles: string[];
+  jobAlertOptIn: boolean;
+  followDigestFrequency: FollowDigestFrequency;
   forumInterests: ForumCategory[];
   discoveryRadius: DiscoveryRadius;
   /** @deprecated use discoveryRadius */
@@ -108,11 +115,35 @@ export interface BusinessProfile {
 export interface JobApplication {
   id: string;
   businessId: string;
+  businessName?: string;
   applicantId: string;
   applicantName: string;
   message: string;
+  coverLetter: string;
+  resumeSnapshot: string;
   status: "pending" | "reviewed" | "accepted" | "declined";
   createdAt: string;
+  commentCount?: number;
+}
+
+export interface JobApplicationComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  isOwnerReply?: boolean;
+}
+
+export interface FollowedBusiness {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  city: string;
+  state: string;
+  isHiring: boolean;
+  followedAt: string;
 }
 
 export interface ServiceOrder {
