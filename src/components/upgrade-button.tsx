@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { startCheckout } from "@/lib/actions/billing";
 import type { BillingInterval, PaidPlanTier } from "@/lib/types";
-import { PLAN_LABELS } from "@/lib/plans";
+import { BIZLIST_PLUS_LABEL, PLAN_LABELS } from "@/lib/plans";
+
+function planLabel(tier: PaidPlanTier): string {
+  if (tier === "customer_pro") return BIZLIST_PLUS_LABEL;
+  return PLAN_LABELS[tier];
+}
 
 export function UpgradeButton({
   tier,
@@ -46,7 +51,7 @@ export function UpgradeButton({
             "w-full rounded-full bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-hover"
           }
         >
-          {label ?? `Upgrade to ${PLAN_LABELS[tier]}`}
+          {label ?? `Upgrade to ${planLabel(tier)}`}
         </button>
       </form>
       {error && <p className="mt-2 text-center text-sm text-red-600">{error}</p>}

@@ -267,7 +267,7 @@ export async function signIn(formData: FormData) {
     await emailWelcome(user.email, displayName);
   }
 
-  redirect("/listings");
+  redirect("/home");
 }
 
 export async function signOut() {

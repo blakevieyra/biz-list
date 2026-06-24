@@ -28,6 +28,10 @@ export function getStripePriceId(tier: PaidPlanTier, interval: BillingInterval):
       monthly: process.env.STRIPE_PRICE_PLATINUM_MONTHLY,
       annual: process.env.STRIPE_PRICE_PLATINUM_ANNUAL,
     },
+    customer_pro: {
+      monthly: process.env.STRIPE_PRICE_CUSTOMER_PLUS_MONTHLY,
+      annual: process.env.STRIPE_PRICE_CUSTOMER_PLUS_ANNUAL,
+    },
   };
   return map[tier][interval] ?? null;
 }
@@ -53,7 +57,7 @@ export async function createCheckoutSession(input: {
       ? { customer: input.stripeCustomerId }
       : { customer_email: input.email }),
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/dashboard?upgraded=${input.tier}`,
+    success_url: `${appUrl}${input.tier === "customer_pro" ? "/home?upgraded=customer_pro" : `/dashboard?upgraded=${input.tier}`}`,
     cancel_url: `${appUrl}/pricing?canceled=1`,
     metadata: {
       userId: input.userId,

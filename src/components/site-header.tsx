@@ -11,9 +11,11 @@ import { MobileNav } from "@/components/mobile-nav";
 import { isBusinessPlan, PLAN_LABELS } from "@/lib/plans";
 
 const links = [
+  { href: "/home", label: "Home", authOnly: true },
   { href: "/feed", label: "Post" },
   { href: "/listings", label: "Listing" },
   { href: "/partnerships", label: "Collaboration" },
+  { href: "/events", label: "Events" },
 ];
 
 export async function SiteHeader() {
@@ -22,7 +24,8 @@ export async function SiteHeader() {
   const notificationCount = userId ? await getUnreadNotificationCount(userId) : 0;
   const profileHref = profile ? "/profile" : "/profile/create";
   const messageCount = userId ? await getUnreadMessageCount(userId) : 0;
-  const showPlansLink = Boolean(profile && profile.role !== "customer");
+  const showPlansLink = Boolean(profile);
+  const isCustomer = profile?.role === "customer";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -38,7 +41,9 @@ export async function SiteHeader() {
         </div>
 
         <nav className="hidden items-center gap-5 text-sm font-medium text-muted lg:flex">
-          {links.map((link) => (
+          {links
+            .filter((link) => !link.authOnly || userId)
+            .map((link) => (
             <Link key={link.href} href={link.href} className="transition hover:text-foreground">
               {link.label}
             </Link>
@@ -91,7 +96,7 @@ export async function SiteHeader() {
                   {profile.displayName}
                 </Link>
                 {showPlansLink && (
-                  <Link href="/pricing" className="text-sm text-muted transition hover:text-foreground">
+                  <Link href={isCustomer ? "/pricing#bizlist-plus" : "/pricing"} className="text-sm text-muted transition hover:text-foreground">
                     Plans
                   </Link>
                 )}
@@ -149,6 +154,9 @@ export function SiteFooter() {
             </Link>
             <Link href="/partnerships" className="min-h-10 leading-10 hover:text-foreground">
               Collaboration
+            </Link>
+            <Link href="/events" className="min-h-10 leading-10 hover:text-foreground">
+              Events
             </Link>
             <Link href="/messages" className="min-h-10 leading-10 hover:text-foreground">
               Messages

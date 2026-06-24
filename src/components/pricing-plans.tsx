@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { UpgradeButton } from "@/components/upgrade-button";
-import { annualSavings, PLAN_PRICES } from "@/lib/plans";
+import { annualSavings, BIZLIST_PLUS_LABEL, formatPlanPrice, PLAN_PRICES } from "@/lib/plans";
 import type { BillingInterval } from "@/lib/types";
 
 const communityFeatures = [
@@ -19,6 +19,13 @@ const proFeatures = [
   "AI online presence audit with website & profile scores",
   "Lead generation from followers, interests, and job seekers",
   "Trending post boost for high engagement",
+];
+
+const customerProFeatures = [
+  "Job alerts and business matches based on your skills and interests",
+  "First pick on deals, sales, and new product releases",
+  "Notifications when followed businesses publish local events",
+  "Everything in free Community membership",
 ];
 
 const platinumFeatures = [
@@ -57,6 +64,47 @@ export function PricingPlans() {
         </div>
       </div>
 
+      <div className="mb-10" id="bizlist-plus">
+        <h2 className="mb-2 text-2xl font-bold">For customers & job seekers</h2>
+        <p className="mb-6 text-sm text-muted">
+          {BIZLIST_PLUS_LABEL} is separate from business plans — built for people who want alerts, matches, and early access.
+        </p>
+        <div className="grid gap-6 md:grid-cols-2">
+          <PlanCard
+            name={BIZLIST_PLUS_LABEL}
+            price={
+              isAnnual ? PLAN_PRICES.customerPro.annual : PLAN_PRICES.customerPro.monthly
+            }
+            interval={interval}
+            savings={isAnnual ? annualSavings("customerPro") : undefined}
+            description="Alerts, matches, early deals, and event notifications."
+            features={customerProFeatures}
+            highlighted
+            cta={{
+              label: isAnnual ? `${BIZLIST_PLUS_LABEL} — yearly` : `${BIZLIST_PLUS_LABEL} — monthly`,
+              component: (
+                <UpgradeButton
+                  tier="customer_pro"
+                  interval={interval}
+                  label={`Upgrade to ${BIZLIST_PLUS_LABEL}`}
+                />
+              ),
+            }}
+          />
+          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <h3 className="font-semibold">Why {BIZLIST_PLUS_LABEL}?</h3>
+            <p className="mt-2 text-sm text-muted">
+              If you are job hunting or want the best local deals first, {BIZLIST_PLUS_LABEL} sends alerts and matches
+              straight to your profile hub — including new events from businesses you follow.
+            </p>
+            <p className="mt-4 text-sm text-muted">
+              Manage alerts, following, and messages from your home profile tab after you upgrade.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h2 className="mb-6 text-2xl font-bold">For businesses</h2>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <PlanCard
           name="Community"
@@ -133,7 +181,7 @@ function PlanCard({
       <h2 className="mt-3 text-2xl font-bold">{name}</h2>
       <p className="mt-2 text-sm text-muted">{description}</p>
       <p className="mt-6 text-4xl font-bold">
-        ${price}
+        ${formatPlanPrice(price)}
         {!isFree && (
           <span className="text-base font-normal text-muted">
             {interval === "annual" ? "/year" : "/month"}
@@ -141,7 +189,9 @@ function PlanCard({
         )}
       </p>
       {savings !== undefined && savings > 0 && (
-        <p className="mt-1 text-sm font-medium text-emerald-700">Save ${savings} vs monthly</p>
+        <p className="mt-1 text-sm font-medium text-emerald-700">
+          Save ${formatPlanPrice(savings)} vs monthly
+        </p>
       )}
       <ul className="mt-6 flex-1 space-y-3">
         {features.map((feature) => (

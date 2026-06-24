@@ -69,9 +69,11 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
 
   if (profile?.role === "customer") {
-
-    return { error: "Business plans are for business and organization accounts." };
-
+    if (tier !== "customer_pro") {
+      return { error: "Business plans are for business and organization accounts." };
+    }
+  } else if (tier === "customer_pro") {
+    return { error: "BizList Plus is for customer accounts." };
   }
 
 
@@ -125,13 +127,15 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
 
 
+  const planTier = tier === "customer_pro" ? "pro" : tier;
+
   const { error } = await admin
 
     .from("profiles")
 
     .update({
 
-      plan_tier: tier,
+      plan_tier: planTier,
 
       plan_started_at: new Date().toISOString(),
 
@@ -147,7 +151,9 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
   if (profile?.email) {
 
-    await emailProUpgrade(profile.email, profile.display_name ?? "there", PLAN_LABELS[tier]);
+    const label =
+      tier === "customer_pro" ? "BizList Plus" : PLAN_LABELS[tier as keyof typeof PLAN_LABELS];
+    await emailProUpgrade(profile.email, profile.display_name ?? "there", label);
 
   }
 
@@ -155,7 +161,7 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
   revalidatePath("/", "layout");
 
-  redirect("/dashboard");
+  redirect(profile?.role === "customer" ? "/home" : "/dashboard");
 
 }
 

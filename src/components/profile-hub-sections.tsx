@@ -35,6 +35,7 @@ export function ProfileHubNav({
   unreadAlerts,
   showGrowthTab = false,
   leadCount = 0,
+  basePath = "/profile",
 }: {
   active: HubTab;
   followingCount: number;
@@ -43,6 +44,7 @@ export function ProfileHubNav({
   unreadAlerts: number;
   showGrowthTab?: boolean;
   leadCount?: number;
+  basePath?: string;
 }) {
   const counts: Partial<Record<string, number>> = {
     following: followingCount,
@@ -51,6 +53,14 @@ export function ProfileHubNav({
     alerts: unreadAlerts,
     growth: leadCount,
   };
+
+  function tabHref(tabId: HubTab) {
+    if (tabId === "overview") return basePath;
+    if (basePath.startsWith("/home")) {
+      return `/home?tab=profile&profileTab=${tabId}`;
+    }
+    return `/profile?tab=${tabId}`;
+  }
 
   return (
     <div className="mb-6 flex flex-wrap gap-2">
@@ -63,7 +73,7 @@ export function ProfileHubNav({
         .map((tab) => (
           <Link
             key={tab.id}
-            href={tab.id === "overview" ? "/profile" : `/profile?tab=${tab.id}`}
+            href={tabHref(tab.id)}
             className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
               active === tab.id
                 ? "bg-accent text-white"

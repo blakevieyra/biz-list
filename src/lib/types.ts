@@ -254,7 +254,7 @@ export interface CollaborationIdea {
 export interface Notification {
   id: string;
   userId: string;
-  type: "follow" | "connection" | "comment" | "message" | "collaboration";
+  type: "follow" | "connection" | "comment" | "message" | "collaboration" | "event" | "deal_alert" | "job_match";
   title: string;
   body: string;
   link: string;
@@ -348,6 +348,37 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   customer: "Customer / Community Member",
 };
 
-export type PaidPlanTier = "pro" | "platinum";
+export type PaidPlanTier = "pro" | "platinum" | "customer_pro";
 
 export type BillingInterval = "monthly" | "annual";
+
+export type EventStatus = "draft" | "published" | "cancelled";
+
+export type EventRsvpStatus = "going" | "interested";
+
+export interface BusinessEvent {
+  id: string;
+  businessId: string;
+  businessName?: string;
+  businessMediaUrl?: string;
+  authorId: string;
+  title: string;
+  description: string;
+  location: string;
+  address: string;
+  city: string;
+  state: string;
+  county?: string;
+  zipCode: string;
+  latitude?: number;
+  longitude?: number;
+  category: string;
+  imageUrl: string;
+  startsAt: string;
+  endsAt?: string;
+  capacity?: number;
+  status: EventStatus;
+  goingCount: number;
+  userRsvp?: EventRsvpStatus | null;
+  createdAt: string;
+}

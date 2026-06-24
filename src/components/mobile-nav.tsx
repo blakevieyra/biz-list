@@ -6,9 +6,11 @@ import { signOut } from "@/lib/actions/auth";
 import type { UserRole } from "@/lib/types";
 
 const publicLinks = [
+  { href: "/home", label: "Home", authOnly: true },
   { href: "/feed", label: "Post" },
   { href: "/listings", label: "Listing" },
   { href: "/partnerships", label: "Collaboration" },
+  { href: "/events", label: "Events" },
 ];
 
 const authLinks = [
@@ -66,7 +68,9 @@ export function MobileNav({
                 </p>
               )}
               <ul className="space-y-1">
-                {publicLinks.map((link) => (
+                {publicLinks
+                  .filter((link) => !link.authOnly || userId)
+                  .map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
@@ -104,7 +108,7 @@ export function MobileNav({
                     </Link>
                     {showPlansLink && (
                       <Link
-                        href="/pricing"
+                        href={profileRole === "customer" ? "/pricing#bizlist-plus" : "/pricing"}
                         onClick={() => setOpen(false)}
                         className="flex min-h-11 items-center justify-center rounded-full border border-border text-sm font-medium"
                       >

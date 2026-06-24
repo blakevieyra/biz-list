@@ -9,6 +9,7 @@ import { canAccess, isBusinessPlan, PLAN_LABELS, type PlanFeature } from "@/lib/
 const navItems = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/posts", label: "Posts & marketing" },
+  { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/leads", label: "Leads", feature: "localLeads" as const },
   { href: "/dashboard/assessment", label: "AI Audit", feature: "aiAudit" as const },
@@ -28,7 +29,7 @@ export default async function DashboardLayout({
   if (!profile) redirect("/profile/create");
 
   if (profile.role === "customer") {
-    redirect("/listings");
+    redirect("/home");
   }
 
   const enabledFeatures: PlanFeature[] = navItems

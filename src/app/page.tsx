@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { redirect } from "next/navigation";
 import { BusinessCard } from "@/components/business-card";
 import { BusinessPostFeed } from "@/components/business-post-feed";
 import { CollaborationCard } from "@/components/collaboration-card";
@@ -14,9 +16,9 @@ import { resolveAreaScope } from "@/lib/feed/location-scope";
 
 const features = [
   {
-    title: "Posts",
+    title: "Latest",
     description:
-      "Follow business updates, open jobs, sales, deals, and community discussions in one scrollable feed.",
+      "Follow business updates, open jobs, sales, deals, and local events in one scrollable feed.",
     href: "/feed",
   },
   {
@@ -31,22 +33,22 @@ const features = [
       "Create B2B deals, joint ventures, work groups, sales events, and organized partnership opportunities.",
     href: "/partnerships",
   },
+  {
+    title: "Management",
+    description:
+      "Manage your profile, following, alerts, messages, and applications — business or personal — in one hub.",
+    href: "/auth/signup",
+  },
 ];
 
 export default async function HomePage() {
   const profile = await getCurrentProfile();
-  const viewer = profile
-    ? {
-        city: profile.city,
-        state: profile.state,
-        zipCode: profile.zipCode,
-        industryInterests: profile.industryInterests,
-      }
-    : null;
-  const areaScope = resolveAreaScope(
-    undefined,
-    profile?.discoveryRadius ?? profile?.feedScope,
-  );
+  if (profile) {
+    redirect("/home");
+  }
+
+  const viewer = null;
+  const areaScope = resolveAreaScope(undefined, undefined);
 
   const [businesses, posts, collaborations, trendingPosts] = await Promise.all([
     getBusinesses({ areaScope, viewer }),
@@ -59,27 +61,42 @@ export default async function HomePage() {
     <>
       <section className="border-b border-border bg-gradient-to-b from-blue-50 to-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-              Posts. Listings. Collaboration.
-            </h1>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
-              BizList helps local businesses get discovered, share updates and deals, hire talent,
-              and build B2B partnerships — all from your business location outward.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link
-                href="/auth/signup"
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-medium text-white transition hover:bg-accent-hover"
-              >
-                Create your profile
-              </Link>
-              <Link
-                href="/feed"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition hover:border-accent/40"
-              >
-                Explore posts
-              </Link>
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                Latest Updates. Listing. Collab.
+              </h1>
+              <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+                BizList helps local businesses get discovered, share updates and deals, hire talent,
+                and build B2B partnerships — all from your business location outward.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-medium text-white transition hover:bg-accent-hover"
+                >
+                  Create your profile
+                </Link>
+                <Link
+                  href="/feed"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition hover:border-accent/40"
+                >
+                  Explore latest
+                </Link>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-border shadow-lg lg:aspect-[5/4]">
+              <Image
+                src="/hero-bizlist.jpg"
+                alt="Local shop interior with products on display"
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+              <p className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1 text-xs text-white">
+                Photo: Unsplash
+              </p>
             </div>
           </div>
         </div>
@@ -87,7 +104,7 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <h2 className="text-2xl font-bold">What you can do on BizList</h2>
-        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
             <Link
               key={feature.title}

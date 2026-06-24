@@ -348,6 +348,43 @@ export async function createBusinessPost(input: {
 
     if (postType === "job") {
       await supabase.from("businesses").update({ is_hiring: true }).eq("id", input.businessId);
+
+      const { data: biz } = await supabase
+        .from("businesses")
+        .select("name, city, state")
+        .eq("id", input.businessId)
+        .single();
+
+      if (biz) {
+        const { notifyJobMatchToCustomerPro } = await import("@/lib/actions/events");
+        await notifyJobMatchToCustomerPro({
+          businessName: biz.name,
+          jobTitle: title,
+          businessId: input.businessId,
+          city: biz.city,
+          state: biz.state,
+        });
+      }
+    }
+
+    if (postType === "deal") {
+      const { data: biz } = await supabase
+        .from("businesses")
+        .select("name, city, state")
+        .eq("id", input.businessId)
+        .single();
+
+      if (biz) {
+        const { notifyDealToCustomerPro } = await import("@/lib/actions/events");
+        await notifyDealToCustomerPro({
+          businessId: input.businessId,
+          businessName: biz.name,
+          postTitle: title,
+          postId: input.businessId,
+          city: biz.city,
+          state: biz.state,
+        });
+      }
     }
 
     revalidatePath(`/listings/${input.businessId}`);

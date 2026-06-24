@@ -4,6 +4,7 @@ export const PLAN_PRICES = {
   free: 0,
   pro: { monthly: 49, annual: 470 },
   platinum: { monthly: 99, annual: 950 },
+  customerPro: { monthly: 12.99, annual: 99.99 },
 } as const;
 
 export const PLAN_LABELS: Record<PlanTier, string> = {
@@ -27,6 +28,12 @@ export type PlanFeature =
   | "trendingBoost"
   | "automatedMarketing"
   | "virtualAgent";
+
+export type CustomerPlanFeature =
+  | "jobAlerts"
+  | "businessMatches"
+  | "firstPickDeals"
+  | "eventNotifications";
 
 const FREE_BUSINESS_FEATURES: PlanFeature[] = [
   "directoryListing",
@@ -61,6 +68,25 @@ export function isBusinessPlan(plan: PlanTier): boolean {
   return plan === "pro" || plan === "platinum";
 }
 
+export function isCustomerPro(plan: PlanTier): boolean {
+  return plan === "pro" || plan === "platinum";
+}
+
+const CUSTOMER_PRO_FEATURES: CustomerPlanFeature[] = [
+  "jobAlerts",
+  "businessMatches",
+  "firstPickDeals",
+  "eventNotifications",
+];
+
+export function canAccessCustomerFeature(
+  plan: PlanTier,
+  feature: CustomerPlanFeature,
+): boolean {
+  if (!isCustomerPro(plan)) return false;
+  return CUSTOMER_PRO_FEATURES.includes(feature);
+}
+
 export function planRank(plan: PlanTier): number {
   if (plan === "pro") return 1;
   if (plan === "platinum") return 2;
@@ -75,7 +101,14 @@ export function canUseDashboard(_plan: PlanTier): boolean {
   return true;
 }
 
-export function annualSavings(tier: "pro" | "platinum"): number {
+export function annualSavings(tier: "pro" | "platinum" | "customerPro"): number {
   const prices = PLAN_PRICES[tier];
-  return prices.monthly * 12 - prices.annual;
+  return Math.round((prices.monthly * 12 - prices.annual) * 100) / 100;
 }
+
+export function formatPlanPrice(price: number): string {
+  return Number.isInteger(price) ? String(price) : price.toFixed(2);
+}
+
+export const BIZLIST_PLUS_LABEL = "BizList Plus";
+export const CUSTOMER_PRO_LABEL = BIZLIST_PLUS_LABEL;
