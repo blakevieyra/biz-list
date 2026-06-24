@@ -222,8 +222,21 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     importantInfo: "Wholesale orders need 48hr notice.",
     isHiring: true,
     services: [
-      { name: "Wholesale loaves", description: "Sourdough and country loaves for cafés", actionType: "link", actionUrl: "https://riverbendbakery.example/order", actionLabel: "Request quote" },
-      { name: "Event catering", description: "Pastry trays for offices and events", actionType: "form", actionLabel: "Place catering order" },
+      {
+        name: "Wholesale loaves",
+        description: "Sourdough and country loaves for cafés",
+        serviceType: "Food & drink",
+        actionType: "link",
+        actionUrl: "https://riverbendbakery.example/order",
+        actionLabel: "Request quote",
+      },
+      {
+        name: "Event catering",
+        description: "Pastry trays for offices and events",
+        serviceType: "Service",
+        actionType: "form",
+        actionLabel: "Place catering order",
+      },
     ],
     mediaUrls: [DEMO_IMAGES.bakery, DEMO_IMAGES.bakery2],
     likeCount: 12,

@@ -19,12 +19,16 @@ import type {
 } from "@/lib/types";
 import {
   businessDiscoveryScore,
+  matchesAreaScope,
   matchesFeedScope,
+  matchesMileRadius,
   type DiscoveryViewer,
   type FeedScope,
   type LocationProfile,
   DEFAULT_DISCOVERY_RADIUS,
 } from "@/lib/feed/location-scope";
+import type { AreaScope, MileRadius } from "@/lib/types";
+import { normalizeServiceType } from "@/lib/service-types";
 import {
   mapBusiness,
   mapCollaboration,
@@ -190,18 +194,48 @@ export async function getBusinesses(filters?: {
   subcategory?: string;
   query?: string;
   searchType?: "all" | "products";
+  productType?: string;
+  areaScope?: AreaScope;
+  mileRadius?: MileRadius;
+  /** @deprecated use areaScope and mileRadius */
   scope?: FeedScope;
   viewer?: DiscoveryViewer | null;
 }): Promise<BusinessProfile[]> {
   const supabase = await getSupabase();
-  const scope = filters?.scope;
   const viewer = filters?.viewer;
+  const areaScope = filters?.areaScope ?? DEFAULT_DISCOVERY_RADIUS;
+  const mileRadius = filters?.mileRadius;
+  const productType = normalizeServiceType(filters?.productType);
 
   function rankBusinesses(list: BusinessProfile[]): BusinessProfile[] {
     return [...list].sort(
       (a, b) =>
-        businessDiscoveryScore(b, viewer, scope) - businessDiscoveryScore(a, viewer, scope),
+        businessDiscoveryScore(b, viewer, mileRadius ?? areaScope) -
+        businessDiscoveryScore(a, viewer, mileRadius ?? areaScope),
     );
+  }
+
+  function matchesLocation(b: BusinessProfile): boolean {
+    if (!viewer) return true;
+    if (!matchesAreaScope(viewer, b, areaScope)) return false;
+    if (mileRadius && !matchesMileRadius(viewer, b, mileRadius)) return false;
+    return true;
+  }
+
+  function serviceMatchesFilters(service: BusinessProfile["services"][number], q: string): boolean {
+    if (productType && service.serviceType !== productType) return false;
+    if (!q) return true;
+    return (
+      service.name.toLowerCase().includes(q) ||
+      service.description.toLowerCase().includes(q) ||
+      (service.price?.toLowerCase().includes(q) ?? false) ||
+      (service.serviceType?.toLowerCase().includes(q) ?? false)
+    );
+  }
+
+  function matchesProductFilters(b: BusinessProfile, q: string): boolean {
+    if (filters?.searchType !== "products" && !productType) return true;
+    return b.services.some((s) => serviceMatchesFilters(s, q));
   }
 
   if (!supabase) {
@@ -212,15 +246,10 @@ export async function getBusinesses(filters?: {
         !filters?.subcategory || b.subcategory === filters.subcategory;
       const q = filters?.query?.toLowerCase() ?? "";
       const matchesQuery =
-        !q ||
-        (filters?.searchType === "products"
-          ? b.services.some(
-              (s) =>
-                s.name.toLowerCase().includes(q) ||
-                s.description.toLowerCase().includes(q) ||
-                (s.price?.toLowerCase().includes(q) ?? false),
-            )
-          : b.name.toLowerCase().includes(q) ||
+        filters?.searchType === "products" || productType
+          ? matchesProductFilters(b, q)
+          : !q ||
+            b.name.toLowerCase().includes(q) ||
             b.description.toLowerCase().includes(q) ||
             b.city.toLowerCase().includes(q) ||
             b.zipCode.includes(q) ||
@@ -229,13 +258,14 @@ export async function getBusinesses(filters?: {
             b.services.some(
               (s) =>
                 s.name.toLowerCase().includes(q) ||
-                s.description.toLowerCase().includes(q),
-            ));
+                s.description.toLowerCase().includes(q) ||
+                (s.serviceType?.toLowerCase().includes(q) ?? false),
+            );
       return matchesIntent && matchesCategory && matchesSubcategory && matchesQuery;
     });
 
-    if (viewer && scope && scope !== "nation") {
-      result = result.filter((b) => matchesFeedScope(viewer, b, scope));
+    if (viewer) {
+      result = result.filter(matchesLocation);
     }
 
     return rankBusinesses(result);
@@ -269,16 +299,11 @@ export async function getBusinesses(filters?: {
     mapBusiness(row, followerMap.get(row.id) ?? [], []),
   );
 
-  if (filters?.query) {
-    const q = filters.query.toLowerCase();
+  if (filters?.query || productType || filters?.searchType === "products") {
+    const q = filters?.query?.toLowerCase() ?? "";
     result = result.filter((b) => {
-      if (filters.searchType === "products") {
-        return b.services.some(
-          (s) =>
-            s.name.toLowerCase().includes(q) ||
-            s.description.toLowerCase().includes(q) ||
-            (s.price?.toLowerCase().includes(q) ?? false),
-        );
+      if (filters?.searchType === "products" || productType) {
+        return matchesProductFilters(b, q);
       }
       return (
         b.name.toLowerCase().includes(q) ||
@@ -289,10 +314,13 @@ export async function getBusinesses(filters?: {
         b.services.some(
           (s) =>
             s.name.toLowerCase().includes(q) ||
-            s.description.toLowerCase().includes(q),
+            s.description.toLowerCase().includes(q) ||
+            (s.serviceType?.toLowerCase().includes(q) ?? false),
         )
       );
     });
+  } else if (productType) {
+    result = result.filter((b) => matchesProductFilters(b, ""));
   }
 
   if (filters?.category) {
@@ -303,8 +331,8 @@ export async function getBusinesses(filters?: {
     result = result.filter((b) => b.subcategory === filters.subcategory);
   }
 
-  if (viewer && scope && scope !== "nation") {
-    result = result.filter((b) => matchesFeedScope(viewer, b, scope));
+  if (viewer) {
+    result = result.filter(matchesLocation);
   }
 
   return rankBusinesses(result);

@@ -3,6 +3,7 @@ export type BusinessService = {
   description: string;
   price?: string;
   imageUrl?: string;
+  serviceType?: string;
   /** External purchase link, or in-app order form when actionType is "form". */
   actionType?: "link" | "form";
   actionUrl?: string;
@@ -18,7 +19,17 @@ export type BusinessSocialLinks = {
   youtube?: string;
 };
 
-export type DiscoveryRadius = "city" | "county" | "state" | "nation";
+export type DiscoveryRadius =
+  | "5"
+  | "10"
+  | "25"
+  | "50"
+  | "city"
+  | "county"
+  | "state"
+  | "nation";
+export type MileRadius = "5" | "10" | "25" | "50";
+export type AreaScope = "city" | "county" | "state" | "nation";
 export type FeedScope = DiscoveryRadius;
 
 export type PlanTier = "free" | "basic" | "pro" | "platinum";

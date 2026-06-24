@@ -10,7 +10,7 @@ import {
   getForumPosts,
 } from "@/lib/data";
 import { getTrendingBusinessPosts } from "@/lib/data/business";
-import { DEFAULT_DISCOVERY_RADIUS } from "@/lib/feed/location-scope";
+import { DEFAULT_DISCOVERY_RADIUS, resolveAreaScope } from "@/lib/feed/location-scope";
 
 const features = [
   {
@@ -43,10 +43,13 @@ export default async function HomePage() {
         industryInterests: profile.industryInterests,
       }
     : null;
-  const scope = profile?.discoveryRadius ?? profile?.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
+  const areaScope = resolveAreaScope(
+    undefined,
+    profile?.discoveryRadius ?? profile?.feedScope,
+  );
 
   const [businesses, posts, collaborations, trendingPosts] = await Promise.all([
-    getBusinesses({ scope, viewer }),
+    getBusinesses({ areaScope, viewer }),
     getForumPosts(),
     getCollaborations(),
     getTrendingBusinessPosts(4),
@@ -57,11 +60,8 @@ export default async function HomePage() {
       <section className="border-b border-border bg-gradient-to-b from-blue-50 to-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-              bizlist.app
-            </p>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
-              Listings. Feed. Partnerships.
+            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+              listings. feed . collaboration
             </h1>
             <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
               BizList helps local businesses get discovered, share updates and deals, hire talent,
@@ -116,7 +116,7 @@ export default async function HomePage() {
               <h2 className="text-2xl font-bold">Featured businesses</h2>
               <p className="mt-2 text-muted">
                 {viewer
-                  ? `Near your zip code and matching your interests in your ${scope} area.`
+                  ? `Near your zip code and matching your interests in your ${areaScope} area.`
                   : "Organizations hiring, seeking customers, or open to partnerships."}
               </p>
             </div>

@@ -12,7 +12,8 @@ import type {
   UserRole,
   PlanTier,
 } from "@/lib/types";
-import { normalizeDiscoveryRadius } from "@/lib/feed/location-scope";
+import { resolveAreaScope } from "@/lib/feed/location-scope";
+import type { AreaScope } from "@/lib/types";
 
 type ProfileRow = {
   id: string;
@@ -38,10 +39,8 @@ type ProfileRow = {
   created_at: string;
 };
 
-function mapDiscoveryRadius(row: ProfileRow): DiscoveryRadius {
-  return normalizeDiscoveryRadius(row.discovery_radius) ??
-    normalizeDiscoveryRadius(row.feed_scope) ??
-    "city";
+function mapDiscoveryRadius(row: ProfileRow): AreaScope {
+  return resolveAreaScope(row.discovery_radius, row.feed_scope);
 }
 
 type BusinessRow = {

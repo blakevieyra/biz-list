@@ -1,12 +1,14 @@
 "use client";
 
 import type { BusinessService } from "@/lib/types";
+import { SERVICE_TYPE_OPTIONS } from "@/lib/service-types";
 
 const emptyService = (): BusinessService => ({
   name: "",
   description: "",
   price: "",
   imageUrl: "",
+  serviceType: "Product",
   actionType: "form",
   actionUrl: "",
   actionLabel: "Place order",
@@ -50,6 +52,20 @@ export function ServicesEditor({
               placeholder="Product or service name"
               className="w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
+            <label className="block text-xs font-medium text-muted">
+              Type
+              <select
+                value={service.serviceType ?? "Product"}
+                onChange={(e) => update(index, { serviceType: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+              >
+                {SERVICE_TYPE_OPTIONS.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </label>
             <textarea
               value={service.description}
               onChange={(e) => update(index, { description: e.target.value })}
