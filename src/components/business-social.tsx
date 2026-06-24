@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { commentOnBusinessPost, submitBusinessReview } from "@/lib/actions/business";
 import { ContentLikeButton } from "@/components/content-like-button";
+import { BusinessPostComments } from "@/components/business-post-comments";
 import { PostMediaGallery, PostTypeBadge } from "@/components/post-media";
 import {
   contentLikeKey,
@@ -205,6 +206,17 @@ export function BusinessActivitySection({
                   {post.commentCount} comment{post.commentCount === 1 ? "" : "s"}
                 </p>
               </div>
+
+              {(post.recentComments?.length ?? 0) > 0 && (
+                <div className="mt-3 rounded-lg border border-border bg-slate-50/70 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Comments
+                  </p>
+                  <div className="mt-2">
+                    <BusinessPostComments comments={post.recentComments!} />
+                  </div>
+                </div>
+              )}
 
               <div className="mt-3 flex gap-2">
                 <input

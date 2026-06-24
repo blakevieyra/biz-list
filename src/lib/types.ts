@@ -136,6 +136,7 @@ export interface BusinessPostComment {
   authorName: string;
   body: string;
   createdAt: string;
+  isOwnerReply?: boolean;
 }
 
 export interface BusinessPost {

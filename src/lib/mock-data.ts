@@ -1,5 +1,6 @@
 import type {
   BusinessPost,
+  BusinessPostComment,
   BusinessProfile,
   BusinessReview,
   CollaborationIdea,
@@ -504,6 +505,59 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
   },
 ];
 
+export const SEED_BUSINESS_POST_COMMENTS: Array<
+  BusinessPostComment & { postId: string; authorId: string }
+> = [
+  {
+    id: "bpc-1",
+    postId: "bpost-1",
+    authorId: "user-4",
+    authorName: "Alex Rivera",
+    body: "Can't wait — will you post flavors here each week?",
+    createdAt: "2026-06-20T09:00:00Z",
+  },
+  {
+    id: "bpc-2",
+    postId: "bpost-1",
+    authorId: "user-1",
+    authorName: "Maria Chen",
+    body: "Yes! We post the lineup every Thursday here and on our listing.",
+    createdAt: "2026-06-20T10:15:00Z",
+  },
+  {
+    id: "bpc-3",
+    postId: "bpost-5",
+    authorId: "user-6",
+    authorName: "Sam Nguyen",
+    body: "Perfect timing — we need banners for a June pop-up.",
+    createdAt: "2026-06-21T11:00:00Z",
+  },
+  {
+    id: "bpc-4",
+    postId: "bpost-5",
+    authorId: "user-9",
+    authorName: "Elena Vasquez",
+    body: "Sam — message us your dimensions and we'll get you a quote today.",
+    createdAt: "2026-06-21T11:45:00Z",
+  },
+  {
+    id: "bpc-5",
+    postId: "bpost-8",
+    authorId: "user-5",
+    authorName: "Jordan Lee",
+    body: "Could our PTA pick up on Wednesdays after school?",
+    createdAt: "2026-06-21T14:00:00Z",
+  },
+  {
+    id: "bpc-6",
+    postId: "bpost-8",
+    authorId: "user-1",
+    authorName: "Maria Chen",
+    body: "Absolutely — message us through the listing and we'll save a box for you.",
+    createdAt: "2026-06-21T15:30:00Z",
+  },
+];
+
 export const SEED_BUSINESS_POSTS: BusinessPost[] = [
   {
     id: "bpost-1",
@@ -707,8 +761,31 @@ export function getUserById(id: string): UserProfile | undefined {
   return SEED_USERS.find((u) => u.id === id);
 }
 
+export function getBusinessPostCommentsForPost(
+  postId: string,
+  ownerId: string,
+): BusinessPostComment[] {
+  return SEED_BUSINESS_POST_COMMENTS.filter((c) => c.postId === postId)
+    .map(({ postId: _postId, authorId, ...comment }) => ({
+      ...comment,
+      isOwnerReply: authorId === ownerId,
+    }))
+    .sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+}
+
 export function getBusinessPostsForBusiness(businessId: string): BusinessPost[] {
-  return SEED_BUSINESS_POSTS.filter((p) => p.businessId === businessId);
+  const business = SEED_BUSINESSES.find((b) => b.id === businessId);
+  return SEED_BUSINESS_POSTS.filter((p) => p.businessId === businessId).map((post) => ({
+    ...post,
+    recentComments: business
+      ? getBusinessPostCommentsForPost(post.id, business.ownerId)
+      : [],
+    commentCount:
+      SEED_BUSINESS_POST_COMMENTS.filter((c) => c.postId === post.id).length ||
+      post.commentCount,
+  }));
 }
 
 export function getBusinessReviewsForBusiness(businessId: string): BusinessReview[] {

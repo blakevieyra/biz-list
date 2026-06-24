@@ -240,16 +240,6 @@ export default async function BusinessDetailPage({
 
           <div className="space-y-6 lg:col-span-2">
 
-            <Card id="about">
-
-              <h2 className="font-semibold">About</h2>
-
-              <p className="mt-3 text-sm leading-relaxed">{business.description}</p>
-
-            </Card>
-
-
-
             <BusinessActivitySection
 
               businessId={business.id}
@@ -428,6 +418,16 @@ export default async function BusinessDetailPage({
 
           <div className="space-y-6">
 
+            <Card id="about">
+
+              <h2 className="font-semibold">About</h2>
+
+              <p className="mt-3 text-sm leading-relaxed">{business.description}</p>
+
+            </Card>
+
+
+
             <Card>
 
               <h2 className="font-semibold">Details</h2>
@@ -542,20 +542,6 @@ export default async function BusinessDetailPage({
 
 
 
-            {business.importantInfo && (
-
-              <Card>
-
-                <h2 className="font-semibold">Important information</h2>
-
-                <p className="mt-3 text-sm leading-relaxed">{business.importantInfo}</p>
-
-              </Card>
-
-            )}
-
-
-
             <Card>
 
               <h2 className="font-semibold">What they&apos;re looking for</h2>
@@ -575,6 +561,20 @@ export default async function BusinessDetailPage({
               </div>
 
             </Card>
+
+
+
+            {business.importantInfo && (
+
+              <Card>
+
+                <h2 className="font-semibold">Important information</h2>
+
+                <p className="mt-3 text-sm leading-relaxed">{business.importantInfo}</p>
+
+              </Card>
+
+            )}
 
 
 

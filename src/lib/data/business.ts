@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getBusinessPostsForBusiness,
   getBusinessReviewsForBusiness,
+  getBusinessPostCommentsForPost,
   SEED_BUSINESSES,
   SEED_BUSINESS_POSTS,
 } from "@/lib/mock-data";
@@ -101,9 +102,59 @@ function authorName(
   return profiles.display_name;
 }
 
+type CommentRow = {
+  id: string;
+  post_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  profiles?: { display_name: string } | { display_name: string }[] | null;
+};
+
+function buildRecentCommentsMap(
+  comments: CommentRow[] | null | undefined,
+  ownerByPostId: Map<string, string>,
+  maxPerPost = 4,
+): { countMap: Map<string, number>; recentMap: Map<string, BusinessPostComment[]> } {
+  const countMap = new Map<string, number>();
+  const grouped = new Map<string, BusinessPostComment[]>();
+
+  for (const c of comments ?? []) {
+    countMap.set(c.post_id, (countMap.get(c.post_id) ?? 0) + 1);
+    const ownerId = ownerByPostId.get(c.post_id) ?? "";
+    const list = grouped.get(c.post_id) ?? [];
+    list.push({
+      id: c.id,
+      authorName: authorName(c.profiles),
+      body: c.body,
+      createdAt: c.created_at,
+      isOwnerReply: c.author_id === ownerId,
+    });
+    grouped.set(c.post_id, list);
+  }
+
+  const recentMap = new Map<string, BusinessPostComment[]>();
+  for (const [postId, list] of grouped) {
+    list.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    recentMap.set(postId, list.slice(-maxPerPost));
+  }
+
+  return { countMap, recentMap };
+}
+
 export async function getBusinessPosts(businessId: string): Promise<BusinessPost[]> {
   const supabase = await createClient();
   if (!supabase) return getBusinessPostsForBusiness(businessId);
+
+  const { data: businessRow } = await supabase
+    .from("businesses")
+    .select("owner_id")
+    .eq("id", businessId)
+    .maybeSingle();
+
+  const ownerId = businessRow?.owner_id ?? "";
 
   const { data: rows } = await supabase
     .from("business_posts")
@@ -116,13 +167,14 @@ export async function getBusinessPosts(businessId: string): Promise<BusinessPost
   const postIds = rows.map((r) => r.id);
   const { data: comments } = await supabase
     .from("business_post_comments")
-    .select("post_id")
-    .in("post_id", postIds);
+    .select("id, post_id, author_id, body, created_at, profiles(display_name)")
+    .in("post_id", postIds)
+    .order("created_at", { ascending: true });
 
-  const countMap = new Map<string, number>();
-  for (const c of comments ?? []) {
-    countMap.set(c.post_id, (countMap.get(c.post_id) ?? 0) + 1);
-  }
+  const { countMap, recentMap } = buildRecentCommentsMap(
+    comments as CommentRow[] | null,
+    new Map(postIds.map((id) => [id, ownerId])),
+  );
 
   const likeCounts = await getPostLikeCounts(postIds);
 
@@ -130,6 +182,7 @@ export async function getBusinessPosts(businessId: string): Promise<BusinessPost
     mapPostRow(row, {
       commentCount: countMap.get(row.id) ?? 0,
       likeCount: likeCounts.get(row.id) ?? 0,
+      recentComments: recentMap.get(row.id) ?? [],
     }),
   );
 }
@@ -214,6 +267,7 @@ type FeedBusinessMeta = {
   like_count?: number;
   rating_avg?: number;
   rating_count?: number;
+  owner_id?: string;
   city: string;
   state: string;
   zip_code?: string;
@@ -289,6 +343,10 @@ export async function getFeedBusinessPosts(options: {
         businessRatingCount: business.ratingCount,
         businessLikeCount: business.likeCount,
         isFollowed,
+        recentComments: getBusinessPostCommentsForPost(post.id, business.ownerId),
+        commentCount:
+          getBusinessPostCommentsForPost(post.id, business.ownerId).length ||
+          post.commentCount,
         feedBadge: assignFeedBadge(
           { ...post, isFollowed },
           business.likeCount,
@@ -314,7 +372,7 @@ export async function getFeedBusinessPosts(options: {
   let query = supabase
     .from("business_posts")
     .select(
-      "*, profiles(display_name), businesses(name, category, media_urls, like_count, rating_avg, rating_count, city, state, zip_code, county, latitude, longitude)",
+      "*, profiles(display_name), businesses(name, category, media_urls, like_count, rating_avg, rating_count, owner_id, city, state, zip_code, county, latitude, longitude)",
     )
     .order("created_at", { ascending: false })
     .limit(Math.max(limit * 3, 60));
@@ -345,27 +403,23 @@ export async function getFeedBusinessPosts(options: {
   );
 
   const postIds = filteredRows.slice(0, limit).map((r) => r.id);
+  const ownerByPostId = new Map(
+    filteredRows.slice(0, limit).map((row) => {
+      const meta = businessMetaFromRow(row.businesses);
+      return [row.id, meta?.owner_id ?? row.author_id] as const;
+    }),
+  );
+
   const { data: comments } = await supabase
     .from("business_post_comments")
-    .select("id, post_id, body, created_at, profiles(display_name)")
+    .select("id, post_id, author_id, body, created_at, profiles(display_name)")
     .in("post_id", postIds)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true });
 
-  const commentCountMap = new Map<string, number>();
-  const recentCommentsMap = new Map<string, BusinessPostComment[]>();
-  for (const c of comments ?? []) {
-    commentCountMap.set(c.post_id, (commentCountMap.get(c.post_id) ?? 0) + 1);
-    const list = recentCommentsMap.get(c.post_id) ?? [];
-    if (list.length < 2) {
-      list.push({
-        id: c.id,
-        authorName: authorName(c.profiles),
-        body: c.body,
-        createdAt: c.created_at,
-      });
-      recentCommentsMap.set(c.post_id, list);
-    }
-  }
+  const { countMap, recentMap } = buildRecentCommentsMap(
+    comments as CommentRow[] | null,
+    ownerByPostId,
+  );
 
   const likeCounts = await getPostLikeCounts(postIds);
 
@@ -382,9 +436,9 @@ export async function getFeedBusinessPosts(options: {
       businessRatingAvg,
       businessRatingCount,
       businessLikeCount,
-      commentCount: commentCountMap.get(row.id) ?? 0,
+      commentCount: countMap.get(row.id) ?? 0,
       likeCount: likeCounts.get(row.id) ?? 0,
-      recentComments: recentCommentsMap.get(row.id) ?? [],
+      recentComments: recentMap.get(row.id) ?? [],
       isFollowed,
     });
     return {

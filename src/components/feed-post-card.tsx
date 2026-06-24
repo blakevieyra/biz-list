@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { commentOnBusinessPost } from "@/lib/actions/business";
+import { BusinessPostComments } from "@/components/business-post-comments";
 import { ContentLikeButton } from "@/components/content-like-button";
 import { PostTypeBadge } from "@/components/post-media";
 import { isImageUrl } from "@/lib/media/post-media";
@@ -17,14 +18,12 @@ const badgeLabels: Record<FeedPostBadge, string> = {
   popular: "Popular",
 };
 
-function LazyMedia({
+function LazyAvatar({
   src,
   alt,
-  className,
 }: {
   src?: string;
   alt: string;
-  className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -46,7 +45,10 @@ function LazyMedia({
   }, [src]);
 
   return (
-    <div ref={ref} className={`overflow-hidden bg-slate-100 ${className ?? ""}`}>
+    <div
+      ref={ref}
+      className="aspect-square w-full overflow-hidden rounded-xl border border-border bg-slate-100"
+    >
       {visible && src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
@@ -70,8 +72,8 @@ export function FeedPostCard({
   const [pending, startTransition] = useTransition();
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const mediaSrc =
-    post.mediaUrls.find(isImageUrl) ?? post.businessMediaUrl ?? undefined;
+  const avatarSrc = post.businessMediaUrl;
+  const postMediaSrc = post.mediaUrls.find(isImageUrl);
 
   function handleComment(e: React.FormEvent) {
     e.preventDefault();
@@ -94,21 +96,16 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="flex flex-col sm:flex-row">
-        <Link
-          href={`/listings/${post.businessId}`}
-          className="block w-full shrink-0 sm:w-36 md:w-40"
-        >
-          <LazyMedia
-            src={mediaSrc}
-            alt={post.businessName ?? "Business"}
-            className="aspect-square h-full min-h-[120px] border-b border-border sm:min-h-[140px] sm:border-b-0 sm:border-r"
-          />
-        </Link>
+      <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7rem_minmax(0,1fr)]">
+        <div className="border-b border-border bg-slate-50/80 p-3 sm:border-b-0 sm:border-r">
+          <Link href={`/listings/${post.businessId}`} className="block">
+            <LazyAvatar src={avatarSrc} alt={post.businessName ?? "Business"} />
+          </Link>
+        </div>
 
-        <div className="min-w-0 flex-1 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0">
+        <div className="min-w-0 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <PostTypeBadge type={post.postType} />
                 {post.feedBadge && (
@@ -119,15 +116,17 @@ export function FeedPostCard({
               </div>
               <Link
                 href={`/listings/${post.businessId}`}
-                className="mt-1 block text-sm font-semibold text-accent hover:underline"
+                className="mt-1 block truncate text-sm font-semibold text-accent hover:underline"
               >
                 {post.businessName ?? "Local business"}
               </Link>
               {post.businessCategory && (
-                <p className="text-xs text-muted">{post.businessCategory}</p>
+                <p className="truncate text-xs text-muted">{post.businessCategory}</p>
               )}
             </div>
-            <span className="shrink-0 text-xs text-muted">{formatPostDateTime(post.createdAt)}</span>
+            <span className="shrink-0 text-right text-xs leading-snug text-muted">
+              {formatPostDateTime(post.createdAt)}
+            </span>
           </div>
 
           {(post.businessRatingCount ?? 0) > 0 && (
@@ -140,7 +139,19 @@ export function FeedPostCard({
           )}
 
           <h3 className="mt-2 text-base font-semibold leading-snug">{post.title}</h3>
-          <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted">{post.body}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted">{post.body}</p>
+
+          {postMediaSrc && postMediaSrc !== avatarSrc && (
+            <div className="mt-3 overflow-hidden rounded-lg border border-border bg-slate-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={postMediaSrc}
+                alt=""
+                loading="lazy"
+                className="max-h-40 w-full object-cover"
+              />
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <ContentLikeButton
@@ -164,14 +175,9 @@ export function FeedPostCard({
       {(post.recentComments?.length ?? 0) > 0 && (
         <div className="border-t border-border bg-slate-50/70 px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Comments</p>
-          <ul className="mt-2 space-y-2">
-            {post.recentComments!.map((item) => (
-              <li key={item.id} className="text-sm">
-                <span className="font-medium">{item.authorName}</span>
-                <span className="text-muted"> · {item.body}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-2">
+            <BusinessPostComments comments={post.recentComments!} />
+          </div>
         </div>
       )}
 

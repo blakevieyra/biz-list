@@ -506,16 +506,30 @@ async function main() {
     await client.query(
       `insert into public.business_post_comments (post_id, author_id, body)
        select $1, $2, $3 where not exists (
-         select 1 from public.business_post_comments where post_id = $1 and author_id = $2
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
        )`,
       [postIds[0], ids.alex, "Can't wait — will you post flavors here each week?"],
     );
     await client.query(
       `insert into public.business_post_comments (post_id, author_id, body)
        select $1, $2, $3 where not exists (
-         select 1 from public.business_post_comments where post_id = $1 and author_id = $2
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[0], ids.maria, "Yes! We post the lineup every Thursday here and on our listing."],
+    );
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
        )`,
       [postIds[4], ids.sam, "Perfect timing — we need banners for a June pop-up."],
+    );
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[4], ids.elena, "Sam — message us your dimensions and we'll get you a quote today."],
     );
 
     await client.query(
