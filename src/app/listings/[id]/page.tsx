@@ -36,6 +36,8 @@ import {
 } from "@/lib/data";
 
 import { getBusinessPosts, getBusinessReviews, getExistingJobApplication } from "@/lib/data/business";
+import { getBusinessEvents } from "@/lib/data/events";
+import { EventCard } from "@/components/event-card";
 
 import { getBusinessContentLikeState } from "@/lib/data/content-likes";
 
@@ -80,7 +82,7 @@ export default async function BusinessDetailPage({
 
 
 
-  const [owner, connectionState, posts, reviews] = await Promise.all([
+  const [owner, connectionState, posts, reviews, events] = await Promise.all([
 
     getProfileById(business.ownerId),
 
@@ -89,6 +91,8 @@ export default async function BusinessDetailPage({
     getBusinessPosts(business.id, userId),
 
     getBusinessReviews(business.id),
+
+    getBusinessEvents({ businessId: business.id, userId, limit: 6 }),
 
   ]);
 
@@ -277,6 +281,42 @@ export default async function BusinessDetailPage({
               isOwner={isOwner}
 
             />
+
+            <BusinessReviewsSection
+
+              businessId={business.id}
+
+              reviews={reviews}
+
+              currentUserId={userId}
+
+              isOwner={isOwner}
+
+            />
+
+            {events.length > 0 && (
+
+              <div>
+
+                <div className="mb-3 flex items-center justify-between">
+
+                  <h2 className="font-semibold">Upcoming events</h2>
+
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+
+                  {events.map((event) => (
+
+                    <EventCard key={event.id} event={event} />
+
+                  ))}
+
+                </div>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -487,20 +527,6 @@ export default async function BusinessDetailPage({
 
 
           <div className="space-y-6 lg:col-span-3 lg:row-start-2">
-
-            <BusinessReviewsSection
-
-              businessId={business.id}
-
-              reviews={reviews}
-
-              currentUserId={userId}
-
-              isOwner={isOwner}
-
-            />
-
-
 
             {business.isHiring && !isOwner && (
 

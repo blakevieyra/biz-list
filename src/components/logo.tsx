@@ -22,7 +22,7 @@ export function Logo({
 
   const content = (
     <Image
-      src="/BizList-logo.png"
+      src="/bizlist-logo.png"
       alt={showText ? "BizList" : "BizList home"}
       width={dims.width}
       height={dims.height}
@@ -61,7 +61,7 @@ export function LogoMark({
   return (
     <div className={`text-center ${className}`}>
       <Image
-        src="/BizList-logo.png"
+        src="/bizlist-logo.png"
         alt="BizList"
         width={dims.width}
         height={dims.height}
