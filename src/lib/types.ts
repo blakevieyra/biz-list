@@ -3,6 +3,7 @@ export type BusinessService = {
   description: string;
   price?: string;
   imageUrl?: string;
+  quantity?: string;
   serviceType?: string;
   /** External purchase link, or in-app order form when actionType is "form". */
   actionType?: "link" | "form";

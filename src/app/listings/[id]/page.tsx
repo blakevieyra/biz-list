@@ -199,7 +199,7 @@ export default async function BusinessDetailPage({
 
 
 
-          <div className="mt-4 flex flex-wrap gap-3 text-base">
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
 
             <span className="rounded-full bg-blue-50 px-4 py-1.5 font-medium text-accent">
 
@@ -233,45 +233,37 @@ export default async function BusinessDetailPage({
 
             )}
 
+            {business.website && (
+
+              <SafeExternalLink
+
+                url={business.website}
+
+                label="Visit website"
+
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-1.5 font-medium hover:border-accent/40 hover:text-accent"
+
+              />
+
+            )}
+
+            {socialEntries.map(([network, url]) => (
+
+              <SafeExternalLink
+
+                key={network}
+
+                url={url!}
+
+                label={socialPlatformLabel(network)}
+
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-muted hover:border-accent/40 hover:text-foreground"
+
+              />
+
+            ))}
+
           </div>
-
-          {(business.website || socialEntries.length > 0) && (
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-
-              {business.website && (
-
-                <SafeExternalLink
-
-                  url={business.website}
-
-                  label="Visit website"
-
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-accent/40 hover:text-accent"
-
-                />
-
-              )}
-
-              {socialEntries.map(([network, url]) => (
-
-                <SafeExternalLink
-
-                  key={network}
-
-                  url={url!}
-
-                  label={socialPlatformLabel(network)}
-
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm text-muted hover:border-accent/40 hover:text-foreground"
-
-                />
-
-              ))}
-
-            </div>
-
-          )}
 
         </div>
 
@@ -302,8 +294,6 @@ export default async function BusinessDetailPage({
               isOwner={isOwner}
 
               contentLikes={contentLikes}
-
-              maxPosts={1}
 
             />
 

@@ -140,23 +140,17 @@ export function BusinessActivitySection({
   currentUserId,
   isOwner,
   contentLikes = { counts: {}, userLiked: [] },
-  maxPosts,
 }: {
   businessId: string;
   posts: BusinessPost[];
   currentUserId: string | null;
   isOwner: boolean;
   contentLikes?: ContentLikeState;
-  maxPosts?: number;
 }) {
-  const visiblePosts = maxPosts ? posts.slice(0, maxPosts) : posts;
-  const hiddenCount = maxPosts ? Math.max(0, posts.length - maxPosts) : 0;
-  const compact = maxPosts === 1;
-
   return (
     <Card id="activity">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">{compact ? "Latest update" : "Business activity"}</h2>
+        <h2 className="font-semibold">Posts</h2>
         {isOwner && (
           <a href="/dashboard/posts" className="text-xs text-accent hover:underline">
             Manage posts →
@@ -164,52 +158,52 @@ export function BusinessActivitySection({
         )}
       </div>
 
-      <ul className="mt-3 space-y-4">
-        {visiblePosts.length === 0 && (
-          <li className="text-sm text-muted">
-            No activity yet.{" "}
-            {isOwner ? "Publish updates from Posts & marketing." : ""}
-          </li>
-        )}
-        {visiblePosts.map((post) => {
-          const likeKey = contentLikeKey("post", post.id);
-          return (
-            <li
-              key={post.id}
-              id={`post-${post.id}`}
-              className={`scroll-mt-24 rounded-xl border border-border ${compact ? "p-3" : "p-4"}`}
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <PostTypeBadge type={post.postType} />
-                <h3 className={`font-medium ${compact ? "text-sm" : ""}`}>{post.title}</h3>
-                {!compact && post.isTrending && (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    Trending
-                  </span>
-                )}
-              </div>
-              <p className={`mt-2 leading-relaxed text-muted ${compact ? "line-clamp-3 text-xs" : "text-sm"}`}>
-                {post.body}
-              </p>
-              {!compact && post.mediaUrls.length > 0 && (
-                <div className="mt-3">
-                  <PostMediaGallery urls={post.mediaUrls} />
+      {posts.length === 0 ? (
+        <p className="mt-3 text-sm text-muted">
+          No posts yet.{isOwner ? " Publish updates from Posts & marketing." : ""}
+        </p>
+      ) : (
+        <ul className="mt-3 max-h-[48rem] space-y-4 overflow-y-auto pr-1">
+          {posts.map((post) => {
+            const likeKey = contentLikeKey("post", post.id);
+            return (
+              <li
+                key={post.id}
+                id={`post-${post.id}`}
+                className="scroll-mt-24 rounded-xl border border-border p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <PostTypeBadge type={post.postType} />
+                  <h3 className="font-medium leading-snug">{post.title}</h3>
+                  {post.isTrending && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      Trending
+                    </span>
+                  )}
                 </div>
-              )}
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <ContentLikeButton
-                  businessId={businessId}
-                  targetType="post"
-                  targetId={post.id}
-                  initialCount={contentLikes.counts[likeKey] ?? post.likeCount}
-                  initialLiked={isContentLiked(contentLikes, "post", post.id)}
-                />
-                <p className="text-xs text-muted">
-                  {post.commentCount} comment{post.commentCount === 1 ? "" : "s"}
-                </p>
-              </div>
 
-              {!compact && (
+                <p className="mt-2 text-sm leading-relaxed text-muted">{post.body}</p>
+
+                {post.mediaUrls.length > 0 && (
+                  <div className="mt-3">
+                    <PostMediaGallery urls={post.mediaUrls} />
+                  </div>
+                )}
+
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <ContentLikeButton
+                    businessId={businessId}
+                    targetType="post"
+                    targetId={post.id}
+                    initialCount={contentLikes.counts[likeKey] ?? post.likeCount}
+                    initialLiked={isContentLiked(contentLikes, "post", post.id)}
+                  />
+                  <p className="text-xs text-muted">
+                    {post.commentCount} comment{post.commentCount === 1 ? "" : "s"}
+                  </p>
+                  <p className="ml-auto text-xs text-muted">{formatPostDateTime(post.createdAt)}</p>
+                </div>
+
                 <div className="mt-3 rounded-lg border border-border bg-slate-50/70 p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Comments
@@ -225,20 +219,10 @@ export function BusinessActivitySection({
                     />
                   </div>
                 </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-
-      {hiddenCount > 0 && (
-        <p className="mt-3 text-xs text-muted">
-          {hiddenCount} more update{hiddenCount === 1 ? "" : "s"} on the{" "}
-          <a href="/feed" className="text-accent hover:underline">
-            feed
-          </a>
-          .
-        </p>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </Card>
   );
