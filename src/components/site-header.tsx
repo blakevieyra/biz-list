@@ -128,23 +128,19 @@ export async function SiteHeader() {
 
 export function SiteFooter() {
   const footerLinks = [
-    { href: "/feed", label: "Post" },
-    { href: "/listings", label: "Listing" },
-    { href: "/partnerships", label: "Collaboration" },
-    { href: "/events", label: "Events" },
-    { href: "/messages", label: "Messages" },
+    { href: "/help", label: "Help" },
+    { href: "/terms", label: "Terms" },
+    { href: "/privacy", label: "Privacy" },
+    { href: "/support", label: "Support" },
   ];
 
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
-          <div className="shrink-0">
-            <Logo size="lg" href="/" />
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">
-              BizList — local business listings, feed, and partnerships.
-            </p>
-          </div>
+          <p className="max-w-md text-sm leading-relaxed text-muted">
+            © 2026 BizList — local business latest, listings and partnerships.
+          </p>
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:justify-end lg:gap-x-8">
             {footerLinks.map((link) => (
               <Link
