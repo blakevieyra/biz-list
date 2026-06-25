@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, PageHeader } from "@/components/ui";
 
-const FAQ: { q: string; a: React.ReactNode }[] = [
+const FAQ: { q: string; a: ReactNode }[] = [
   {
     q: "How do I create an account?",
     a: (
