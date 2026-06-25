@@ -714,22 +714,30 @@ export async function updateJobApplicationStatus(input: {
 export async function submitServiceOrder(input: {
   businessId: string;
   serviceName: string;
-  message: string;
   quantity?: string;
+  dateNeeded?: string;
+  fulfillment?: string;
+  notes?: string;
+  /** Legacy field — kept for backward compat; prefer notes. */
+  message?: string;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to place orders." };
 
   try {
     const { supabase, user } = await requireUser();
-    const message = input.message.trim().slice(0, 2000);
-    const quantity = input.quantity?.trim().slice(0, 100) ?? "";
     const serviceName = input.serviceName.trim().slice(0, 120);
+    const quantity = input.quantity?.trim().slice(0, 200) ?? "";
+    const dateNeeded = input.dateNeeded?.trim().slice(0, 20) ?? "";
+    const fulfillment = input.fulfillment?.trim().slice(0, 60) ?? "";
+    const notes = (input.notes ?? input.message ?? "").trim().slice(0, 2000);
 
     if (!serviceName) return { error: "Service name is required." };
-    if (!message) return { error: "Tell the business what you need." };
+    if (!quantity && !notes) return { error: "Please fill in at least the quantity or a note for the business." };
 
-    const moderation = moderateUserContent(message, "Order");
-    if (!moderation.ok) return { error: moderation.reason };
+    if (notes) {
+      const moderation = moderateUserContent(notes, "Order");
+      if (!moderation.ok) return { error: moderation.reason };
+    }
 
     const { data: business } = await supabase
       .from("businesses")
@@ -748,11 +756,20 @@ export async function submitServiceOrder(input: {
       return { error: "This offering was not found." };
     }
 
+    // Build a structured summary stored in the message column
+    const messageParts = [
+      quantity ? `Amount / quantity: ${quantity}` : null,
+      dateNeeded ? `Date needed: ${dateNeeded}` : null,
+      fulfillment ? `Fulfillment: ${fulfillment}` : null,
+      notes ? `Notes: ${notes}` : null,
+    ].filter(Boolean);
+    const structuredMessage = messageParts.join("\n");
+
     const { error } = await supabase.from("service_orders").insert({
       business_id: input.businessId,
       customer_id: user.id,
       service_name: serviceName,
-      message,
+      message: structuredMessage,
       quantity,
       status: "pending",
     });
@@ -779,7 +796,7 @@ export async function submitServiceOrder(input: {
         user_id: business.owner_id,
         type: "message",
         title: "New service order",
-        body: `${customerName} ordered ${serviceName} at ${business.name}`,
+        body: `${customerName} requested ${serviceName} at ${business.name}`,
         link: "/dashboard/orders",
       });
     }
@@ -793,7 +810,7 @@ export async function submitServiceOrder(input: {
         customerName,
         business.name,
         serviceName,
-        message,
+        structuredMessage,
         quantity,
       );
     }
@@ -804,7 +821,7 @@ export async function submitServiceOrder(input: {
         customerName,
         business.name,
         serviceName,
-        message,
+        structuredMessage,
         quantity,
         listingLink,
       );
