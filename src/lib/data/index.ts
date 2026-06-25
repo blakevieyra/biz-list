@@ -32,7 +32,11 @@ import {
 } from "@/lib/feed/location-scope";
 import type { AreaScope, MileRadius } from "@/lib/types";
 import { normalizeServiceType } from "@/lib/service-types";
-import { enrichLocationCoordinates, enrichManyLocationCoordinates } from "@/lib/geo/location-coords";
+import {
+  enrichLocationCoordinates,
+  enrichManyLocationCoordinates,
+  filterByDiscoveryRadius,
+} from "@/lib/geo/location-coords";
 import {
   mapBusiness,
   mapCollaboration,
@@ -266,11 +270,7 @@ export async function getBusinesses(filters?: {
     });
 
     if (viewer) {
-      const enrichedViewer = await enrichLocationCoordinates(viewer);
-      const enrichedResult = await enrichManyLocationCoordinates(result);
-      result = enrichedResult.filter((b) =>
-        matchesDiscoveryRadius(enrichedViewer, b, discoveryRadius),
-      );
+      result = await filterByDiscoveryRadius(result, viewer, discoveryRadius);
     }
 
     return rankBusinesses(result);
@@ -337,11 +337,7 @@ export async function getBusinesses(filters?: {
   }
 
   if (viewer) {
-    const enrichedViewer = await enrichLocationCoordinates(viewer);
-    const enrichedBusinesses = await enrichManyLocationCoordinates(result);
-    result = enrichedBusinesses.filter((b) =>
-      matchesDiscoveryRadius(enrichedViewer, b, discoveryRadius),
-    );
+    result = await filterByDiscoveryRadius(result, viewer, discoveryRadius);
   }
 
   return rankBusinesses(result);
@@ -504,14 +500,16 @@ export async function getCollaborations(
 ): Promise<CollaborationIdea[]> {
   const supabase = await getSupabase();
   if (!supabase) {
-    return type
+    const seed = type
       ? SEED_COLLABORATIONS.filter((item) => item.collaborationType === type)
       : SEED_COLLABORATIONS;
+    return seed.filter((item) => Boolean(item.businessId));
   }
 
   let query = supabase
     .from("collaborations")
-    .select("*, profiles(display_name)")
+    .select("*, profiles(display_name, role), businesses(name)")
+    .not("business_id", "is", null)
     .order("created_at", { ascending: false });
 
   if (type) {
@@ -519,7 +517,8 @@ export async function getCollaborations(
   }
 
   const { data: rows } = await query;
-  return (rows as CollaborationRow[] | null)?.map(mapCollaboration) ?? [];
+  const mapped = (rows as CollaborationRow[] | null)?.map(mapCollaboration) ?? [];
+  return mapped.filter((item) => item.businessId);
 }
 
 export async function getCollaborationById(id: string): Promise<CollaborationIdea | null> {

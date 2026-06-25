@@ -1,4 +1,10 @@
-import { normalizeZipCode } from "@/lib/feed/location-scope";
+import {
+  matchesDiscoveryRadius,
+  normalizeZipCode,
+  type DiscoveryViewer,
+  type LocationProfile,
+} from "@/lib/feed/location-scope";
+import type { DiscoveryRadius } from "@/lib/types";
 import { geocodeUsZipCode } from "@/lib/geo/geocode";
 
 export type LocatableProfile = {
@@ -55,4 +61,25 @@ export async function enrichManyLocationCoordinates<T extends LocatableProfile>(
 ): Promise<T[]> {
   const cache = new Map<string, { latitude: number; longitude: number } | null>();
   return Promise.all(profiles.map((profile) => enrichLocationCoordinates(profile, cache)));
+}
+
+export async function filterByDiscoveryRadius<T extends LocationProfile>(
+  items: T[],
+  viewer: DiscoveryViewer | null | undefined,
+  radius: DiscoveryRadius,
+): Promise<T[]> {
+  if (!viewer) return items;
+
+  const cache = new Map<string, { latitude: number; longitude: number } | null>();
+  const enrichedViewer = await enrichLocationCoordinates(viewer, cache);
+
+  const results: T[] = [];
+  for (const item of items) {
+    const enrichedItem = await enrichLocationCoordinates(item, cache);
+    if (matchesDiscoveryRadius(enrichedViewer, enrichedItem, radius)) {
+      results.push(item);
+    }
+  }
+
+  return results;
 }

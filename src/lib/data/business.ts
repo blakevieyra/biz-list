@@ -27,6 +27,7 @@ import {
   matchesDiscoveryRadius,
   type DiscoveryViewer,
 } from "@/lib/feed/location-scope";
+import { filterByDiscoveryRadius } from "@/lib/geo/location-coords";
 
 
 type BusinessPostRow = {
@@ -381,10 +382,7 @@ export async function getFeedBusinessPosts(options: {
 }): Promise<BusinessPost[]> {
   const limit = options.limit ?? 40;
   const viewer = options.viewer;
-  const discoveryRadius =
-    options.discoveryRadius ??
-    options.mileRadius ??
-    (options.areaScope ?? "city");
+  const discoveryRadius = options.discoveryRadius ?? options.mileRadius ?? options.areaScope ?? "city";
   const typeSet = options.postTypes ? new Set(options.postTypes) : null;
 
   const supabase = await createClient();
@@ -392,16 +390,16 @@ export async function getFeedBusinessPosts(options: {
   if (!supabase) {
     let posts = [...SEED_BUSINESS_POSTS];
     if (typeSet) posts = posts.filter((p) => typeSet.has(p.postType));
-    posts = posts.map((post) => {
+
+    const candidates: BusinessPost[] = [];
+    for (const post of posts) {
       const business = SEED_BUSINESSES.find((b) => b.id === post.businessId);
-      if (!business) return post;
-      if (viewer) {
-        if (!matchesDiscoveryRadius(viewer, business, discoveryRadius)) return null;
-      }
+      if (!business) continue;
+
       const isFollowed = options.userId
         ? business.followerIds.includes(options.userId)
         : false;
-      const enriched: BusinessPost = {
+      candidates.push({
         ...post,
         businessName: business.name,
         businessCategory: business.category,
@@ -420,11 +418,22 @@ export async function getFeedBusinessPosts(options: {
           business.ratingAvg,
           business.ratingCount,
         ),
-      };
-      return enriched;
-    }).filter((p): p is BusinessPost => p !== null);
+      });
+    }
 
-    return sortFeedPosts(posts).slice(0, limit);
+    if (viewer) {
+      const businessById = new Map(SEED_BUSINESSES.map((b) => [b.id, b]));
+      const filtered: BusinessPost[] = [];
+      for (const post of candidates) {
+        const business = businessById.get(post.businessId);
+        if (!business) continue;
+        const [match] = await filterByDiscoveryRadius([business], viewer, discoveryRadius);
+        if (match) filtered.push(post);
+      }
+      return sortFeedPosts(filtered).slice(0, limit);
+    }
+
+    return sortFeedPosts(candidates).slice(0, limit);
   }
 
   let followedIds = new Set<string>();
@@ -451,23 +460,30 @@ export async function getFeedBusinessPosts(options: {
   const { data: rows } = await query;
   if (!rows?.length) return sortFeedPosts(SEED_BUSINESS_POSTS.slice(0, limit));
 
-  const filteredRows = (rows as (BusinessPostRow & { businesses?: FeedBusinessMeta | FeedBusinessMeta[] | null })[]).filter(
-    (row) => {
-      const meta = businessMetaFromRow(row.businesses);
-      if (!meta || !viewer) return true;
-      const location = {
-        city: meta.city,
-        state: meta.state,
-        county: meta.county ?? "",
-        zipCode: meta.zip_code ?? "",
-        country: meta.country ?? "US",
-        latitude: meta.latitude ?? undefined,
-        longitude: meta.longitude ?? undefined,
-      };
-      if (!matchesDiscoveryRadius(viewer, location, discoveryRadius)) return false;
-      return true;
-    },
-  );
+  const filteredRows: (BusinessPostRow & {
+    businesses?: FeedBusinessMeta | FeedBusinessMeta[] | null;
+  })[] = [];
+
+  for (const row of rows as (BusinessPostRow & {
+    businesses?: FeedBusinessMeta | FeedBusinessMeta[] | null;
+  })[]) {
+    const meta = businessMetaFromRow(row.businesses);
+    if (!meta || !viewer) {
+      filteredRows.push(row);
+      continue;
+    }
+    const location = {
+      city: meta.city,
+      state: meta.state,
+      county: meta.county ?? "",
+      zipCode: meta.zip_code ?? "",
+      country: meta.country ?? "US",
+      latitude: meta.latitude ?? undefined,
+      longitude: meta.longitude ?? undefined,
+    };
+    const [match] = await filterByDiscoveryRadius([location], viewer, discoveryRadius);
+    if (match) filteredRows.push(row);
+  }
 
   const postIds = filteredRows.slice(0, limit).map((r) => r.id);
   const ownerByPostId = new Map(

@@ -1,9 +1,19 @@
 /** Resolve US zip codes to lat/lng via Zippopotam (no API key). */
+const KNOWN_US_ZIP_COORDS: Record<string, { latitude: number; longitude: number }> = {
+  "78701": { latitude: 30.2711, longitude: -97.7437 },
+  "78704": { latitude: 30.2433, longitude: -97.7698 },
+  "78613": { latitude: 30.5217, longitude: -97.8278 },
+  "78664": { latitude: 30.5083, longitude: -97.6789 },
+};
+
 export async function geocodeUsZipCode(
   zip: string,
 ): Promise<{ latitude: number; longitude: number } | null> {
   const normalized = zip.replace(/\D/g, "").slice(0, 5);
   if (normalized.length !== 5) return null;
+
+  const known = KNOWN_US_ZIP_COORDS[normalized];
+  if (known) return known;
 
   try {
     const response = await fetch(`https://api.zippopotam.us/us/${normalized}`, {

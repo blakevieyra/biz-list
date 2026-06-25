@@ -88,17 +88,17 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-1 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7.5rem_minmax(0,1fr)]">
+      <div className="grid min-h-[22rem] grid-cols-1 md:grid-cols-2">
+        <div className="flex min-h-[18rem] min-w-0 flex-col border-b border-border md:min-h-[22rem] md:border-b-0 md:border-r">
+          <div className="grid h-full min-h-0 flex-1 grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7.5rem_minmax(0,1fr)]">
             <Link
               href={`/listings/${post.businessId}`}
-              className="relative block min-h-[7.5rem] overflow-hidden border-r border-border bg-slate-100 sm:min-h-full"
+              className="relative block h-full min-h-[18rem] overflow-hidden border-r border-border bg-slate-100 md:min-h-0"
             >
               <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
             </Link>
 
-            <div className="min-w-0 p-4">
+            <div className="flex min-h-0 flex-1 flex-col p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -133,22 +133,26 @@ export function FeedPostCard({
                 </span>
               </div>
 
-              <h3 className="mt-2 text-base font-semibold leading-snug">{post.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-muted">{post.body}</p>
+              <div className="mt-2 min-h-0 flex-1">
+                <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
+                <p className="mt-1 line-clamp-4 text-sm leading-relaxed text-muted sm:line-clamp-5">
+                  {post.body}
+                </p>
 
-              {postMediaSrc && postMediaSrc !== avatarSrc && (
-                <div className="mt-3 overflow-hidden rounded-lg border border-border bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={postMediaSrc}
-                    alt=""
-                    loading="lazy"
-                    className="max-h-40 w-full object-cover"
-                  />
-                </div>
-              )}
+                {postMediaSrc && postMediaSrc !== avatarSrc && (
+                  <div className="mt-3 overflow-hidden rounded-lg border border-border bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={postMediaSrc}
+                      alt=""
+                      loading="lazy"
+                      className="max-h-36 w-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
                 <ContentLikeButton
                   businessId={post.businessId}
                   targetType="post"
@@ -168,9 +172,11 @@ export function FeedPostCard({
           </div>
         </div>
 
-        <div className="flex max-h-80 flex-col border-t border-border bg-slate-50/60 px-3 py-3 md:max-h-none md:border-l md:border-t-0">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Comments</p>
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        <div className="flex min-h-[16rem] flex-col bg-slate-50/60 md:min-h-[22rem] md:h-full">
+          <p className="shrink-0 border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
+            Comments
+          </p>
+          <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
             <BusinessPostCommentThread
               postId={post.id}
               businessId={post.businessId}

@@ -13,6 +13,11 @@ export default async function DashboardEventsPage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/profile/create");
 
+  const isBusinessAccount = profile.role === "business" || profile.role === "organization";
+  if (!isBusinessAccount) {
+    redirect("/events");
+  }
+
   const business = await getBusinessByOwnerId(userId);
   if (!business) {
     return (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { UpgradeButton } from "@/components/upgrade-button";
-import { annualSavings, BIZLIST_PLUS_LABEL, formatPlanPrice, PLAN_PRICES } from "@/lib/plans";
+import { annualSavings, BIZLIST_PLUS_FEATURES, BIZLIST_PLUS_LABEL, formatPlanPrice, PLAN_PRICES } from "@/lib/plans";
 import type { BillingInterval } from "@/lib/types";
 
 const communityFeatures = [
@@ -19,13 +19,7 @@ const proFeatures = [
   "AI online presence audit with website & profile scores",
   "Lead generation from followers, interests, and job seekers",
   "Trending post boost for high engagement",
-];
-
-const customerProFeatures = [
-  "Job alerts and business matches based on your skills and interests",
-  "First pick on deals, sales, and new product releases",
-  "Notifications when followed businesses publish local events",
-  "Everything in free Community membership",
+  `All ${BIZLIST_PLUS_LABEL} perks included (job alerts, early deals, event notifications)`,
 ];
 
 const platinumFeatures = [
@@ -67,7 +61,8 @@ export function PricingPlans() {
       <div className="mb-10" id="bizlist-plus">
         <h2 className="mb-2 text-2xl font-bold">For customers & job seekers</h2>
         <p className="mb-6 text-sm text-muted">
-          {BIZLIST_PLUS_LABEL} is separate from business plans — built for people who want alerts, matches, and early access.
+          {BIZLIST_PLUS_LABEL} for customer accounts. Business Pro and Platinum include the same perks
+          at no extra charge.
         </p>
         <div className="grid gap-6 md:grid-cols-2">
           <PlanCard
@@ -78,7 +73,7 @@ export function PricingPlans() {
             interval={interval}
             savings={isAnnual ? annualSavings("customerPro") : undefined}
             description="Alerts, matches, early deals, and event notifications."
-            features={customerProFeatures}
+            features={[...BIZLIST_PLUS_FEATURES]}
             highlighted
             cta={{
               label: isAnnual ? `${BIZLIST_PLUS_LABEL} — yearly` : `${BIZLIST_PLUS_LABEL} — monthly`,

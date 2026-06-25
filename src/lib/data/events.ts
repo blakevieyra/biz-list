@@ -1,11 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { SEED_BUSINESS_EVENTS } from "@/lib/mock-data";
 import {
-  matchesAreaScope,
-  matchesMileRadius,
   type DiscoveryViewer,
 } from "@/lib/feed/location-scope";
-import type { AreaScope, BusinessEvent, MileRadius } from "@/lib/types";
+import type { AreaScope, BusinessEvent, DiscoveryRadius, MileRadius } from "@/lib/types";
+import { filterByDiscoveryRadius } from "@/lib/geo/location-coords";
 import { isIndustryOption } from "@/lib/industries";
 
 type EventRow = {
@@ -124,14 +123,35 @@ async function attachRsvpCounts(
   }));
 }
 
+async function filterEventsByDiscovery(
+  events: BusinessEvent[],
+  viewer: DiscoveryViewer | null | undefined,
+  discoveryRadius: DiscoveryRadius,
+): Promise<BusinessEvent[]> {
+  if (!viewer) return events;
+
+  const filtered: BusinessEvent[] = [];
+  for (const event of events) {
+    const location = {
+      city: event.city,
+      state: event.state,
+      county: event.county,
+      zipCode: event.zipCode,
+      country: event.country ?? "US",
+      latitude: event.latitude,
+      longitude: event.longitude,
+    };
+    const [match] = await filterByDiscoveryRadius([location], viewer, discoveryRadius);
+    if (match) filtered.push(event);
+  }
+  return filtered;
+}
+
 function matchesEventFilters(
   event: BusinessEvent,
   filters: {
     query?: string;
     category?: string;
-    areaScope?: AreaScope;
-    mileRadius?: MileRadius;
-    viewer?: DiscoveryViewer | null;
   },
 ): boolean {
   if (filters.query) {
@@ -151,39 +171,18 @@ function matchesEventFilters(
 
   if (filters.category && event.category !== filters.category) return false;
 
-  const locationProfile = {
-    city: event.city,
-    state: event.state,
-    county: event.county,
-    zipCode: event.zipCode,
-    country: event.country ?? "US",
-    latitude: event.latitude,
-    longitude: event.longitude,
-  };
-
-  if (filters.mileRadius && filters.viewer) {
-    if (!matchesMileRadius(locationProfile, filters.viewer, filters.mileRadius)) {
-      return false;
-    }
-  } else if (filters.areaScope && filters.viewer) {
-    if (!matchesAreaScope(locationProfile, filters.viewer, filters.areaScope)) {
-      return false;
-    }
-  }
-
   return true;
 }
 
-function filterSeedEvents(filters?: {
+async function filterSeedEvents(filters?: {
   query?: string;
   category?: string;
-  areaScope?: AreaScope;
-  mileRadius?: MileRadius;
+  discoveryRadius?: DiscoveryRadius;
   viewer?: DiscoveryViewer | null;
   businessId?: string;
   upcomingOnly?: boolean;
   limit?: number;
-}): BusinessEvent[] {
+}): Promise<BusinessEvent[]> {
   let events = SEED_BUSINESS_EVENTS.filter((e) => e.status === "published");
 
   if (filters?.businessId) {
@@ -199,11 +198,12 @@ function filterSeedEvents(filters?: {
     matchesEventFilters(event, {
       query: filters?.query,
       category: filters?.category,
-      areaScope: filters?.areaScope,
-      mileRadius: filters?.mileRadius,
-      viewer: filters?.viewer,
     }),
   );
+
+  if (filters?.discoveryRadius && filters.viewer) {
+    events = await filterEventsByDiscovery(events, filters.viewer, filters.discoveryRadius);
+  }
 
   events.sort(
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
@@ -221,14 +221,17 @@ export async function getBusinessEvents(filters?: {
   category?: string;
   areaScope?: AreaScope;
   mileRadius?: MileRadius;
+  discoveryRadius?: DiscoveryRadius;
   viewer?: DiscoveryViewer | null;
   businessId?: string;
   upcomingOnly?: boolean;
   limit?: number;
   userId?: string | null;
 }): Promise<BusinessEvent[]> {
+  const discoveryRadius =
+    filters?.discoveryRadius ?? filters?.mileRadius ?? filters?.areaScope ?? "city";
   const supabase = await createClient();
-  if (!supabase) return filterSeedEvents(filters);
+  if (!supabase) return filterSeedEvents({ ...filters, discoveryRadius });
 
   let query = supabase
     .from("business_events")
@@ -249,7 +252,7 @@ export async function getBusinessEvents(filters?: {
   }
 
   const { data: rows } = await query;
-  if (!rows?.length) return filterSeedEvents(filters);
+  if (!rows?.length) return filterSeedEvents({ ...filters, discoveryRadius });
 
   let events = (rows as EventRow[]).map((row) => mapEventRow(row));
 
@@ -261,11 +264,12 @@ export async function getBusinessEvents(filters?: {
     matchesEventFilters(event, {
       query: filters?.query,
       category: filters?.category,
-      areaScope: filters?.areaScope,
-      mileRadius: filters?.mileRadius,
-      viewer: filters?.viewer,
     }),
   );
+
+  if (filters?.viewer) {
+    events = await filterEventsByDiscovery(events, filters.viewer, discoveryRadius);
+  }
 
   if (filters?.limit) {
     events = events.slice(0, filters.limit);
@@ -326,6 +330,43 @@ export async function getBusinessEventById(
 
   const [event] = await attachRsvpCounts([mapEventRow(row as EventRow)], userId);
   return event ?? null;
+}
+
+type EventCommentRow = {
+  id: string;
+  event_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  profiles?: { display_name: string } | { display_name: string }[] | null;
+};
+
+function commentAuthorName(
+  profiles: EventCommentRow["profiles"],
+): string {
+  if (!profiles) return "Member";
+  if (Array.isArray(profiles)) return profiles[0]?.display_name ?? "Member";
+  return profiles.display_name;
+}
+
+export async function getEventComments(eventId: string): Promise<import("@/lib/types").EventComment[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+
+  const { data: rows } = await supabase
+    .from("event_comments")
+    .select("*, profiles(display_name)")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+
+  return ((rows ?? []) as EventCommentRow[]).map((row) => ({
+    id: row.id,
+    eventId: row.event_id,
+    authorId: row.author_id,
+    authorName: commentAuthorName(row.profiles),
+    body: row.body,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function getEventsForBusinessOwner(

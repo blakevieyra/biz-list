@@ -54,13 +54,12 @@ async function notifyCustomerProUsers(params: {
   let userQuery = admin
     .from("profiles")
     .select("id, role, plan_tier, city, state, job_alert_opt_in")
-    .eq("role", "customer")
     .in("plan_tier", ["pro", "platinum"]);
 
-  const { data: proCustomers } = await userQuery;
-  if (!proCustomers?.length) return;
+  const { data: proUsers } = await userQuery;
+  if (!proUsers?.length) return;
 
-  const recipients = proCustomers.filter((profile) => {
+  const recipients = proUsers.filter((profile) => {
     const plan = (profile.plan_tier ?? "free") as PlanTier;
     if (params.type === "event" && !canAccessCustomerFeature(plan, "eventNotifications")) {
       return false;
@@ -71,7 +70,13 @@ async function notifyCustomerProUsers(params: {
     if (params.type === "job_match" && !canAccessCustomerFeature(plan, "jobAlerts")) {
       return false;
     }
-    if (params.type === "job_match" && !profile.job_alert_opt_in) return false;
+    if (
+      params.type === "job_match" &&
+      profile.role === "customer" &&
+      !profile.job_alert_opt_in
+    ) {
+      return false;
+    }
     if (params.followerIds?.length && !params.followerIds.includes(profile.id)) {
       return false;
     }
@@ -236,6 +241,41 @@ export async function toggleEventRsvp(eventId: string) {
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update RSVP." };
+  }
+}
+
+export async function commentOnEvent(eventId: string, body: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to comment on events." };
+
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 1000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+
+    const moderation = moderateMultiple({ Comment: trimmed });
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const { data: event } = await supabase
+      .from("business_events")
+      .select("id")
+      .eq("id", eventId)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (!event) return { error: "Event not found." };
+
+    const { error } = await supabase.from("event_comments").insert({
+      event_id: eventId,
+      author_id: user.id,
+      body: trimmed,
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/events/${eventId}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to post comment." };
   }
 }
 

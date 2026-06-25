@@ -72,6 +72,9 @@ export function isCustomerPro(plan: PlanTier): boolean {
   return plan === "pro" || plan === "platinum";
 }
 
+/** BizList Plus perks (alerts, deals, events) — included with Pro/Platinum for any account type. */
+export const hasBizListPlusPerks = isCustomerPro;
+
 const CUSTOMER_PRO_FEATURES: CustomerPlanFeature[] = [
   "jobAlerts",
   "businessMatches",
@@ -83,7 +86,7 @@ export function canAccessCustomerFeature(
   plan: PlanTier,
   feature: CustomerPlanFeature,
 ): boolean {
-  if (!isCustomerPro(plan)) return false;
+  if (!hasBizListPlusPerks(plan)) return false;
   return CUSTOMER_PRO_FEATURES.includes(feature);
 }
 
@@ -112,3 +115,10 @@ export function formatPlanPrice(price: number): string {
 
 export const BIZLIST_PLUS_LABEL = "BizList Plus";
 export const CUSTOMER_PRO_LABEL = BIZLIST_PLUS_LABEL;
+
+export const BIZLIST_PLUS_FEATURES = [
+  "Job alerts and business matches based on your skills and interests",
+  "First pick on deals, sales, and new product releases",
+  "Notifications when followed businesses publish local events",
+  "Everything in free Community membership",
+] as const;

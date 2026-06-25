@@ -655,9 +655,31 @@ export async function createCollaboration(input: {
         ? input.collaborationType
         : "proposal";
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "business" && profile?.role !== "organization") {
+      return { error: "Only business and organization accounts can publish collaborations." };
+    }
+
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (!business?.id) {
+      return {
+        error: "Create your business listing before publishing collaborations.",
+      };
+    }
+
     const { error } = await supabase.from("collaborations").insert({
       author_id: user.id,
-      business_id: input.businessId ?? null,
+      business_id: business.id,
       title: input.title.trim().slice(0, 200),
       summary: input.summary.trim().slice(0, 2000),
       looking_for: input.lookingFor.trim().slice(0, 500),

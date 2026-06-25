@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { NewCollaborationForm } from "@/components/new-collaboration-form";
 import { PageHeader } from "@/components/ui";
+import { getCurrentProfile } from "@/lib/data";
 import type { CollaborationType } from "@/lib/types";
 
 export default async function NewCollaborationPage({
@@ -8,6 +10,14 @@ export default async function NewCollaborationPage({
 }: {
   searchParams: Promise<{ type?: string }>;
 }) {
+  const profile = await getCurrentProfile();
+  if (!profile) redirect("/auth/login");
+
+  const isBusinessAccount = profile.role === "business" || profile.role === "organization";
+  if (!isBusinessAccount) {
+    redirect("/partnerships");
+  }
+
   const params = await searchParams;
   const initialType: CollaborationType =
     params.type === "contract" || params.type === "b2b_sale" ? params.type : "proposal";
@@ -19,7 +29,7 @@ export default async function NewCollaborationPage({
       </Link>
       <PageHeader
         title="Create proposal"
-        description="Share a proposal, contract opportunity, or B2B sale with local businesses."
+        description="Share a proposal, contract opportunity, or B2B sale from your business profile."
       />
       <NewCollaborationForm initialType={initialType} />
     </div>

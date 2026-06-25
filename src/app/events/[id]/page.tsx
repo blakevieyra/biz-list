@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EventCommentsSection } from "@/components/event-comments-section";
 import { EventRsvpButton } from "@/components/event-rsvp-button";
 import { Card, PageHeader, formatPostDateTime } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
-import { getBusinessEventById } from "@/lib/data/events";
+import { getBusinessEventById, getEventComments } from "@/lib/data/events";
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const userId = await getAuthUserId();
-  const event = await getBusinessEventById(id, userId);
+  const [event, comments] = await Promise.all([
+    getBusinessEventById(id, userId),
+    getEventComments(id),
+  ]);
 
   if (!event) notFound();
 
@@ -92,6 +96,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </Link>
           )}
         </div>
+
+        <EventCommentsSection
+          eventId={event.id}
+          comments={comments}
+          currentUserId={userId}
+        />
       </Card>
     </div>
   );

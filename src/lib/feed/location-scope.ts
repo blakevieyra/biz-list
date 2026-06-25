@@ -68,8 +68,34 @@ export function resolveDiscoveryFilter(
   return DEFAULT_DISCOVERY_FILTER;
 }
 
-export function isMileDiscoveryFilter(value: DiscoveryRadius): value is MileRadius {
-  return MILE_VALUES.has(value);
+export function resolveActiveDiscoveryFilter(input: {
+  miles?: string;
+  scope?: string;
+  near?: string;
+  profileDefault?: DiscoveryRadius | string;
+}): DiscoveryRadius {
+  if (input.miles !== undefined && input.miles !== "") {
+    const mile = resolveMileRadius(input.miles);
+    if (mile) return mile;
+  }
+
+  if (input.scope !== undefined && input.scope !== "") {
+    const area = normalizeDiscoveryRadius(input.scope);
+    if (area && AREA_VALUES.has(area)) return area as AreaScope;
+  }
+
+  const fromNear = normalizeDiscoveryRadius(input.near);
+  if (fromNear) return fromNear;
+
+  return resolveDiscoveryFilter(undefined, input.profileDefault);
+}
+
+export function isMileFilterActive(miles?: string, scope?: string): boolean {
+  return miles !== undefined && miles !== "";
+}
+
+export function isAreaFilterActive(miles?: string, scope?: string): boolean {
+  return scope !== undefined && scope !== "";
 }
 
 export function discoveryFilterHrefValue(value: DiscoveryRadius): string | undefined {

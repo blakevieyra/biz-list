@@ -1,52 +1,28 @@
-"use client";
-
 import Link from "next/link";
 
-export type HomeTab = "latest" | "listings" | "collaboration" | "profile";
+export type HomeHubView = "overview" | "activity";
 
-const tabs: { id: HomeTab; label: string }[] = [
-  { id: "latest", label: "Latest" },
-  { id: "listings", label: "Listings" },
-  { id: "collaboration", label: "Collaboration" },
-  { id: "profile", label: "Profile" },
-];
+export function HomeHubNav({ active }: { active: HomeHubView }) {
+  const tabs: { id: HomeHubView; label: string; href: string }[] = [
+    { id: "overview", label: "Overview", href: "/home" },
+    { id: "activity", label: "Activity", href: "/home?view=activity" },
+  ];
 
-export function HomeHubNav({
-  active,
-  profileTab,
-}: {
-  active: HomeTab;
-  profileTab?: string;
-}) {
   return (
-    <div className="mb-6 flex flex-wrap gap-2">
-      {tabs.map((tab) => {
-        const href =
-          tab.id === "profile" && profileTab
-            ? `/home?tab=profile&profileTab=${profileTab}`
-            : tab.id === "latest"
-              ? "/home?tab=latest"
-              : `/home?tab=${tab.id}`;
-        return (
-          <Link
-            key={tab.id}
-            href={href}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
-              active === tab.id
-                ? "bg-accent text-white"
-                : "border border-border bg-card text-muted hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-      <Link
-        href="/events"
-        className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground sm:px-4 sm:py-2 sm:text-sm"
-      >
-        Events
-      </Link>
-    </div>
+    <nav className="mb-8 flex gap-1 border-b border-border">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.id}
+          href={tab.href}
+          className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition ${
+            active === tab.id
+              ? "border-accent text-accent"
+              : "border-transparent text-muted hover:border-border hover:text-foreground"
+          }`}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
   );
 }

@@ -229,6 +229,15 @@ export interface BusinessPost {
   createdAt: string;
 }
 
+export interface EventComment {
+  id: string;
+  eventId: string;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface BusinessReview {
   id: string;
   businessId: string;

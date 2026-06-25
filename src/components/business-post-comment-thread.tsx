@@ -7,7 +7,7 @@ import { uploadCommentAttachment } from "@/lib/actions/upload";
 import { ContentLikeButton } from "@/components/content-like-button";
 import { organizeCommentThreads } from "@/lib/comments/thread";
 import { isImageUrl } from "@/lib/media/post-media";
-import { formatMemberSince } from "@/components/ui";
+import { formatPostDateTime } from "@/components/ui";
 import type { BusinessPostComment } from "@/lib/types";
 
 function memberInitials(name: string): string {
@@ -102,12 +102,10 @@ function CommentItem({
           <div className="min-w-0 flex-1">
             <p className="text-sm leading-relaxed">
               <span className="font-medium text-foreground">{comment.authorName}</span>
-              {comment.memberSince && (
-                <span className="text-xs text-muted">
-                  {" "}
-                  · Member since {formatMemberSince(comment.memberSince)}
-                </span>
-              )}
+              <span className="text-xs text-muted">
+                {" "}
+                · {formatPostDateTime(comment.createdAt)}
+              </span>
               {comment.isOwnerReply && (
                 <span className="ml-1.5 inline-flex rounded-full bg-accent/10 px-2 py-0.5 align-middle text-[11px] font-medium text-accent">
                   Reply from business
@@ -244,25 +242,27 @@ export function BusinessPostCommentThread({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {threaded.length > 0 ? (
-        <ul className="space-y-2.5">
-          {threaded.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              businessId={businessId}
-              currentUserId={currentUserId}
-              depth={0}
-              replyToId={replyToId}
-              onReply={handleReply}
-            />
-          ))}
-        </ul>
-      ) : (
-        <p className="text-xs text-muted">No comments yet.</p>
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+        {threaded.length > 0 ? (
+          <ul className="space-y-2.5">
+            {threaded.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                businessId={businessId}
+                currentUserId={currentUserId}
+                depth={0}
+                replyToId={replyToId}
+                onReply={handleReply}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted">No comments yet.</p>
+        )}
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-auto space-y-2 border-t border-border pt-3">
+      <form onSubmit={handleSubmit} className="mt-3 shrink-0 space-y-2 border-t border-border pt-3">
         {replyTarget && (
           <div className="flex items-center justify-between gap-2 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs">
             <span className="text-muted">
@@ -354,12 +354,10 @@ export function BusinessPostComments({
             <CommentAuthorAvatar name={comment.authorName} avatarUrl={comment.authorAvatarUrl} />
             <p className="min-w-0 flex-1">
               <span className="font-medium">{comment.authorName}</span>
-              {comment.memberSince && (
-                <span className="text-xs text-muted">
-                  {" "}
-                  · Member since {formatMemberSince(comment.memberSince)}
-                </span>
-              )}
+              <span className="text-xs text-muted">
+                {" "}
+                · {formatPostDateTime(comment.createdAt)}
+              </span>
               {comment.isOwnerReply && (
                 <span className="ml-1.5 inline-flex rounded-full bg-accent/10 px-2 py-0.5 align-middle text-[11px] font-medium text-accent">
                   Reply from business

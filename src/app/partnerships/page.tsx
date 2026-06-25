@@ -3,7 +3,7 @@ import { CollaborationProposalCard } from "@/components/collaboration-proposal-c
 import { ForumDiscussionsSection } from "@/components/forum-discussions-section";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { Card, PageHeader } from "@/components/ui";
-import { getCollaborationCommentsByIds, getCollaborations } from "@/lib/data";
+import { getCollaborationCommentsByIds, getCollaborations, getCurrentProfile } from "@/lib/data";
 import type { CollaborationComment, CollaborationType, ForumCategory } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
@@ -36,6 +36,9 @@ export default async function CollaboratePage({
     : undefined;
   const forumQuery = params.q ?? "";
   const userId = await getAuthUserId();
+  const profile = await getCurrentProfile();
+  const isBusinessAccount =
+    profile?.role === "business" || profile?.role === "organization";
 
   const collaborations =
     tab === "forum" ? [] : await getCollaborations(tab as CollaborationType);
@@ -59,7 +62,7 @@ export default async function CollaboratePage({
         description={
           isForumTab
             ? "Community discussions about partnerships, local tips, hiring, and more."
-            : "Share proposals, contracts, and B2B sales opportunities with local businesses."
+            : "Proposals, contracts, and B2B sales posted by local businesses and organizations."
         }
         action={
           isForumTab ? (
@@ -78,12 +81,19 @@ export default async function CollaboratePage({
                 Sign in to post
               </Link>
             )
-          ) : (
+          ) : isBusinessAccount ? (
             <Link
               href={`/partnerships/new?type=${tab}`}
               className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
             >
               Create proposal
+            </Link>
+          ) : (
+            <Link
+              href="/profile/create"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+            >
+              Business account required
             </Link>
           )
         }

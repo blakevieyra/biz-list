@@ -7,14 +7,14 @@ import { getBusinessEvents } from "@/lib/data/events";
 import {
   AREA_SCOPE_LABELS,
   AREA_SCOPE_OPTIONS,
-  DEFAULT_DISCOVERY_RADIUS,
-  DEFAULT_MILE_RADIUS,
+  isAreaFilterActive,
+  isMileFilterActive,
   MILE_RADIUS_LABELS,
   MILE_RADIUS_OPTIONS,
-  resolveAreaScope,
-  resolveMileRadius,
+  resolveActiveDiscoveryFilter,
 } from "@/lib/feed/location-scope";
 import { INDUSTRY_OPTIONS, isIndustryOption } from "@/lib/industries";
+import type { AreaScope, MileRadius } from "@/lib/types";
 
 export default async function EventsPage({
   searchParams,
@@ -29,10 +29,15 @@ export default async function EventsPage({
   const params = await searchParams;
   const profile = await getCurrentProfile();
   const userId = await getAuthUserId();
-  const areaScope = resolveAreaScope(params.scope, profile?.discoveryRadius ?? profile?.feedScope);
-  const mileRadius = resolveMileRadius(params.miles) ?? DEFAULT_MILE_RADIUS;
+  const discoveryRadius = resolveActiveDiscoveryFilter({
+    miles: params.miles,
+    scope: params.scope,
+    profileDefault: profile?.discoveryRadius ?? profile?.feedScope,
+  });
   const query = params.q ?? "";
   const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
+  const mileMode = isMileFilterActive(params.miles, params.scope);
+  const areaMode = isAreaFilterActive(params.miles, params.scope);
 
   const viewer = profile
     ? {
@@ -49,8 +54,7 @@ export default async function EventsPage({
 
   const events = await getBusinessEvents({
     viewer,
-    areaScope,
-    mileRadius,
+    discoveryRadius,
     query: query || undefined,
     category: categoryFilter,
     userId,
@@ -58,13 +62,16 @@ export default async function EventsPage({
   });
 
   function buildHref(next: Record<string, string | undefined>) {
-    const merged = {
-      scope: areaScope !== DEFAULT_DISCOVERY_RADIUS ? areaScope : undefined,
-      miles: mileRadius !== DEFAULT_MILE_RADIUS ? mileRadius : undefined,
+    const merged: Record<string, string | undefined> = {
+      scope: params.scope,
+      miles: params.miles,
       q: query || undefined,
       category: categoryFilter,
       ...next,
     };
+    if (next.miles === "") merged.miles = undefined;
+    if (next.scope === "") merged.scope = undefined;
+
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(merged)) {
       if (value) search.set(key, value);
@@ -73,13 +80,25 @@ export default async function EventsPage({
     return qs ? `/events?${qs}` : "/events";
   }
 
+  function mileIsActive(m: MileRadius): boolean {
+    if (mileMode) return params.miles === m;
+    if (!areaMode && !params.miles && !params.scope) return discoveryRadius === m;
+    return false;
+  }
+
+  function areaIsActive(s: AreaScope): boolean {
+    if (areaMode) return params.scope === s;
+    if (!mileMode && !params.miles && !params.scope) return discoveryRadius === s;
+    return false;
+  }
+
   const isBusinessAccount = profile?.role === "business" || profile?.role === "organization";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Local events"
-        description="Discover events hosted by businesses near you. Mark going to save your spot and get reminders."
+        description="Discover events hosted by businesses near you. Mark going to save your spot and comment with questions."
         action={
           isBusinessAccount ? (
             <Link
@@ -99,15 +118,21 @@ export default async function EventsPage({
         }
       />
 
+      {!isBusinessAccount && (
+        <p className="mb-4 text-sm text-muted">
+          Events are published by local businesses. Customers can RSVP, save events, and leave comments.
+        </p>
+      )}
+
       <section className="mb-4">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Distance</p>
         <div className="filter-scroll">
           {MILE_RADIUS_OPTIONS.map((m) => (
             <Link
               key={m}
-              href={buildHref({ miles: m === DEFAULT_MILE_RADIUS ? undefined : m })}
+              href={buildHref({ miles: m, scope: "" })}
               className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                mileRadius === m
+                mileIsActive(m)
                   ? "bg-accent text-white"
                   : "border border-border bg-card text-muted hover:text-foreground"
               }`}
@@ -124,9 +149,9 @@ export default async function EventsPage({
           {AREA_SCOPE_OPTIONS.map((s) => (
             <Link
               key={s}
-              href={buildHref({ scope: s === DEFAULT_DISCOVERY_RADIUS ? undefined : s })}
+              href={buildHref({ scope: s, miles: "" })}
               className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                areaScope === s
+                areaIsActive(s)
                   ? "bg-accent text-white"
                   : "border border-border bg-card text-muted hover:text-foreground"
               }`}
@@ -167,12 +192,8 @@ export default async function EventsPage({
       </section>
 
       <form action="/events" method="get" className="mb-6 flex flex-col gap-3 sm:flex-row">
-        {areaScope !== DEFAULT_DISCOVERY_RADIUS && (
-          <input type="hidden" name="scope" value={areaScope} />
-        )}
-        {mileRadius !== DEFAULT_MILE_RADIUS && (
-          <input type="hidden" name="miles" value={mileRadius} />
-        )}
+        {params.scope && <input type="hidden" name="scope" value={params.scope} />}
+        {params.miles && <input type="hidden" name="miles" value={params.miles} />}
         {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
         <input
           type="search"
