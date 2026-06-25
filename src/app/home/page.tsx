@@ -24,6 +24,7 @@ export default async function HomeHubPage() {
     state: profile.state,
     county: profile.county,
     zipCode: profile.zipCode,
+    country: profile.country,
     latitude: profile.latitude,
     longitude: profile.longitude,
     industryInterests: profile.industryInterests,

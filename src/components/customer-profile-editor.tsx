@@ -30,6 +30,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
     city: profile.city,
     state: profile.state,
     zipCode: profile.zipCode,
+    country: profile.country,
     headline: profile.headline,
     skills: profile.skills.join(", "),
     isSeekingWork: profile.isSeekingWork,
@@ -51,6 +52,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
         city: form.city.trim(),
         state: form.state.trim(),
         zipCode: form.zipCode.trim(),
+        country: form.country.trim() || "US",
         headline: form.headline.trim(),
         skills: form.skills
           .split(",")
@@ -116,10 +118,11 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
           </label>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
             <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
             <Field label="Zip code" value={form.zipCode} onChange={(v) => setForm({ ...form, zipCode: v })} placeholder="78701" />
+            <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="US" />
           </div>
         </div>
       </Card>

@@ -32,6 +32,7 @@ import {
 } from "@/lib/feed/location-scope";
 import type { AreaScope, MileRadius } from "@/lib/types";
 import { normalizeServiceType } from "@/lib/service-types";
+import { enrichLocationCoordinates, enrichManyLocationCoordinates } from "@/lib/geo/location-coords";
 import {
   mapBusiness,
   mapCollaboration,
@@ -221,10 +222,6 @@ export async function getBusinesses(filters?: {
     );
   }
 
-  function matchesLocation(b: BusinessProfile): boolean {
-    if (!viewer) return true;
-    return matchesDiscoveryRadius(viewer, b, discoveryRadius);
-  }
 
   function serviceMatchesFilters(service: BusinessProfile["services"][number], q: string): boolean {
     if (productType && service.serviceType !== productType) return false;
@@ -269,7 +266,11 @@ export async function getBusinesses(filters?: {
     });
 
     if (viewer) {
-      result = result.filter(matchesLocation);
+      const enrichedViewer = await enrichLocationCoordinates(viewer);
+      const enrichedResult = await enrichManyLocationCoordinates(result);
+      result = enrichedResult.filter((b) =>
+        matchesDiscoveryRadius(enrichedViewer, b, discoveryRadius),
+      );
     }
 
     return rankBusinesses(result);
@@ -336,7 +337,11 @@ export async function getBusinesses(filters?: {
   }
 
   if (viewer) {
-    result = result.filter(matchesLocation);
+    const enrichedViewer = await enrichLocationCoordinates(viewer);
+    const enrichedBusinesses = await enrichManyLocationCoordinates(result);
+    result = enrichedBusinesses.filter((b) =>
+      matchesDiscoveryRadius(enrichedViewer, b, discoveryRadius),
+    );
   }
 
   return rankBusinesses(result);

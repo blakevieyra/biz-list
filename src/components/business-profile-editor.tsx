@@ -48,6 +48,7 @@ export function BusinessProfileEditor({
     city: business.city,
     state: business.state,
     zipCode: business.zipCode,
+    country: business.country,
     website: business.website ?? "",
     socialLinks: business.socialLinks ?? {},
     phone: business.phone,
@@ -86,6 +87,7 @@ export function BusinessProfileEditor({
         city: form.city,
         state: form.state,
         zipCode: form.zipCode,
+        country: form.country,
         website: form.website,
         socialLinks: form.socialLinks,
         phone: form.phone,
@@ -148,10 +150,11 @@ export function BusinessProfileEditor({
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
           </label>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
             <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
             <Field label="Zip code" value={form.zipCode} onChange={(v) => setForm({ ...form, zipCode: v })} placeholder="78701" />
+            <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="US" />
           </div>
         </div>
       </Card>

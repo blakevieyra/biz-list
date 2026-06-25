@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitServiceOrder } from "@/lib/actions/business";
+import { offeringActionLabel } from "@/lib/service-types";
 import type { BusinessService } from "@/lib/types";
 
 export function ServiceListing({
@@ -27,7 +28,11 @@ export function ServiceListing({
       businessName={businessName}
       serviceName={service.name}
       servicePrice={service.price}
-      buttonLabel={compact ? "Order" : service.actionLabel || "Place order"}
+      buttonLabel={
+        compact
+          ? offeringActionLabel(service.serviceType, true)
+          : service.actionLabel || offeringActionLabel(service.serviceType, false)
+      }
       currentUserId={currentUserId}
       compact={compact}
     />

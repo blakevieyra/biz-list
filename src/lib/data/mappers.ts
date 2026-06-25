@@ -27,6 +27,7 @@ type ProfileRow = {
   state: string;
   county?: string;
   zip_code?: string;
+  country?: string;
   latitude?: number | null;
   longitude?: number | null;
   discovery_radius?: DiscoveryRadius;
@@ -62,6 +63,7 @@ type BusinessRow = {
   state: string;
   county?: string;
   zip_code?: string;
+  country?: string;
   latitude?: number | null;
   longitude?: number | null;
   website: string | null;
@@ -133,6 +135,7 @@ export function mapProfile(row: ProfileRow): UserProfile {
     state: row.state,
     county: row.county ?? "",
     zipCode: row.zip_code ?? "",
+    country: row.country ?? "US",
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
     interestTags: row.interest_tags ?? [],
@@ -187,6 +190,7 @@ export function mapBusiness(
     state: row.state,
     county: row.county ?? "",
     zipCode: row.zip_code ?? "",
+    country: row.country ?? "US",
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
     website: row.website ?? undefined,

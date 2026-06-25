@@ -18,6 +18,7 @@ import {
   validateBusinessCategory,
   validateLocationFields,
 } from "@/lib/validation/profile-fields";
+import { geocodeUsZipCode } from "@/lib/geo/geocode";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   emailServiceOrderConfirmation,
@@ -229,6 +230,7 @@ export async function saveBusinessDashboardProfile(input: {
   city: string;
   state: string;
   zipCode: string;
+  country?: string;
   website: string;
   socialLinks: BusinessSocialLinks;
   phone: string;
@@ -262,11 +264,14 @@ export async function saveBusinessDashboardProfile(input: {
       city: input.city,
       state: input.state,
       zipCode: input.zipCode,
+      country: input.country,
     });
     if (location.error) return { error: location.error };
 
     const validatedCategory = validateBusinessCategory(input.category, input.subcategory);
     if (validatedCategory.error) return { error: validatedCategory.error };
+
+    const geo = await geocodeUsZipCode(location.zipCode);
 
     const { error: profileError } = await supabase
       .from("profiles")
@@ -275,6 +280,9 @@ export async function saveBusinessDashboardProfile(input: {
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,
+        country: location.country,
+        latitude: geo?.latitude ?? null,
+        longitude: geo?.longitude ?? null,
       })
       .eq("id", user.id);
 
@@ -296,6 +304,9 @@ export async function saveBusinessDashboardProfile(input: {
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,
+        country: location.country,
+        latitude: geo?.latitude ?? null,
+        longitude: geo?.longitude ?? null,
         website,
         social_links: socialLinks,
         phone: input.phone.trim(),

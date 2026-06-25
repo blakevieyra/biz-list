@@ -17,16 +17,18 @@ export function validateLocationFields(input: {
   city: string;
   state: string;
   zipCode?: string;
-}): { error: string | null; zipCode: string } {
+  country?: string;
+}): { error: string | null; zipCode: string; country: string } {
   if (!input.city.trim() || !input.state.trim()) {
-    return { error: "City and state are required.", zipCode: "" };
+    return { error: "City and state are required.", zipCode: "", country: "US" };
   }
+  const country = (input.country ?? "US").trim().toUpperCase() || "US";
   if (input.zipCode !== undefined) {
     const zipError = validateZipCode(input.zipCode);
-    if (zipError) return { error: zipError, zipCode: "" };
-    return { error: null, zipCode: normalizeZipCode(input.zipCode) };
+    if (zipError) return { error: zipError, zipCode: "", country };
+    return { error: null, zipCode: normalizeZipCode(input.zipCode), country };
   }
-  return { error: null, zipCode: "" };
+  return { error: null, zipCode: "", country };
 }
 
 export function validateIndustryInterests(interests: string[]): {

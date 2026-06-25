@@ -22,3 +22,14 @@ export function normalizeServiceType(value: string | undefined): ServiceType | u
   const match = SERVICE_TYPE_OPTIONS.find((t) => t.toLowerCase() === trimmed.toLowerCase());
   return match;
 }
+
+export function offeringActionLabel(serviceType?: string, compact = false): string {
+  const normalized = normalizeServiceType(serviceType);
+  if (normalized === "Service" || normalized === "Event / experience") {
+    return compact ? "Book" : "Book now";
+  }
+  if (normalized === "Other") {
+    return compact ? "See more" : "See more";
+  }
+  return compact ? "Order" : "Place order";
+}

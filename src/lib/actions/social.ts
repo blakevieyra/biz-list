@@ -77,6 +77,7 @@ export async function saveProfile(input: {
   city: string;
   state: string;
   zipCode?: string;
+  country?: string;
   forumInterests: ForumCategory[];
   interestTags?: string[];
   industryInterests?: string[];
@@ -119,6 +120,7 @@ export async function saveProfile(input: {
       city: input.city,
       state: input.state,
       zipCode: input.zipCode ?? "",
+      country: input.country,
     });
     if (location.error) return { error: location.error };
 
@@ -151,6 +153,7 @@ export async function saveProfile(input: {
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,
+        country: location.country,
         latitude: geo?.latitude ?? null,
         longitude: geo?.longitude ?? null,
         discovery_radius: discoveryRadius,
@@ -188,6 +191,7 @@ export async function saveProfile(input: {
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,
+        country: location.country,
         latitude: geo?.latitude ?? null,
         longitude: geo?.longitude ?? null,
         website: getSafeExternalUrl(input.website?.trim()) ?? null,
@@ -248,6 +252,7 @@ export async function updateUserProfile(input: {
   city: string;
   state: string;
   zipCode?: string;
+  country?: string;
   headline?: string;
   skills?: string[];
   isSeekingWork?: boolean;
@@ -278,6 +283,7 @@ export async function updateUserProfile(input: {
       city: input.city,
       state: input.state,
       zipCode: input.zipCode ?? "",
+      country: input.country,
     });
     if (location.error) return { error: location.error };
 
@@ -295,6 +301,7 @@ export async function updateUserProfile(input: {
         city: input.city.trim(),
         state: input.state.trim(),
         zip_code: location.zipCode,
+        country: location.country,
         latitude: geo?.latitude ?? null,
         longitude: geo?.longitude ?? null,
         discovery_radius: discoveryRadius,

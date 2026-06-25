@@ -43,6 +43,7 @@ type FormState = {
   city: string;
   state: string;
   zipCode: string;
+  country: string;
   headline: string;
   skills: string[];
   isSeekingWork: boolean;
@@ -87,6 +88,7 @@ export function ProfileCreateWizard({
     city: "",
     state: "",
     zipCode: "",
+    country: "US",
     headline: "",
     skills: [],
     isSeekingWork: false,
@@ -210,6 +212,7 @@ export function ProfileCreateWizard({
         city: form.city.trim(),
         state: form.state.trim(),
         zipCode: form.zipCode.trim(),
+        country: form.country.trim() || "US",
         forumInterests: form.forumInterests,
         interestTags: form.interestTags,
         industryInterests: form.industryInterests,
@@ -346,10 +349,11 @@ export function ProfileCreateWizard({
           <StepBlock title="About you">
             <Field label="Display name" value={form.displayName} onChange={(v) => setForm({ ...form, displayName: v })} />
             <TextArea label="Bio" value={form.bio} onChange={(v) => setForm({ ...form, bio: v })} placeholder="What should locals know about you?" />
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
               <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} placeholder="TX" />
               <Field label="Zip code" value={form.zipCode} onChange={(v) => setForm({ ...form, zipCode: v })} placeholder="78701" />
+              <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="US" />
             </div>
           </StepBlock>
         )}
@@ -492,7 +496,7 @@ export function ProfileCreateWizard({
             <dl className="space-y-3 text-sm">
               <ReviewRow label="Name" value={form.displayName} />
               <ReviewRow label="Role" value={ROLE_LABELS[form.role]} />
-              <ReviewRow label="Location" value={`${form.city}, ${form.state} ${form.zipCode}`} />
+              <ReviewRow label="Location" value={`${form.city}, ${form.state} ${form.zipCode}, ${form.country}`} />
               {isBusiness ? (
                 <>
                   <ReviewRow label="Business" value={form.businessName} />

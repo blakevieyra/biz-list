@@ -20,6 +20,7 @@ type EventRow = {
   state: string;
   county?: string;
   zip_code: string;
+  country?: string;
   latitude?: number | null;
   longitude?: number | null;
   category: string;
@@ -74,6 +75,7 @@ export function mapEventRow(
     state: row.state,
     county: row.county,
     zipCode: row.zip_code,
+    country: row.country ?? "US",
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
     category: row.category,
@@ -154,6 +156,7 @@ function matchesEventFilters(
     state: event.state,
     county: event.county,
     zipCode: event.zipCode,
+    country: event.country ?? "US",
     latitude: event.latitude,
     longitude: event.longitude,
   };

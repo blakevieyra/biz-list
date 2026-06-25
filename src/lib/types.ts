@@ -66,6 +66,7 @@ export interface UserProfile {
   state: string;
   county?: string;
   zipCode: string;
+  country: string;
   latitude?: number;
   longitude?: number;
   interestTags: string[];
@@ -112,6 +113,7 @@ export interface BusinessProfile {
   state: string;
   county?: string;
   zipCode: string;
+  country: string;
   latitude?: number;
   longitude?: number;
   website?: string;
@@ -414,6 +416,7 @@ export interface BusinessEvent {
   state: string;
   county?: string;
   zipCode: string;
+  country?: string;
   latitude?: number;
   longitude?: number;
   category: string;

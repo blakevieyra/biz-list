@@ -6,12 +6,19 @@ export type FeedScope = DiscoveryRadius;
 
 export type LocationProfile = Pick<
   UserProfile,
-  "city" | "state" | "county" | "zipCode" | "latitude" | "longitude"
+  "city" | "state" | "county" | "zipCode" | "country" | "latitude" | "longitude"
 >;
 
 export type DiscoveryViewer = Pick<
   UserProfile,
-  "city" | "state" | "county" | "zipCode" | "latitude" | "longitude" | "industryInterests"
+  | "city"
+  | "state"
+  | "county"
+  | "zipCode"
+  | "country"
+  | "latitude"
+  | "longitude"
+  | "industryInterests"
 >;
 
 export const MILE_RADIUS_OPTIONS: MileRadius[] = ["5", "10", "25", "50"];
@@ -136,11 +143,25 @@ function normalizeLocation(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function normalizeCountry(value: string | undefined): string {
+  const raw = (value ?? "US").trim().toUpperCase();
+  if (raw === "USA" || raw === "UNITED STATES") return "US";
+  return raw;
+}
+
+function countriesMatch(a: LocationProfile, b: LocationProfile): boolean {
+  const viewerCountry = normalizeCountry(a.country);
+  const targetCountry = normalizeCountry(b.country);
+  return viewerCountry === targetCountry;
+}
+
 export function matchesMileRadius(
   viewer: LocationProfile,
   target: LocationProfile,
   miles: MileRadius,
 ): boolean {
+  if (!countriesMatch(viewer, target)) return false;
+
   const limit = Number(miles);
   if (hasCoordinates(viewer) && hasCoordinates(target)) {
     return haversineMiles(viewer, target) <= limit;
@@ -155,10 +176,14 @@ export function matchesMileRadius(
   const viewerState = normalizeLocation(viewer.state);
   const targetState = normalizeLocation(target.state);
   if (viewerCity && targetCity && viewerCity === targetCity && viewerState === targetState) {
-    return miles === "5" || miles === "10";
+    return miles === "5" || miles === "10" || miles === "25";
   }
 
-  return viewerState === targetState && (miles === "25" || miles === "50");
+  if (viewerState && targetState && viewerState === targetState) {
+    return miles === "25" || miles === "50";
+  }
+
+  return false;
 }
 
 export function matchesAreaScope(
@@ -166,7 +191,9 @@ export function matchesAreaScope(
   target: LocationProfile,
   scope: AreaScope,
 ): boolean {
-  if (scope === "nation") return true;
+  if (scope === "nation") return countriesMatch(viewer, target);
+
+  if (!countriesMatch(viewer, target)) return false;
 
   const viewerState = normalizeLocation(viewer.state);
   const targetState = normalizeLocation(target.state);

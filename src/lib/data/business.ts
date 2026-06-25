@@ -336,6 +336,7 @@ type FeedBusinessMeta = {
   state: string;
   zip_code?: string;
   county?: string;
+  country?: string;
   latitude?: number | null;
   longitude?: number | null;
 };
@@ -438,7 +439,7 @@ export async function getFeedBusinessPosts(options: {
   let query = supabase
     .from("business_posts")
     .select(
-      "*, profiles(display_name), businesses(name, category, media_urls, like_count, rating_avg, rating_count, owner_id, city, state, zip_code, county, latitude, longitude)",
+      "*, profiles(display_name), businesses(name, category, media_urls, like_count, rating_avg, rating_count, owner_id, city, state, zip_code, county, country, latitude, longitude)",
     )
     .order("created_at", { ascending: false })
     .limit(Math.max(limit * 3, 60));
@@ -459,6 +460,7 @@ export async function getFeedBusinessPosts(options: {
         state: meta.state,
         county: meta.county ?? "",
         zipCode: meta.zip_code ?? "",
+        country: meta.country ?? "US",
         latitude: meta.latitude ?? undefined,
         longitude: meta.longitude ?? undefined,
       };

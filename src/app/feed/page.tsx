@@ -69,6 +69,7 @@ export default async function FeedPage({
         state: profile.state,
         county: profile.county,
         zipCode: profile.zipCode,
+        country: profile.country,
         latitude: profile.latitude,
         longitude: profile.longitude,
         industryInterests: profile.industryInterests,

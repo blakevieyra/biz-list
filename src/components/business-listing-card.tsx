@@ -12,6 +12,14 @@ import { Card, formatPostDateTime, StarRating } from "@/components/ui";
 const actionButtonClass =
   "inline-flex min-h-9 w-full items-center justify-center rounded-full border px-3 text-sm font-medium disabled:opacity-50";
 
+function formatLocation(business: BusinessProfile): string {
+  const parts = [business.city, business.state].filter(Boolean);
+  if (business.zipCode) parts.push(business.zipCode);
+  const location = parts.join(", ");
+  const country = business.country && business.country !== "US" ? ` · ${business.country}` : "";
+  return `${location}${country}`;
+}
+
 export function BusinessListingCard({
   business,
   latestPosts = [],
@@ -71,7 +79,7 @@ export function BusinessListingCard({
 
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
-      <Link href={`/listings/${business.id}`} className="block h-[32%] min-h-[110px] shrink-0">
+      <Link href={`/listings/${business.id}`} className="block h-36 shrink-0">
         {cover ? (
           <div className="h-full overflow-hidden border-b border-border bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -84,7 +92,7 @@ export function BusinessListingCard({
         )}
       </Link>
 
-      <div className="flex min-h-0 flex-1 flex-col p-3">
+      <div className="flex flex-1 flex-col p-3">
         <Link href={`/listings/${business.id}`} className="block">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             {displayCategoryLabel(business.category, business.subcategory)}
@@ -166,41 +174,42 @@ export function BusinessListingCard({
           )}
         </div>
 
-        {!isOwner && (
-          <div className="mt-2 grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={handleFollow}
-              className={`${actionButtonClass} ${
-                isFollowing
-                  ? "border-accent bg-teal-50 text-accent"
-                  : "border-border bg-card hover:border-accent/40"
-              }`}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={handleMessage}
-              className={`${actionButtonClass} border-border bg-card hover:border-accent/40`}
-            >
-              Message
-            </button>
-          </div>
-        )}
+        <div className="mt-auto pt-3">
+          {!isOwner && (
+            <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={handleFollow}
+                className={`${actionButtonClass} ${
+                  isFollowing
+                    ? "border-accent bg-teal-50 text-accent"
+                    : "border-border bg-card hover:border-accent/40"
+                }`}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={handleMessage}
+                className={`${actionButtonClass} border-border bg-card hover:border-accent/40`}
+              >
+                Message
+              </button>
+            </div>
+          )}
 
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+          {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
 
-        <Link
-          href={`/listings/${business.id}`}
-          className="mt-2 border-t border-border pt-2 text-xs text-muted"
-        >
-          {business.city}, {business.state}
-          {business.zipCode ? ` ${business.zipCode}` : ""}
-          <span className="ml-1 text-accent">· View listing →</span>
-        </Link>
+          <Link
+            href={`/listings/${business.id}`}
+            className={`block border-t border-border pt-2 text-xs text-muted ${!isOwner ? "mt-2" : ""}`}
+          >
+            {formatLocation(business)}
+            <span className="ml-1 text-accent">· View listing →</span>
+          </Link>
+        </div>
       </div>
     </Card>
   );
