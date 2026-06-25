@@ -200,8 +200,11 @@ export async function createBusinessEvent(input: {
   }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function toggleEventRsvp(eventId: string) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to RSVP." };
+  if (!UUID_RE.test(eventId)) return { error: "RSVP is not available for demo events." };
 
   try {
     const { supabase, user } = await requireUser();
@@ -242,6 +245,7 @@ export async function toggleEventRsvp(eventId: string) {
 
 export async function commentOnEvent(eventId: string, body: string) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to comment on events." };
+  if (!UUID_RE.test(eventId)) return { error: "Comments are not available for demo events." };
 
   try {
     const { supabase, user } = await requireUser();
