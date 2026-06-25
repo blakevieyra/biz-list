@@ -1,4 +1,7 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ForumDiscussionsSection } from "@/components/forum-discussions-section";
+import { PageHeader } from "@/components/ui";
+import { getAuthUserId } from "@/lib/actions/auth";
 import type { ForumCategory } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
@@ -7,17 +10,47 @@ const forumCategories = Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[];
 export default async function ForumPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; q?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; post?: string }>;
 }) {
   const params = await searchParams;
-  const search = new URLSearchParams({ tab: "forum" });
+  const userId = await getAuthUserId();
 
-  if (forumCategories.includes(params.category as ForumCategory)) {
-    search.set("category", params.category as string);
-  }
-  if (params.q?.trim()) {
-    search.set("q", params.q.trim());
-  }
+  const category = forumCategories.includes(params.category as ForumCategory)
+    ? (params.category as ForumCategory)
+    : undefined;
+  const query = params.q ?? "";
+  const selectedPostId = params.post?.trim() || undefined;
 
-  redirect(`/partnerships?${search.toString()}`);
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <PageHeader
+        title="Forum"
+        description="Community discussions about partnerships, local tips, hiring, and more."
+        action={
+          userId ? (
+            <Link
+              href="/forum/new"
+              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              New discussion
+            </Link>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+            >
+              Sign in to post
+            </Link>
+          )
+        }
+      />
+
+      <ForumDiscussionsSection
+        basePath="/forum"
+        category={category}
+        query={query}
+        selectedPostId={selectedPostId}
+      />
+    </div>
+  );
 }

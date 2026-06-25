@@ -278,7 +278,7 @@ export function ProfileCreateWizard({
               {isBusiness ? "Open dashboard" : "Browse directory"}
             </Link>
             <Link
-              href="/partnerships?tab=forum"
+              href="/forum"
               className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:border-accent/40"
             >
               Explore forum

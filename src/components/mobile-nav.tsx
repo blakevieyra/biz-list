@@ -95,15 +95,6 @@ export function MobileNav({
                     />
                   </li>
                 ))}
-                <li>
-                  <Link
-                    href="/partnerships?tab=forum"
-                    onClick={() => setOpen(false)}
-                    className="flex min-h-11 items-center rounded-xl px-3 text-sm font-medium hover:bg-blue-50"
-                  >
-                    Forum
-                  </Link>
-                </li>
                 {userId &&
                   authLinks
                     .filter((link) => link.href !== "/dashboard" || profileRole !== "customer")

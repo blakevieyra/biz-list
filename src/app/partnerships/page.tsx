@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { CollaborationProposalCard } from "@/components/collaboration-proposal-card";
-import { ForumDiscussionsSection } from "@/components/forum-discussions-section";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { Card, PageHeader } from "@/components/ui";
 import { getCollaborationCommentsByIds, getCollaborations, getCurrentProfile } from "@/lib/data";
-import type { CollaborationComment, CollaborationType, ForumCategory } from "@/lib/types";
-import { FORUM_CATEGORY_LABELS } from "@/lib/types";
+import type { CollaborationComment, CollaborationType } from "@/lib/types";
 
 const collaborationTabs: { id: CollaborationType; label: string }[] = [
   { id: "proposal", label: "Proposals" },
@@ -13,78 +11,36 @@ const collaborationTabs: { id: CollaborationType; label: string }[] = [
   { id: "b2b_sale", label: "B2B sales" },
 ];
 
-const forumCategories = Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[];
-
-type CollaborateTab = CollaborationType | "forum";
-
-const allTabs: { id: CollaborateTab; label: string }[] = [
-  ...collaborationTabs,
-  { id: "forum", label: "Forum" },
-];
-
 export default async function CollaboratePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; category?: string; q?: string; post?: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const params = await searchParams;
-  const tab: CollaborateTab = allTabs.some((t) => t.id === params.tab)
-    ? (params.tab as CollaborateTab)
+  const tab: CollaborationType = collaborationTabs.some((t) => t.id === params.tab)
+    ? (params.tab as CollaborationType)
     : "proposal";
-  const forumCategory = forumCategories.includes(params.category as ForumCategory)
-    ? (params.category as ForumCategory)
-    : undefined;
-  const forumQuery = params.q ?? "";
-  const selectedPostId = params.post?.trim() || undefined;
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const isBusinessAccount =
     profile?.role === "business" || profile?.role === "organization";
 
-  const collaborations =
-    tab === "forum"
-      ? []
-      : await getCollaborations(tab as CollaborationType, userId);
+  const collaborations = await getCollaborations(tab, userId);
   const commentsById: Map<string, CollaborationComment[]> =
-    tab === "forum"
-      ? new Map()
-      : await getCollaborationCommentsByIds(collaborations.map((idea) => idea.id));
+    await getCollaborationCommentsByIds(collaborations.map((idea) => idea.id));
 
-  function tabHref(next: CollaborateTab) {
+  function tabHref(next: CollaborationType) {
     if (next === "proposal") return "/partnerships";
-    if (next === "forum") return "/partnerships?tab=forum";
     return `/partnerships?tab=${next}`;
   }
-
-  const isForumTab = tab === "forum";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Collaborations"
-        description={
-          isForumTab
-            ? "Community discussions about partnerships, local tips, hiring, and more."
-            : "Proposals, contracts, and B2B sales posted by local businesses and organizations."
-        }
+        description="Proposals, contracts, and B2B sales posted by local businesses and organizations."
         action={
-          isForumTab ? (
-            userId ? (
-              <Link
-                href="/forum/new"
-                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-              >
-                New discussion
-              </Link>
-            ) : (
-              <Link
-                href="/auth/login"
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-              >
-                Sign in to post
-              </Link>
-            )
-          ) : isBusinessAccount ? (
+          isBusinessAccount ? (
             <Link
               href={`/partnerships/new?type=${tab}`}
               className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
@@ -103,7 +59,7 @@ export default async function CollaboratePage({
       />
 
       <div className="filter-scroll mb-8">
-        {allTabs.map(({ id, label }) => (
+        {collaborationTabs.map(({ id, label }) => (
           <Link
             key={id}
             href={tabHref(id)}
@@ -118,14 +74,7 @@ export default async function CollaboratePage({
         ))}
       </div>
 
-      {isForumTab ? (
-        <ForumDiscussionsSection
-          basePath="/partnerships?tab=forum"
-          category={forumCategory}
-          query={forumQuery}
-          selectedPostId={selectedPostId}
-        />
-      ) : collaborations.length === 0 ? (
+      {collaborations.length === 0 ? (
         <Card>
           <p className="text-sm text-muted">
             No shared {collaborationTabs.find((t) => t.id === tab)?.label.toLowerCase()} yet.{" "}

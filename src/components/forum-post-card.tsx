@@ -3,7 +3,7 @@ import type { ForumPost } from "@/lib/types";
 import { Card, CategoryBadge, formatDate } from "./ui";
 
 export function ForumPostCard({ post, href }: { post: ForumPost; href?: string }) {
-  const link = href ?? `/partnerships?tab=forum&post=${post.id}`;
+  const link = href ?? `/forum?post=${post.id}`;
   return (
     <Link href={link}>
       <Card className="transition hover:border-accent/40 hover:shadow-md">

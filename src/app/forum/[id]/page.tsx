@@ -6,5 +6,5 @@ export default async function ForumPostPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/partnerships?tab=forum&post=${encodeURIComponent(id)}`);
+  redirect(`/forum?post=${encodeURIComponent(id)}`);
 }

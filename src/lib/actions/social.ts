@@ -564,12 +564,13 @@ export async function createForumPost(input: {
         author.email,
         author.display_name ?? "there",
         input.title,
-        `/partnerships?tab=forum&post=${data.id}`,
+        `/forum?post=${data.id}`,
       );
     }
 
     revalidatePath("/feed");
     revalidatePath("/partnerships");
+    revalidatePath("/forum");
     return { success: true, id: data.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to create post." };
@@ -615,13 +616,14 @@ export async function createComment(postId: string, body: string) {
         type: "comment",
         title: "New comment on your post",
         body: `${commenter?.display_name ?? "Someone"} commented on "${post.title}"`,
-        link: `/partnerships?tab=forum&post=${postId}`,
+        link: `/forum?post=${postId}`,
         actorName: commenter?.display_name ?? "Someone",
         postTitle: post.title,
       });
     }
 
     revalidatePath("/partnerships");
+    revalidatePath("/forum");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to post comment." };
