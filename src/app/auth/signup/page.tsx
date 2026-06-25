@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui";
 export default function SignUpPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-10 sm:px-6">
-      <LogoMark className="mb-10" size="xl" />
+      <LogoMark className="mb-10" size="2xl" />
       <PageHeader
         title="Create your account"
         description="We'll email you a one-time verification link before your account is created."

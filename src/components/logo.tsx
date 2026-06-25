@@ -3,9 +3,10 @@ import Link from "next/link";
 
 const LOGO_SIZES = {
   sm: { width: 160, height: 42, className: "h-10 w-auto max-w-[160px]" },
-  md: { width: 200, height: 52, className: "h-12 w-auto max-w-[200px]" },
-  lg: { width: 260, height: 68, className: "h-16 w-auto max-w-[260px]" },
-  xl: { width: 300, height: 78, className: "h-20 w-auto max-w-[300px]" },
+  md: { width: 220, height: 58, className: "h-14 w-auto max-w-[220px]" },
+  lg: { width: 280, height: 74, className: "h-[4.5rem] w-auto max-w-[280px]" },
+  xl: { width: 340, height: 88, className: "h-24 w-auto max-w-[340px]" },
+  "2xl": { width: 400, height: 104, className: "h-28 w-auto max-w-[400px]" },
 } as const;
 
 export function Logo({
@@ -13,7 +14,7 @@ export function Logo({
   showText = true,
   href = "/",
 }: {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   showText?: boolean;
   href?: string;
 }) {
@@ -42,9 +43,10 @@ export function Logo({
 }
 
 const MARK_SIZES = {
-  md: { width: 240, height: 62, className: "h-16 w-auto max-w-[280px]" },
-  lg: { width: 300, height: 78, className: "h-20 w-auto max-w-[320px]" },
-  xl: { width: 340, height: 88, className: "h-24 w-auto max-w-[360px]" },
+  md: { width: 280, height: 74, className: "h-[4.5rem] w-auto max-w-[320px]" },
+  lg: { width: 340, height: 88, className: "h-24 w-auto max-w-[380px]" },
+  xl: { width: 400, height: 104, className: "h-28 w-auto max-w-[420px]" },
+  "2xl": { width: 460, height: 120, className: "h-32 w-auto max-w-[480px]" },
 } as const;
 
 export function LogoMark({

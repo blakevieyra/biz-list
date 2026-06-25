@@ -22,7 +22,7 @@ export default async function CheckEmailPage({
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:py-12 sm:px-6">
-      <LogoMark className="mb-10" size="xl" />
+      <LogoMark className="mb-10" size="2xl" />
 
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">

@@ -146,19 +146,19 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-sm">
-            <Logo size="lg" href="/" />
-            <p className="mt-4 text-sm leading-relaxed text-muted">
+        <div className="flex flex-col gap-8">
+          <div className="max-w-xl">
+            <Logo size="2xl" href="/" />
+            <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
               BizList — local business listings, feed, and partnerships.
             </p>
           </div>
-          <nav className="flex flex-col gap-1 sm:min-w-[160px]">
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 sm:gap-x-8">
             {footerLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="min-h-11 py-1 text-sm text-muted transition hover:text-foreground"
+                className="text-sm font-medium text-muted transition hover:text-foreground sm:text-base"
               >
                 {link.label}
               </Link>
