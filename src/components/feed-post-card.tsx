@@ -88,12 +88,12 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 md:h-[28rem]">
-        <div className="flex min-h-[18rem] min-w-0 flex-col border-b border-border md:h-full md:min-h-0 md:overflow-hidden md:border-b-0 md:border-r">
+      <div className="grid grid-cols-1 md:grid-cols-2 md:h-56">
+        <div className="flex min-h-[10rem] min-w-0 flex-col border-b border-border md:h-full md:min-h-0 md:overflow-hidden md:border-b-0 md:border-r">
           <div className="grid h-full min-h-0 flex-1 grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7.5rem_minmax(0,1fr)]">
             <Link
               href={`/listings/${post.businessId}`}
-              className="relative block h-full min-h-[18rem] overflow-hidden border-r border-border bg-slate-100 md:min-h-0"
+              className="relative block h-full min-h-[10rem] overflow-hidden border-r border-border bg-slate-100 md:min-h-0"
             >
               <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
             </Link>
@@ -112,7 +112,7 @@ export function FeedPostCard({
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <Link
                       href={`/listings/${post.businessId}`}
-                      className="truncate text-sm font-semibold text-accent hover:underline"
+                      className="truncate text-base font-bold text-accent hover:underline"
                     >
                       {post.businessName ?? "Local business"}
                     </Link>
@@ -120,12 +120,11 @@ export function FeedPostCard({
                       <StarRating
                         rating={post.businessRatingAvg ?? 0}
                         count={post.businessRatingCount}
-                        compact
                       />
                     )}
                   </div>
                   {post.businessCategory && (
-                    <p className="truncate text-xs text-muted">{post.businessCategory}</p>
+                    <p className="truncate text-sm font-medium text-muted">{post.businessCategory}</p>
                   )}
                 </div>
                 <span className="shrink-0 text-right text-xs leading-snug text-muted">
@@ -172,7 +171,7 @@ export function FeedPostCard({
           </div>
         </div>
 
-        <div className="flex h-80 max-h-80 flex-col overflow-hidden bg-slate-50/60 md:h-full md:max-h-none">
+        <div className="flex h-44 max-h-44 flex-col overflow-hidden bg-slate-50/60 md:h-full md:max-h-none">
           <p className="shrink-0 border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
             Comments
           </p>
