@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitServiceOrder } from "@/lib/actions/business";
+import { trackOfferingClick } from "@/lib/actions/analytics";
 import {
   offeringActionLabel,
   offeringFormTitle,
@@ -104,7 +105,10 @@ function ServiceOrderForm({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          trackOfferingClick(businessId, serviceName, buttonLabel.toLowerCase()).catch(() => {});
+        }}
         className={
           compact
             ? "shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"

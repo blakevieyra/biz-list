@@ -360,7 +360,7 @@ export async function createBusinessPost(input: {
 
     const initialBoost = canAccess(plan, "trendingBoost") ? 3 : 0;
 
-    const { error } = await supabase.from("business_posts").insert({
+    const { data: newPost, error } = await supabase.from("business_posts").insert({
       business_id: input.businessId,
       author_id: user.id,
       post_type: postType,
@@ -369,7 +369,7 @@ export async function createBusinessPost(input: {
       media_urls: sanitizeMediaUrls(input.mediaUrls),
       engagement_score: initialBoost,
       is_trending: canAccess(plan, "trendingBoost") && initialBoost >= 3,
-    });
+    }).select("id").single();
 
     if (error) return { error: error.message };
 
@@ -397,7 +397,7 @@ export async function createBusinessPost(input: {
     if (postType === "deal") {
       const { data: biz } = await supabase
         .from("businesses")
-        .select("name, city, state")
+        .select("name, category, city, state")
         .eq("id", input.businessId)
         .single();
 
@@ -406,8 +406,9 @@ export async function createBusinessPost(input: {
         await notifyDealToCustomerPro({
           businessId: input.businessId,
           businessName: biz.name,
+          businessCategory: biz.category,
           postTitle: title,
-          postId: input.businessId,
+          postId: newPost?.id ?? input.businessId,
           city: biz.city,
           state: biz.state,
         });

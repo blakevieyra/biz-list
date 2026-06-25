@@ -126,11 +126,11 @@ export function StarRating({
 }: {
   rating: number;
   count?: number;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   compact?: boolean;
 }) {
   const filled = Math.min(5, Math.max(0, Math.round(rating)));
-  const textSize = compact ? "text-xs" : size === "md" ? "text-base" : "text-sm";
+  const textSize = compact ? "text-xs" : size === "lg" ? "text-xl" : size === "md" ? "text-base" : "text-sm";
 
   return (
     <span

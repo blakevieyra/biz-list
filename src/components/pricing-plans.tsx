@@ -16,6 +16,7 @@ const communityFeatures = [
 
 const proFeatures = [
   "Everything in Community",
+  "Analytics — page views and offering button clicks",
   "AI online presence audit with website & profile scores",
   "Lead generation from followers, interests, and job seekers",
   "Trending post boost for high engagement",

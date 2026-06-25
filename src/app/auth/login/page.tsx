@@ -12,8 +12,9 @@ export default async function LoginPage({
   const authError = params.error === "auth";
 
   return (
-    <div className="mx-auto max-w-md px-4 py-8 sm:py-12 sm:px-6">
-      <LogoMark className="mb-10" size="2xl" />
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+      <LogoMark className="mb-10 mx-auto" size="2xl" />
       <PageHeader
         title="Sign in"
         description="Access your profile, messages, and community posts."
@@ -30,6 +31,7 @@ export default async function LoginPage({
           Create an account
         </Link>
       </p>
+      </div>
     </div>
   );
 }

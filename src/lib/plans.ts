@@ -25,6 +25,7 @@ export type PlanFeature =
   | "localLeads"
   | "aiAudit"
   | "trendingBoost"
+  | "analytics"
   | "automatedMarketing"
   | "virtualAgent";
 
@@ -47,12 +48,13 @@ const FREE_BUSINESS_FEATURES: PlanFeature[] = [
 
 const FEATURE_MATRIX: Record<PlanTier, PlanFeature[]> = {
   free: ["messaging", "networking", "customerLikes", "reviews", ...FREE_BUSINESS_FEATURES],
-  pro: [...FREE_BUSINESS_FEATURES, "localLeads", "aiAudit", "trendingBoost"],
+  pro: [...FREE_BUSINESS_FEATURES, "localLeads", "aiAudit", "trendingBoost", "analytics"],
   platinum: [
     ...FREE_BUSINESS_FEATURES,
     "localLeads",
     "aiAudit",
     "trendingBoost",
+    "analytics",
     "automatedMarketing",
     "virtualAgent",
   ],

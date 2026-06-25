@@ -12,6 +12,7 @@ const navItems = [
   { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/leads", label: "Leads", feature: "localLeads" as const },
+  { href: "/dashboard/analytics", label: "Analytics", feature: "analytics" as const },
   { href: "/dashboard/assessment", label: "AI Audit", feature: "aiAudit" as const },
   { href: "/dashboard/marketing", label: "Marketing", feature: "automatedMarketing" as const },
   { href: "/dashboard/agent", label: "Virtual Agent", feature: "virtualAgent" as const },

@@ -49,6 +49,7 @@ import { buildResumeSnapshot } from "@/lib/resume";
 import { contentLikeKey, isContentLiked } from "@/lib/content-likes-types";
 
 import { displayCategoryLabel } from "@/lib/industries";
+import { PageViewTracker } from "@/components/page-view-tracker";
 
 
 
@@ -158,11 +159,11 @@ export default async function BusinessDetailPage({
 
             <div className="min-w-0">
 
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{business.name}</h1>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{business.name}</h1>
 
               {business.tagline && (
 
-                <p className="mt-1 text-muted">{business.tagline}</p>
+                <p className="mt-1 text-base text-muted">{business.tagline}</p>
 
               )}
 
@@ -198,9 +199,9 @@ export default async function BusinessDetailPage({
 
 
 
-          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+          <div className="mt-4 flex flex-wrap gap-3 text-base">
 
-            <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-accent">
+            <span className="rounded-full bg-blue-50 px-4 py-1.5 font-medium text-accent">
 
               {displayCategoryLabel(business.category, business.subcategory)}
 
@@ -234,9 +235,49 @@ export default async function BusinessDetailPage({
 
           </div>
 
+          {(business.website || socialEntries.length > 0) && (
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+
+              {business.website && (
+
+                <SafeExternalLink
+
+                  url={business.website}
+
+                  label="Visit website"
+
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-accent/40 hover:text-accent"
+
+                />
+
+              )}
+
+              {socialEntries.map(([network, url]) => (
+
+                <SafeExternalLink
+
+                  key={network}
+
+                  url={url!}
+
+                  label={socialPlatformLabel(network)}
+
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm text-muted hover:border-accent/40 hover:text-foreground"
+
+                />
+
+              ))}
+
+            </div>
+
+          )}
+
         </div>
 
       </section>
+
+      <PageViewTracker businessId={business.id} />
 
 
 

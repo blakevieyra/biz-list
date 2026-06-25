@@ -16,13 +16,13 @@ export function ListingRatingHeader({
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
       {ratingCount > 0 ? (
         <>
-          <StarRating rating={ratingAvg} count={ratingCount} size="md" />
-          <span className="text-sm text-muted">
+          <StarRating rating={ratingAvg} count={ratingCount} size="lg" />
+          <span className="text-base text-muted">
             {ratingCount} review{ratingCount === 1 ? "" : "s"}
           </span>
         </>
       ) : (
-        <span className="text-sm text-muted">No reviews yet</span>
+        <span className="text-base text-muted">No reviews yet</span>
       )}
       {showLeaveReview && (
         <Link href="#reviews" className="text-sm font-medium text-accent hover:underline">

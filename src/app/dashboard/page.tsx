@@ -5,6 +5,7 @@ import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessPosts } from "@/lib/data/business";
 import { getBusinessById, getCurrentProfile } from "@/lib/data";
 import { getAiAssessments, getLocalLeads } from "@/lib/data/pro";
+import { getBusinessAnalytics } from "@/lib/data/analytics";
 import { canAccess } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,9 +32,12 @@ export default async function DashboardPage() {
   const business = businessRow ? await getBusinessById(businessRow.id) : null;
   const posts = business ? await getBusinessPosts(business.id) : [];
 
-  const [leads, assessments] = await Promise.all([
+  const [leads, assessments, analytics] = await Promise.all([
     canAccess(profile.planTier, "localLeads") ? getLocalLeads(userId) : Promise.resolve([]),
     canAccess(profile.planTier, "aiAudit") ? getAiAssessments(userId) : Promise.resolve([]),
+    canAccess(profile.planTier, "analytics") && business
+      ? getBusinessAnalytics(business.id)
+      : Promise.resolve(null),
   ]);
 
   return (
@@ -104,6 +108,21 @@ export default async function DashboardPage() {
             <p className="mt-4 text-3xl font-bold">{assessments.length}</p>
             <Link href="/dashboard/assessment" className="mt-4 inline-block text-sm text-accent hover:underline">
               Run audit →
+            </Link>
+          </Card>
+        )}
+
+        {analytics && (
+          <Card>
+            <h2 className="font-semibold">Page views</h2>
+            <p className="mt-4 text-3xl font-bold">{analytics.views7d}</p>
+            <p className="text-xs text-muted">last 7 days</p>
+            <div className="mt-2 flex gap-4 text-xs text-muted">
+              <span>{analytics.views30d} this month</span>
+              <span>{analytics.viewsAllTime} total</span>
+            </div>
+            <Link href="/dashboard/analytics" className="mt-4 inline-block text-sm text-accent hover:underline">
+              Full analytics →
             </Link>
           </Card>
         )}

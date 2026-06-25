@@ -30,8 +30,8 @@ export function ForumPostLikeButton({
     startTransition(async () => {
       const result = await toggleForumPostLike(postId);
       if ("liked" in result) {
-        setLiked(result.liked);
-        setCount(result.likeCount);
+        setLiked(result.liked ?? false);
+        setCount(result.likeCount ?? 0);
       }
     });
   }

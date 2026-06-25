@@ -62,7 +62,7 @@ export async function ForumPostThreadPanel({
         <ForumPostLikeButton
           postId={post.id}
           initialLiked={post.likedByViewer ?? false}
-          initialCount={post.likeCount}
+          initialCount={post.likeCount ?? 0}
           requiresAuth={!userId}
         />
       </div>

@@ -47,16 +47,17 @@ async function notifyCustomerProUsers(params: {
   followerIds?: string[];
   city?: string;
   state?: string;
+  /** Business category — used to match non-followers via businessMatches perk. */
+  businessCategory?: string;
 }) {
   const admin = getSupabaseAdmin();
   if (!admin) return;
 
-  const userQuery = admin
+  const { data: proUsers } = await admin
     .from("profiles")
-    .select("id, role, plan_tier, city, state, job_alert_opt_in")
+    .select("id, role, plan_tier, city, state, job_alert_opt_in, industry_interests")
     .in("plan_tier", ["pro", "platinum"]);
 
-  const { data: proUsers } = await userQuery;
   if (!proUsers?.length) return;
 
   const recipients = proUsers.filter((profile) => {
@@ -64,16 +65,27 @@ async function notifyCustomerProUsers(params: {
     if (params.type === "event" && !canAccessCustomerFeature(plan, "eventNotifications")) {
       return false;
     }
-    if (params.type === "deal_alert" && !canAccessCustomerFeature(plan, "firstPickDeals")) {
-      return false;
+    if (params.type === "deal_alert") {
+      const isFollower = Boolean(params.followerIds?.includes(profile.id));
+      if (isFollower) {
+        if (!canAccessCustomerFeature(plan, "firstPickDeals")) return false;
+      } else {
+        // Non-followers reach via businessMatches perk only when category overlaps
+        if (!canAccessCustomerFeature(plan, "businessMatches")) return false;
+        if (!params.businessCategory) return false;
+        const catBase = params.businessCategory.toLowerCase().split(" & ")[0].split(",")[0].trim();
+        const interests: string[] = (profile.industry_interests as string[] | null) ?? [];
+        const hasInterest = interests.some((interest) => {
+          const interestBase = interest.toLowerCase().split(" › ")[0].trim();
+          return interestBase.includes(catBase) || catBase.includes(interestBase);
+        });
+        if (!hasInterest) return false;
+      }
     }
     if (params.type === "job_match" && !canAccessCustomerFeature(plan, "jobAlerts")) {
       return false;
     }
     if (params.type === "job_match" && !profile.job_alert_opt_in) {
-      return false;
-    }
-    if (params.followerIds?.length && !params.followerIds.includes(profile.id)) {
       return false;
     }
     if (params.city && params.state && profile.city && profile.state) {
@@ -282,6 +294,7 @@ export async function commentOnEvent(eventId: string, body: string) {
 export async function notifyDealToCustomerPro(input: {
   businessId: string;
   businessName: string;
+  businessCategory?: string;
   postTitle: string;
   postId: string;
   city?: string;
@@ -299,10 +312,11 @@ export async function notifyDealToCustomerPro(input: {
     type: "deal_alert",
     title: `Early deal: ${input.postTitle}`,
     body: `${input.businessName} shared a deal for BizList Plus subscribers first.`,
-    link: `/feed?tab=sales`,
+    link: `/listings/${input.businessId}`,
     followerIds: (followers ?? []).map((f) => f.follower_id),
     city: input.city,
     state: input.state,
+    businessCategory: input.businessCategory,
   });
 }
 
