@@ -326,7 +326,9 @@ export async function getBusinessEventById(
     .eq("status", "published")
     .maybeSingle();
 
-  if (!row) return null;
+  if (!row) {
+    return SEED_BUSINESS_EVENTS.find((e) => e.id === id && e.status === "published") ?? null;
+  }
 
   const [event] = await attachRsvpCounts([mapEventRow(row as EventRow)], userId);
   return event ?? null;

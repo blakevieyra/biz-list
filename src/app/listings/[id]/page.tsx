@@ -318,6 +318,30 @@ export default async function BusinessDetailPage({
 
             )}
 
+            {business.isHiring && !isOwner && (
+
+              <JobApplySection
+
+                businessId={business.id}
+
+                businessName={business.name}
+
+                business={business}
+
+                isHiring={business.isHiring}
+
+                currentUserId={userId}
+
+                isOwner={isOwner}
+
+                resumePreview={resumePreview}
+
+                existingApplication={existingApplication}
+
+              />
+
+            )}
+
           </div>
 
 
@@ -526,33 +550,6 @@ export default async function BusinessDetailPage({
 
 
 
-          <div className="space-y-6 lg:col-span-3 lg:row-start-2">
-
-            {business.isHiring && !isOwner && (
-
-              <JobApplySection
-
-                businessId={business.id}
-
-                businessName={business.name}
-
-                business={business}
-
-                isHiring={business.isHiring}
-
-                currentUserId={userId}
-
-                isOwner={isOwner}
-
-                resumePreview={resumePreview}
-
-                existingApplication={existingApplication}
-
-              />
-
-            )}
-
-          </div>
 
         </div>
 
