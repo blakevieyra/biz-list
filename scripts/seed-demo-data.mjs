@@ -43,6 +43,11 @@ const DEMO_IMAGES = {
   retail: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
   fitness: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
   print: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
+  flyerFitness: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
+  flyerPrint: "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?w=800&q=80",
+  flyerMarket: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
+  ytBakeryTour: "https://www.youtube.com/watch?v=nwXBh8XNZGU",
+  ytPrintProcess: "https://www.youtube.com/watch?v=DU7HOrAKhhA",
 };
 
 loadEnvFile(path.join(root, ".env.local"));
@@ -484,21 +489,27 @@ async function main() {
       );
     }
 
+    // [businessId, authorId, postType, title, body, media, score, trending]
     const posts = [
-      [riverbend, ids.maria, "New weekend sourdough drop — Saturdays at 8am", "Starting this Saturday we're doing a limited sourdough drop at the shop.", [DEMO_IMAGES.bakery], 42, true],
-      [riverbend, ids.maria, "Now hiring a part-time pastry assistant", "Looking for someone with early-morning availability Tue–Sat.", [], 28, false],
-      [makers, ids.makers, "June maker market — vendor spots open", "Ten spots left for our June community market.", [DEMO_IMAGES.retail], 35, true],
-      [fitness, ids.diego, "Free corporate stretch sessions this month", "Piloting 20-minute desk-break mobility sessions for local offices.", [DEMO_IMAGES.fitness], 19, false],
-      [printCo, ids.elena, "Grand opening banner bundle — 15% off in May", "Bundled yard signs and window clings for local launches.", [DEMO_IMAGES.print], 24, false],
-      [greenline, ids.james, "Summer lease review special for retail pop-ups", "Flat-fee review available through June.", [DEMO_IMAGES.legal], 15, false],
+      [riverbend, ids.maria, "update", "New weekend sourdough drop — Saturdays at 8am", "Starting this Saturday we're doing a limited sourdough drop at the shop.", [DEMO_IMAGES.bakery], 42, true],
+      [riverbend, ids.maria, "job", "Now hiring a part-time pastry assistant", "Looking for someone with early-morning availability Tue–Sat.", [], 28, false],
+      [makers, ids.makers, "update", "June maker market — vendor spots open", "Ten spots left for our June community market.", [DEMO_IMAGES.retail], 35, true],
+      [fitness, ids.diego, "deal", "Free corporate stretch sessions this month", "Piloting 20-minute desk-break mobility sessions for local offices.", [DEMO_IMAGES.fitness], 19, false],
+      [printCo, ids.elena, "deal", "Grand opening banner bundle — 15% off in May", "Bundled yard signs and window clings for local launches.", [DEMO_IMAGES.print], 24, false],
+      [greenline, ids.james, "deal", "Summer lease review special for retail pop-ups", "Flat-fee review available through June.", [DEMO_IMAGES.legal], 15, false],
+      // Flyer + video posts
+      [fitness, ids.diego, "deal", "Summer kick-off — 3 months for the price of 2", "Join before July 4th and lock in our best rate. Includes unlimited group classes, open gym, and a free nutrition consult.", [DEMO_IMAGES.flyerFitness], 38, true],
+      [riverbend, ids.maria, "video", "Behind the scenes — sourdough at 4am", "We filmed a morning bake so you can see what goes into each loaf. This is why Saturday drops sell out by 9am.", [DEMO_IMAGES.ytBakeryTour], 55, true],
+      [printCo, ids.elena, "update", "New large-format printer — same-day banners now available", "Just installed a 64-inch wide-format machine. Same-day banners up to 4×8 ft for Cedar Park and Round Rock.", [DEMO_IMAGES.flyerPrint, DEMO_IMAGES.ytPrintProcess], 29, false],
+      [makers, ids.makers, "deal", "Market day flyer — July 4th weekend pop-up", "Thirty vendors, live music, and food trucks this July 4th weekend. Free entry. Print this flyer for $1 off any vendor purchase.", [DEMO_IMAGES.flyerMarket], 44, true],
     ];
 
     const postIds = [];
-    for (const [businessId, authorId, title, body, media, score, trending] of posts) {
+    for (const [businessId, authorId, postType, title, body, media, score, trending] of posts) {
       const { rows } = await client.query(
-        `insert into public.business_posts (business_id, author_id, title, body, media_urls, engagement_score, is_trending)
-         values ($1, $2, $3, $4, $5, $6, $7) returning id`,
-        [businessId, authorId, title, body, media, score, trending],
+        `insert into public.business_posts (business_id, author_id, post_type, title, body, media_urls, engagement_score, is_trending)
+         values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
+        [businessId, authorId, postType, title, body, media, score, trending],
       );
       postIds.push(rows[0].id);
     }
@@ -530,6 +541,43 @@ async function main() {
          select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
        )`,
       [postIds[4], ids.elena, "Sam — message us your dimensions and we'll get you a quote today."],
+    );
+
+    // Comments on the new flyer / video posts (indices 6–9)
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[6], ids.priya, "Is the nutrition consult included from day one or after the first month?"],
+    );
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[6], ids.diego, "Day one — book it when you sign up and we’ll get you scheduled same week."],
+    );
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[7], ids.alex, "This is amazing — I had no idea how much goes into a single loaf."],
+    );
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[7], ids.jordan, "Watched the whole thing. Will definitely be at Saturday’s drop."],
+    );
+    await client.query(
+      `insert into public.business_post_comments (post_id, author_id, body)
+       select $1, $2, $3 where not exists (
+         select 1 from public.business_post_comments where post_id = $1 and author_id = $2 and body = $3
+       )`,
+      [postIds[9], ids.sam, "Sending this to our whole group — we’ll be there on Saturday."],
     );
 
     await client.query(

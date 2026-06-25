@@ -1,18 +1,21 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { uploadBusinessImage } from "@/lib/actions/upload";
+import { uploadBusinessImage, uploadBusinessMedia } from "@/lib/actions/upload";
+import { isDirectVideoUrl } from "@/lib/media/post-media";
 
 export function ImageUpload({
   label,
   hint,
   onUploaded,
   existingUrls = [],
+  acceptVideo = false,
 }: {
   label: string;
   hint?: string;
   onUploaded: (urls: string[]) => void;
   existingUrls?: string[];
+  acceptVideo?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -28,7 +31,9 @@ export function ImageUpload({
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.set("file", file);
-        const result = await uploadBusinessImage(formData);
+        const result = acceptVideo
+          ? await uploadBusinessMedia(formData)
+          : await uploadBusinessImage(formData);
         if (result.error) {
           setError(result.error);
           return;
@@ -47,6 +52,10 @@ export function ImageUpload({
     onUploaded(next);
   }
 
+  const accept = acceptVideo
+    ? "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+    : "image/jpeg,image/png,image/webp,image/gif";
+
   return (
     <div className="space-y-3">
       <div>
@@ -57,9 +66,19 @@ export function ImageUpload({
       {urls.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {urls.map((url) => (
-            <div key={url} className="relative overflow-hidden rounded-xl border border-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="aspect-square w-full object-cover" />
+            <div key={url} className="relative overflow-hidden rounded-xl border border-border bg-slate-100">
+              {isDirectVideoUrl(url) ? (
+                <video
+                  src={url}
+                  className="aspect-square w-full object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={url} alt="" className="aspect-square w-full object-cover" />
+              )}
               <button
                 type="button"
                 onClick={() => removeUrl(url)}
@@ -75,7 +94,7 @@ export function ImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept={accept}
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
@@ -87,7 +106,11 @@ export function ImageUpload({
         onClick={() => inputRef.current?.click()}
         className="min-h-11 rounded-full border border-dashed border-border px-4 py-2 text-sm font-medium hover:border-accent/40 disabled:opacity-50"
       >
-        {pending ? "Uploading..." : urls.length ? "Add more photos" : "Upload photos"}
+        {pending
+          ? "Uploading..."
+          : urls.length
+            ? acceptVideo ? "Add more photos or video" : "Add more photos"
+            : acceptVideo ? "Upload photo or video" : "Upload photos"}
       </button>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { BusinessPostCommentThread } from "@/components/business-post-comment-thread";
 import { ContentLikeButton } from "@/components/content-like-button";
 import { PostTypeBadge } from "@/components/post-media";
-import { isImageUrl } from "@/lib/media/post-media";
+import { isDirectVideoUrl, isImageUrl, isVideoUrl, youtubeEmbedUrl } from "@/lib/media/post-media";
 import type { BusinessPost, FeedPostBadge } from "@/lib/types";
 import { Card, formatPostDateTime, StarRating } from "@/components/ui";
 
@@ -85,6 +85,12 @@ export function FeedPostCard({
 }) {
   const avatarSrc = post.businessMediaUrl;
   const postMediaSrc = post.mediaUrls.find(isImageUrl);
+  const postVideoSrc = post.mediaUrls.find(isVideoUrl);
+  const youtubeId = postVideoSrc ? (() => {
+    const embed = youtubeEmbedUrl(postVideoSrc);
+    return embed ? embed.split("/embed/")[1]?.split("?")[0] ?? null : null;
+  })() : null;
+  const isDirectVideo = postVideoSrc ? isDirectVideoUrl(postVideoSrc) : false;
 
   return (
     <Card className="overflow-hidden p-0">
@@ -147,6 +153,37 @@ export function FeedPostCard({
                       loading="lazy"
                       className="max-h-36 w-full object-cover"
                     />
+                  </div>
+                )}
+
+                {!postMediaSrc && postVideoSrc && (
+                  <div className="mt-3 overflow-hidden rounded-lg border border-border bg-black">
+                    {youtubeId ? (
+                      <div className="relative aspect-video">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60">
+                            <svg viewBox="0 0 24 24" fill="white" className="h-5 w-5 translate-x-0.5">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : isDirectVideo && postVideoSrc ? (
+                      <video
+                        src={postVideoSrc}
+                        className="max-h-36 w-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : null}
                   </div>
                 )}
               </div>

@@ -37,7 +37,7 @@ export function BusinessPostComposer({ businessId }: { businessId: string }) {
     const body = String(formData.get("body") ?? "").trim();
 
     const urls = [...mediaUrls];
-    if (postType === "video" && videoUrl.trim()) {
+    if (videoUrl.trim()) {
       urls.unshift(videoUrl.trim());
     }
 
@@ -118,28 +118,24 @@ export function BusinessPostComposer({ businessId }: { businessId: string }) {
         />
       </label>
 
-      {postType === "video" ? (
-        <label className="block text-sm">
-          Video link
-          <input
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="YouTube, Vimeo, or direct .mp4 link"
-            className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-          />
-          <span className="mt-1 block text-xs text-muted">
-            Paste a YouTube/Vimeo URL or upload a video file below.
-          </span>
-        </label>
-      ) : null}
+      <label className="block text-sm">
+        Video link{" "}
+        <span className="font-normal text-muted">(optional)</span>
+        <input
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          placeholder="YouTube, Vimeo, or direct .mp4 link"
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+        />
+        <span className="mt-1 block text-xs text-muted">
+          Paste a YouTube or Vimeo URL, or a direct .mp4 link. Leave blank if uploading a file below.
+        </span>
+      </label>
 
       <ImageUpload
-        label={postType === "video" ? "Upload video or thumbnail" : "Photos"}
-        hint={
-          postType === "video"
-            ? "Upload MP4/WebM clips or a cover image for your video post."
-            : "Add product shots, flyers, or team photos. Images appear in the feed."
-        }
+        label="Photos & video"
+        hint="Upload a flyer, product photo, or short video clip (images ≤ 5 MB · video ≤ 50 MB)."
+        acceptVideo
         existingUrls={mediaUrls}
         onUploaded={setMediaUrls}
       />

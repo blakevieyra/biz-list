@@ -10,4 +10,13 @@ export const DEMO_IMAGES = {
   avatarMaria: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=128&h=128&fit=crop&q=80",
   avatarAlex: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&h=128&fit=crop&q=80",
   avatarBlake: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=128&h=128&fit=crop&q=80",
+  // Flyer / promo images used in posts
+  flyerFitness: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
+  flyerBakery: "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=800&q=80",
+  flyerPrint: "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?w=800&q=80",
+  flyerMarket: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
+  // YouTube demo video IDs (public business promo videos)
+  ytBakeryTour: "https://www.youtube.com/watch?v=nwXBh8XNZGU",
+  ytFitnessPromo: "https://www.youtube.com/watch?v=6v2L2UGZJAM",
+  ytPrintProcess: "https://www.youtube.com/watch?v=DU7HOrAKhhA",
 } as const;

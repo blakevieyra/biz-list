@@ -16,15 +16,7 @@ loadEnvFile(path.join(root, ".env.local"));
 loadEnvFile(path.join(root, ".env"));
 
 const PENDING = [
-  "supabase/migrations/20260624270000_comment_threads_attachments.sql",
-  "supabase/migrations/20260624300000_job_application_form.sql",
-  "supabase/migrations/20260624310000_collaboration_types_comments.sql",
-  "supabase/migrations/20260624320000_profile_avatar_url.sql",
-  "supabase/migrations/20260624330000_profile_country.sql",
-  "supabase/migrations/20260624340000_event_comments.sql",
-  "supabase/migrations/20260624350000_collaboration_interests.sql",
-  "supabase/migrations/20260625100000_forum_enhancements.sql",
-  "supabase/migrations/20260625200000_business_analytics.sql",
+  "supabase/migrations/20260625220000_business_media_video.sql",
 ];
 
 function loadEnvFile(filePath) {
