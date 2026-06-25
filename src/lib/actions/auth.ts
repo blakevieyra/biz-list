@@ -267,7 +267,7 @@ export async function signIn(formData: FormData) {
     await emailWelcome(user.email, displayName);
   }
 
-  redirect("/home");
+  redirect("/home?tab=latest");
 }
 
 export async function signOut() {

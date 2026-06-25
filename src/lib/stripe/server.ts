@@ -57,7 +57,7 @@ export async function createCheckoutSession(input: {
       ? { customer: input.stripeCustomerId }
       : { customer_email: input.email }),
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}${input.tier === "customer_pro" ? "/home?upgraded=customer_pro" : `/dashboard?upgraded=${input.tier}`}`,
+    success_url: `${appUrl}${input.tier === "customer_pro" ? "/home?tab=latest&upgraded=customer_pro" : `/dashboard?upgraded=${input.tier}`}`,
     cancel_url: `${appUrl}/pricing?canceled=1`,
     metadata: {
       userId: input.userId,

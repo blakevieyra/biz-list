@@ -29,7 +29,7 @@ export default async function DashboardLayout({
   if (!profile) redirect("/profile/create");
 
   if (profile.role === "customer") {
-    redirect("/home");
+    redirect("/home?tab=latest");
   }
 
   const enabledFeatures: PlanFeature[] = navItems

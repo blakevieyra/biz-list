@@ -79,6 +79,10 @@ export default async function HomeHubPage({
   if (!profile) redirect("/profile/create");
 
   const params = await searchParams;
+  if (!params.tab) {
+    redirect("/home?tab=latest");
+  }
+
   const tab: HomeTab = homeTabs.has(params.tab as HomeTab)
     ? (params.tab as HomeTab)
     : "latest";
@@ -169,7 +173,7 @@ export default async function HomeHubPage({
 
   function buildHref(next: Record<string, string | undefined>) {
     const merged = {
-      tab: tab !== "latest" ? tab : undefined,
+      tab,
       profileTab: tab === "profile" && profileTab !== "overview" ? profileTab : undefined,
       scope: areaScope !== DEFAULT_DISCOVERY_RADIUS ? areaScope : undefined,
       miles: mileRadius !== DEFAULT_MILE_RADIUS ? mileRadius : undefined,
@@ -183,7 +187,7 @@ export default async function HomeHubPage({
       if (value) search.set(key, value);
     }
     const qs = search.toString();
-    return qs ? `/home?${qs}` : "/home";
+    return qs ? `/home?${qs}` : "/home?tab=latest";
   }
 
   const subcategories = categoryFilter ? getSubcategories(categoryFilter) : [];

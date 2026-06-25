@@ -11,7 +11,7 @@ import { MobileNav } from "@/components/mobile-nav";
 import { isBusinessPlan, PLAN_LABELS } from "@/lib/plans";
 
 const links = [
-  { href: "/home", label: "Home", authOnly: true },
+  { href: "/home?tab=latest", label: "Home", authOnly: true },
   { href: "/feed", label: "Post" },
   { href: "/listings", label: "Listing" },
   { href: "/partnerships", label: "Collaboration" },
@@ -31,7 +31,7 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
         <div className="flex min-w-0 items-center gap-3">
-          <Logo size="lg" />
+          <Logo size="lg" href={userId ? "/home?tab=latest" : "/"} />
           <MobileNav
             userId={userId}
             displayName={profile?.displayName}

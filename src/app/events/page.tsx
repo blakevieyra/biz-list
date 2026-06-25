@@ -89,7 +89,7 @@ export default async function EventsPage({
             </Link>
           ) : profile ? (
             <Link
-              href="/home"
+              href="/home?tab=latest"
               className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
             >
               Back to home

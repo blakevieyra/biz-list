@@ -25,7 +25,7 @@ export function HomeHubNav({
           tab.id === "profile" && profileTab
             ? `/home?tab=profile&profileTab=${profileTab}`
             : tab.id === "latest"
-              ? "/home"
+              ? "/home?tab=latest"
               : `/home?tab=${tab.id}`;
         return (
           <Link
