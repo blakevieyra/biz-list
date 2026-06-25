@@ -116,7 +116,7 @@ export function BusinessListingCard({
         </Link>
 
         <div className="mt-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest update</p>
           {latestPost ? (
             <Link
               href={`/listings/${business.id}#post-${latestPost.id}`}

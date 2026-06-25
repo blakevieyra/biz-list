@@ -25,7 +25,10 @@ export function normalizeServiceType(value: string | undefined): ServiceType | u
 
 export function offeringActionLabel(serviceType?: string, compact = false): string {
   const normalized = normalizeServiceType(serviceType);
-  if (normalized === "Service" || normalized === "Event / experience") {
+  if (normalized === "Event / experience") {
+    return compact ? "RSVP" : "RSVP now";
+  }
+  if (normalized === "Service") {
     return compact ? "Book" : "Book now";
   }
   if (normalized === "Other" || !normalized) {
@@ -37,7 +40,10 @@ export function offeringActionLabel(serviceType?: string, compact = false): stri
 export function offeringFormTitle(serviceType?: string, serviceName?: string): string {
   const normalized = normalizeServiceType(serviceType);
   const name = serviceName ?? "this offering";
-  if (normalized === "Service" || normalized === "Event / experience") {
+  if (normalized === "Event / experience") {
+    return `RSVP for ${name}`;
+  }
+  if (normalized === "Service") {
     return `Book ${name}`;
   }
   if (normalized === "Other" || !normalized) {
@@ -48,7 +54,10 @@ export function offeringFormTitle(serviceType?: string, serviceName?: string): s
 
 export function offeringSubmitLabel(serviceType?: string): string {
   const normalized = normalizeServiceType(serviceType);
-  if (normalized === "Service" || normalized === "Event / experience") {
+  if (normalized === "Event / experience") {
+    return "Send RSVP request";
+  }
+  if (normalized === "Service") {
     return "Send booking request";
   }
   if (normalized === "Other" || !normalized) {
