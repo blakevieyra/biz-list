@@ -2,7 +2,6 @@ import type {
   BusinessIntent,
   BusinessProfile,
   BusinessService,
-  BusinessSocialLinks,
   CollaborationIdea,
   Comment,
   ForumCategory,
@@ -13,6 +12,7 @@ import type {
   PlanTier,
 } from "@/lib/types";
 import { resolveAreaScope } from "@/lib/feed/location-scope";
+import { parseSocialLinks } from "@/lib/social-platforms";
 import type { AreaScope } from "@/lib/types";
 
 type ProfileRow = {
@@ -145,21 +145,6 @@ export function mapProfile(row: ProfileRow): UserProfile {
     discoveryRadius: mapDiscoveryRadius(row),
     feedScope: mapDiscoveryRadius(row),
     createdAt: row.created_at,
-  };
-}
-
-function parseSocialLinks(raw: unknown): BusinessSocialLinks {
-  if (!raw || typeof raw !== "object") return {};
-  const links = raw as Record<string, unknown>;
-  const pick = (key: keyof BusinessSocialLinks) =>
-    typeof links[key] === "string" ? links[key] : undefined;
-  return {
-    instagram: pick("instagram"),
-    facebook: pick("facebook"),
-    linkedin: pick("linkedin"),
-    x: pick("x"),
-    tiktok: pick("tiktok"),
-    youtube: pick("youtube"),
   };
 }
 

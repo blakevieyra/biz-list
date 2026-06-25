@@ -14,6 +14,7 @@ import {
 } from "@/lib/data";
 import { getBusinessPosts, getBusinessReviews } from "@/lib/data/business";
 import { getAuthUserId } from "@/lib/actions/auth";
+import { socialPlatformLabel } from "@/lib/social-platforms";
 
 export default async function BusinessDetailPage({
   params,
@@ -211,8 +212,8 @@ export default async function BusinessDetailPage({
                       <SafeExternalLink
                         key={network}
                         url={url!}
-                        label={network}
-                        className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium capitalize hover:bg-slate-200"
+                        label={socialPlatformLabel(network)}
+                        className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium hover:bg-slate-200"
                       />
                     ))}
                   </dd>

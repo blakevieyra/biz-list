@@ -13,6 +13,7 @@ import type {
   BusinessPostType,
   BusinessReview,
   BusinessService,
+  DiscoveryRadius,
   JobApplication,
   JobApplicationComment,
   MileRadius,
@@ -22,8 +23,7 @@ import type {
 import { parsePostType } from "@/lib/media/post-media";
 import { getPostLikeCounts } from "@/lib/data/content-likes";
 import {
-  matchesAreaScope,
-  matchesMileRadius,
+  matchesDiscoveryRadius,
   type DiscoveryViewer,
 } from "@/lib/feed/location-scope";
 
@@ -310,14 +310,17 @@ export async function getFeedBusinessPosts(options: {
   viewer?: DiscoveryViewer | null;
   areaScope?: AreaScope;
   mileRadius?: MileRadius;
+  discoveryRadius?: DiscoveryRadius;
   userId?: string | null;
   postTypes?: BusinessPostType[];
   limit?: number;
 }): Promise<BusinessPost[]> {
   const limit = options.limit ?? 40;
   const viewer = options.viewer;
-  const areaScope = options.areaScope ?? "city";
-  const mileRadius = options.mileRadius;
+  const discoveryRadius =
+    options.discoveryRadius ??
+    options.mileRadius ??
+    (options.areaScope ?? "city");
   const typeSet = options.postTypes ? new Set(options.postTypes) : null;
 
   const supabase = await createClient();
@@ -329,8 +332,7 @@ export async function getFeedBusinessPosts(options: {
       const business = SEED_BUSINESSES.find((b) => b.id === post.businessId);
       if (!business) return post;
       if (viewer) {
-        if (!matchesAreaScope(viewer, business, areaScope)) return null;
-        if (mileRadius && !matchesMileRadius(viewer, business, mileRadius)) return null;
+        if (!matchesDiscoveryRadius(viewer, business, discoveryRadius)) return null;
       }
       const isFollowed = options.userId
         ? business.followerIds.includes(options.userId)
@@ -397,8 +399,7 @@ export async function getFeedBusinessPosts(options: {
         latitude: meta.latitude ?? undefined,
         longitude: meta.longitude ?? undefined,
       };
-      if (!matchesAreaScope(viewer, location, areaScope)) return false;
-      if (mileRadius && !matchesMileRadius(viewer, location, mileRadius)) return false;
+      if (!matchesDiscoveryRadius(viewer, location, discoveryRadius)) return false;
       return true;
     },
   );

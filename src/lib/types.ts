@@ -17,6 +17,10 @@ export type BusinessSocialLinks = {
   x?: string;
   tiktok?: string;
   youtube?: string;
+  pinterest?: string;
+  threads?: string;
+  snapchat?: string;
+  yelp?: string;
 };
 
 export type DiscoveryRadius =

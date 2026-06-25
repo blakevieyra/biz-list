@@ -41,6 +41,33 @@ export const FEED_SCOPE_LABELS = DISCOVERY_RADIUS_LABELS;
 
 export const DEFAULT_DISCOVERY_RADIUS: AreaScope = "city";
 export const DEFAULT_MILE_RADIUS: MileRadius = "25";
+export const DEFAULT_DISCOVERY_FILTER: DiscoveryRadius = "25";
+
+export const DISCOVERY_FILTER_OPTIONS: DiscoveryRadius[] = [
+  ...MILE_RADIUS_OPTIONS,
+  ...AREA_SCOPE_OPTIONS,
+];
+
+export function resolveDiscoveryFilter(
+  urlValue: string | undefined,
+  profileValue?: DiscoveryRadius | string,
+): DiscoveryRadius {
+  const fromUrl = normalizeDiscoveryRadius(urlValue);
+  if (fromUrl) return fromUrl;
+
+  const fromProfile = normalizeDiscoveryRadius(profileValue);
+  if (fromProfile) return fromProfile;
+
+  return DEFAULT_DISCOVERY_FILTER;
+}
+
+export function isMileDiscoveryFilter(value: DiscoveryRadius): value is MileRadius {
+  return MILE_VALUES.has(value);
+}
+
+export function discoveryFilterHrefValue(value: DiscoveryRadius): string | undefined {
+  return value === DEFAULT_DISCOVERY_FILTER ? undefined : value;
+}
 
 const MILE_VALUES = new Set<string>(MILE_RADIUS_OPTIONS);
 const AREA_VALUES = new Set<string>(AREA_SCOPE_OPTIONS);

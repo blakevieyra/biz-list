@@ -12,6 +12,7 @@ import type {
   BusinessProfile,
   CollaborationIdea,
   Comment,
+  DiscoveryRadius,
   ForumCategory,
   ForumPost,
   Notification,
@@ -20,9 +21,8 @@ import type {
 } from "@/lib/types";
 import {
   businessDiscoveryScore,
-  matchesAreaScope,
+  matchesDiscoveryRadius,
   matchesFeedScope,
-  matchesMileRadius,
   type DiscoveryViewer,
   type FeedScope,
   type LocationProfile,
@@ -198,7 +198,8 @@ export async function getBusinesses(filters?: {
   productType?: string;
   areaScope?: AreaScope;
   mileRadius?: MileRadius;
-  /** @deprecated use areaScope and mileRadius */
+  discoveryRadius?: DiscoveryRadius;
+  /** @deprecated use discoveryRadius */
   scope?: FeedScope;
   viewer?: DiscoveryViewer | null;
 }): Promise<BusinessProfile[]> {
@@ -206,21 +207,21 @@ export async function getBusinesses(filters?: {
   const viewer = filters?.viewer;
   const areaScope = filters?.areaScope ?? DEFAULT_DISCOVERY_RADIUS;
   const mileRadius = filters?.mileRadius;
+  const discoveryRadius =
+    filters?.discoveryRadius ?? mileRadius ?? (areaScope as DiscoveryRadius);
   const productType = normalizeServiceType(filters?.productType);
 
   function rankBusinesses(list: BusinessProfile[]): BusinessProfile[] {
     return [...list].sort(
       (a, b) =>
-        businessDiscoveryScore(b, viewer, mileRadius ?? areaScope) -
-        businessDiscoveryScore(a, viewer, mileRadius ?? areaScope),
+        businessDiscoveryScore(b, viewer, discoveryRadius) -
+        businessDiscoveryScore(a, viewer, discoveryRadius),
     );
   }
 
   function matchesLocation(b: BusinessProfile): boolean {
     if (!viewer) return true;
-    if (!matchesAreaScope(viewer, b, areaScope)) return false;
-    if (mileRadius && !matchesMileRadius(viewer, b, mileRadius)) return false;
-    return true;
+    return matchesDiscoveryRadius(viewer, b, discoveryRadius);
   }
 
   function serviceMatchesFilters(service: BusinessProfile["services"][number], q: string): boolean {

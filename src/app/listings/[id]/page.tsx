@@ -39,6 +39,7 @@ import { getBusinessPosts, getBusinessReviews, getExistingJobApplication } from 
 import { getBusinessContentLikeState } from "@/lib/data/content-likes";
 
 import { getAuthUserId } from "@/lib/actions/auth";
+import { socialPlatformLabel } from "@/lib/social-platforms";
 
 import { buildResumeSnapshot } from "@/lib/resume";
 
@@ -526,9 +527,9 @@ export default async function BusinessDetailPage({
 
                           url={url!}
 
-                          label={network}
+                          label={socialPlatformLabel(network)}
 
-                          className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium capitalize hover:bg-slate-200"
+                          className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium hover:bg-slate-200"
 
                         />
 
