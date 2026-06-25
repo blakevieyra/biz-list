@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 const LOGO_SIZES = {
-  sm: { width: 140, height: 36, className: "h-9 w-auto max-w-[140px]" },
-  md: { width: 180, height: 46, className: "h-[46px] w-auto max-w-[180px]" },
-  lg: { width: 220, height: 56, className: "h-14 w-auto max-w-[220px]" },
+  sm: { width: 160, height: 42, className: "h-10 w-auto max-w-[160px]" },
+  md: { width: 200, height: 52, className: "h-12 w-auto max-w-[200px]" },
+  lg: { width: 260, height: 68, className: "h-16 w-auto max-w-[260px]" },
+  xl: { width: 300, height: 78, className: "h-20 w-auto max-w-[300px]" },
 } as const;
 
 export function Logo({
@@ -12,7 +13,7 @@ export function Logo({
   showText = true,
   href = "/",
 }: {
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   showText?: boolean;
   href?: string;
 }) {
@@ -40,15 +41,30 @@ export function Logo({
   return content;
 }
 
-export function LogoMark({ className = "" }: { className?: string }) {
+const MARK_SIZES = {
+  md: { width: 240, height: 62, className: "h-16 w-auto max-w-[280px]" },
+  lg: { width: 300, height: 78, className: "h-20 w-auto max-w-[320px]" },
+  xl: { width: 340, height: 88, className: "h-24 w-auto max-w-[360px]" },
+} as const;
+
+export function LogoMark({
+  className = "",
+  size = "lg",
+}: {
+  className?: string;
+  size?: keyof typeof MARK_SIZES;
+}) {
+  const dims = MARK_SIZES[size];
+
   return (
     <div className={`text-center ${className}`}>
       <Image
         src="/bizlist-logo.png"
         alt="BizList"
-        width={160}
-        height={40}
-        className="mx-auto h-12 w-auto max-w-[200px] object-contain"
+        width={dims.width}
+        height={dims.height}
+        className={`mx-auto object-contain ${dims.className}`}
+        priority
       />
     </div>
   );

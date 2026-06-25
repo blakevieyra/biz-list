@@ -11,7 +11,7 @@ export default async function CreateProfilePage() {
   return (
     <>
       <div className="mx-auto max-w-2xl px-4 pt-8 sm:px-6">
-        <LogoMark className="mb-2" />
+        <LogoMark className="mb-4" size="lg" />
       </div>
       <Suspense fallback={<div className="mx-auto max-w-2xl px-4 py-10 text-sm text-muted">Loading...</div>}>
         <ProfileCreateWizard initialDisplayName={profile?.displayName ?? ""} />

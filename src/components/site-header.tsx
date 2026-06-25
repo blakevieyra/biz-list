@@ -135,33 +135,35 @@ export async function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const footerLinks = [
+    { href: "/feed", label: "Post" },
+    { href: "/listings", label: "Listing" },
+    { href: "/partnerships", label: "Collaboration" },
+    { href: "/events", label: "Events" },
+    { href: "/messages", label: "Messages" },
+  ];
+
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">
-            <Logo size="sm" href="/" />
-            <p className="mt-3 text-sm leading-relaxed text-muted">
+            <Logo size="lg" href="/" />
+            <p className="mt-4 text-sm leading-relaxed text-muted">
               BizList — local business listings, feed, and partnerships.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-muted sm:grid-cols-3">
-            <Link href="/feed" className="min-h-10 leading-10 hover:text-foreground">
-              Post
-            </Link>
-            <Link href="/listings" className="min-h-10 leading-10 hover:text-foreground">
-              Listing
-            </Link>
-            <Link href="/partnerships" className="min-h-10 leading-10 hover:text-foreground">
-              Collaboration
-            </Link>
-            <Link href="/events" className="min-h-10 leading-10 hover:text-foreground">
-              Events
-            </Link>
-            <Link href="/messages" className="min-h-10 leading-10 hover:text-foreground">
-              Messages
-            </Link>
-          </div>
+          <nav className="flex flex-col gap-1 sm:min-w-[160px]">
+            {footerLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="min-h-11 py-1 text-sm text-muted transition hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

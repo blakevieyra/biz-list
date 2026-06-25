@@ -13,7 +13,7 @@ export default async function LoginPage({
 
   return (
     <div className="mx-auto max-w-md px-4 py-8 sm:py-12 sm:px-6">
-      <LogoMark className="mb-8" />
+      <LogoMark className="mb-10" size="xl" />
       <PageHeader
         title="Sign in"
         description="Access your profile, messages, and community posts."
