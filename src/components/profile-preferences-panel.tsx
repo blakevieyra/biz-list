@@ -8,7 +8,7 @@ import { IndustryPicker } from "@/components/industry-picker";
 import { JobTitlePicker } from "@/components/job-title-picker";
 import { Card } from "@/components/ui";
 import type { FollowDigestFrequency, UserProfile } from "@/lib/types";
-import { ALLCONNECT_PLUS_LABEL } from "@/lib/plans";
+import { BIZLIST_PLUS_LABEL } from "@/lib/plans";
 import { buildResumeSnapshot } from "@/lib/resume";
 
 const digestOptions: { value: FollowDigestFrequency; label: string }[] = [
@@ -24,7 +24,7 @@ export function ProfilePreferencesPanel({
 }: {
   profile: UserProfile;
   /** Lighter layout for business Pro/Platinum — alerts and matching without resume builder. */
-  variant?: "full" | "AllConnect-plus";
+  variant?: "full" | "BizList-plus";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -51,7 +51,7 @@ export function ProfilePreferencesPanel({
       .filter(Boolean),
   });
 
-  const isAllConnectPlusVariant = variant === "AllConnect-plus";
+  const isBizListPlusVariant = variant === "BizList-plus";
 
   function handleSave() {
     setError(null);
@@ -82,9 +82,9 @@ export function ProfilePreferencesPanel({
 
   return (
     <div className="space-y-6">
-      {isAllConnectPlusVariant && (
+      {isBizListPlusVariant && (
         <Card>
-          <h2 className="font-semibold">{ALLCONNECT_PLUS_LABEL} alert preferences</h2>
+          <h2 className="font-semibold">{BIZLIST_PLUS_LABEL} alert preferences</h2>
           <p className="mt-1 text-sm text-muted">
             Included with your Pro or Platinum plan. Choose what you want notified about from
             businesses you follow and local matches.
@@ -118,15 +118,15 @@ export function ProfilePreferencesPanel({
 
       <Card>
         <h2 className="font-semibold">
-          {isAllConnectPlusVariant ? "Job & deal matching" : "Job seeker profile"}
+          {isBizListPlusVariant ? "Job & deal matching" : "Job seeker profile"}
         </h2>
         <p className="mt-1 text-sm text-muted">
-          {isAllConnectPlusVariant
-            ? "Opt into job alerts and set industries and roles so AllConnect can match you to local openings and hiring businesses."
+          {isBizListPlusVariant
+            ? "Opt into job alerts and set industries and roles so BizList can match you to local openings and hiring businesses."
             : "Build a reusable resume and opt into job alerts by industry and role."}
         </p>
         <div className="mt-4 space-y-4">
-          {!isAllConnectPlusVariant && (
+          {!isBizListPlusVariant && (
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -143,12 +143,12 @@ export function ProfilePreferencesPanel({
               onChange={(e) => setForm({ ...form, jobAlertOptIn: e.target.checked })}
             />
             <span>
-              {isAllConnectPlusVariant
+              {isBizListPlusVariant
                 ? "Notify me about local job posts and matches in my industries"
                 : "Email me when followed businesses post jobs in my industries"}
             </span>
           </label>
-          {isAllConnectPlusVariant && (
+          {isBizListPlusVariant && (
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -165,7 +165,7 @@ export function ProfilePreferencesPanel({
               onChange={(e) => setForm({ ...form, headline: e.target.value })}
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
               placeholder={
-                isAllConnectPlusVariant
+                isBizListPlusVariant
                   ? "e.g. Open to weekend shifts or part-time roles"
                   : "e.g. Open to part-time bakery roles"
               }
@@ -180,7 +180,7 @@ export function ProfilePreferencesPanel({
               placeholder="Comma-separated skills"
             />
           </label>
-          {!isAllConnectPlusVariant && (
+          {!isBizListPlusVariant && (
             <>
               <label className="block text-sm">
                 <span className="font-medium">Experience</span>
@@ -215,7 +215,7 @@ export function ProfilePreferencesPanel({
             label="Target industries"
             hint="Used for job alerts, deal alerts, and discovery."
           />
-          {!isAllConnectPlusVariant && (
+          {!isBizListPlusVariant && (
             <div>
               <p className="text-sm font-medium">Resume preview (sent with applications)</p>
               <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-xs leading-relaxed text-muted">
@@ -238,7 +238,7 @@ export function ProfilePreferencesPanel({
         >
           {pending ? "Saving..." : "Save preferences"}
         </button>
-        {!isAllConnectPlusVariant && (
+        {!isBizListPlusVariant && (
           <Link
             href="/profile/edit"
             className="inline-flex min-h-11 items-center rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:border-accent/40"

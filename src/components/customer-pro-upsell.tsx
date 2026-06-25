@@ -3,8 +3,8 @@ import { UpgradeButton } from "@/components/upgrade-button";
 import { Card } from "@/components/ui";
 import {
   annualSavings,
-  ALLCONNECT_PLUS_LABEL,
-  ALLCONNECT_PLUS_FEATURES,
+  BIZLIST_PLUS_LABEL,
+  BIZLIST_PLUS_FEATURES,
   formatPlanPrice,
   PLAN_PRICES,
 } from "@/lib/plans";
@@ -15,7 +15,7 @@ export function CustomerProUpsell({ compact = false }: { compact?: boolean }) {
       <Card className="border-accent/20 bg-blue-50/50">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-semibold text-accent">{ALLCONNECT_PLUS_LABEL}</p>
+            <p className="font-semibold text-accent">{BIZLIST_PLUS_LABEL}</p>
             <p className="text-sm text-muted">
               Job alerts, early deals, and local event notifications — from $
               {formatPlanPrice(PLAN_PRICES.customerPro.monthly)}/mo or $
@@ -38,8 +38,8 @@ export function CustomerProUpsell({ compact = false }: { compact?: boolean }) {
   const yearlySavings = annualSavings("customerPro");
 
   return (
-    <Card id="AllConnect-plus" className="border-accent/20">
-      <h2 className="text-xl font-semibold">{ALLCONNECT_PLUS_LABEL}</h2>
+    <Card id="BizList-plus" className="border-accent/20">
+      <h2 className="text-xl font-semibold">{BIZLIST_PLUS_LABEL}</h2>
       <p className="mt-2 text-sm text-muted">
         For job seekers and local shoppers who want alerts, matches, and first pick on deals and events.
       </p>
@@ -68,7 +68,7 @@ export function CustomerProUpsell({ compact = false }: { compact?: boolean }) {
       <div className="mt-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">What&apos;s included</p>
         <ul className="mt-3 space-y-2 text-sm">
-          {ALLCONNECT_PLUS_FEATURES.map((feature) => (
+          {BIZLIST_PLUS_FEATURES.map((feature) => (
             <li key={feature} className="flex gap-2">
               <span className="shrink-0 text-accent">✓</span>
               <span>{feature}</span>
@@ -81,18 +81,18 @@ export function CustomerProUpsell({ compact = false }: { compact?: boolean }) {
         <UpgradeButton
           tier="customer_pro"
           interval="monthly"
-          label={`${ALLCONNECT_PLUS_LABEL} — $${formatPlanPrice(monthlyPrice)}/mo`}
+          label={`${BIZLIST_PLUS_LABEL} — $${formatPlanPrice(monthlyPrice)}/mo`}
         />
         <UpgradeButton
           tier="customer_pro"
           interval="annual"
-          label={`${ALLCONNECT_PLUS_LABEL} — $${formatPlanPrice(annualPrice)}/yr`}
+          label={`${BIZLIST_PLUS_LABEL} — $${formatPlanPrice(annualPrice)}/yr`}
           className="rounded-full border border-border bg-card px-5 py-3 text-sm font-medium hover:border-accent/40"
         />
       </div>
       <p className="mt-3 text-xs text-muted">
         Compare all plans on{" "}
-        <Link href="/pricing#AllConnect-plus" className="font-medium text-accent hover:underline">
+        <Link href="/pricing#BizList-plus" className="font-medium text-accent hover:underline">
           the pricing page
         </Link>
         .

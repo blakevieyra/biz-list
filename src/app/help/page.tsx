@@ -25,7 +25,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How does the Discovery Radius work?",
-    a: "Your discovery radius controls how far AllConnect casts when showing you listings, feed posts, and events. You can set it to your city, county, state, or a specific mile radius. Adjust it any time from My Profile → Edit.",
+    a: "Your discovery radius controls how far BizList casts when showing you listings, feed posts, and events. You can set it to your city, county, state, or a specific mile radius. Adjust it any time from My Profile → Edit.",
   },
   {
     q: "How do I post an update, job, or deal?",
@@ -39,15 +39,15 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "How do I publish an event?",
     a: (
       <>
-        From <Link href="/dashboard/events" className="text-accent hover:underline">Dashboard → Events</Link>, click <strong>New event</strong>, fill in the details, and publish. AllConnect Plus subscribers who follow your business will be notified.
+        From <Link href="/dashboard/events" className="text-accent hover:underline">Dashboard → Events</Link>, click <strong>New event</strong>, fill in the details, and publish. BizList Plus subscribers who follow your business will be notified.
       </>
     ),
   },
   {
-    q: "What is AllConnect Plus?",
+    q: "What is BizList Plus?",
     a: (
       <>
-        AllConnect Plus ($12.99/mo) is for community members who want job alerts, early access to deals, and event notifications from businesses they follow. Business Pro and Platinum plans include the same perks at no extra charge.{" "}
+        BizList Plus ($12.99/mo) is for community members who want job alerts, early access to deals, and event notifications from businesses they follow. Business Pro and Platinum plans include the same perks at no extra charge.{" "}
         <Link href="/pricing" className="text-accent hover:underline">See pricing →</Link>
       </>
     ),
@@ -79,7 +79,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "How do I apply for a job listed on AllConnect?",
+    q: "How do I apply for a job listed on BizList?",
     a: "Visit the business listing, scroll to the Jobs section, and click Apply. You'll answer any custom questions the business set up and can attach a resume.",
   },
   {
@@ -109,7 +109,7 @@ export default function HelpPage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Help & FAQ"
-        description="Quick answers for getting started on AllConnect."
+        description="Quick answers for getting started on BizList."
       />
 
       <div className="space-y-3">

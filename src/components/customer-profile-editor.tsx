@@ -181,7 +181,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
 
       <Card>
         <h2 className="font-semibold">Discovery radius</h2>
-        <p className="mt-1 text-sm text-muted">How far from your location AllConnect shows listings and feed content.</p>
+        <p className="mt-1 text-sm text-muted">How far from your location BizList shows listings and feed content.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((scope) => (
             <button

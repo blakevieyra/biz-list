@@ -294,7 +294,7 @@ export async function notifyDealToCustomerPro(input: {
   await notifyCustomerProUsers({
     type: "deal_alert",
     title: `Early deal: ${input.postTitle}`,
-    body: `${input.businessName} shared a deal for AllConnect Plus subscribers first.`,
+    body: `${input.businessName} shared a deal for BizList Plus subscribers first.`,
     link: `/feed?tab=sales`,
     followerIds: (followers ?? []).map((f) => f.follower_id),
     city: input.city,

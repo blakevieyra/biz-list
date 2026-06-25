@@ -14,7 +14,7 @@ function getEncryptionKey(): Buffer {
     if (isProductionEnvironment()) {
       throw new Error("SIGNUP_VERIFICATION_SECRET is required in production.");
     }
-    return createHash("sha256").update("allconnect-dev-signup-secret").digest();
+    return createHash("sha256").update("BizList-dev-signup-secret").digest();
   }
 
   return createHash("sha256").update(secret).digest();

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessByOwnerId, getCurrentProfile } from "@/lib/data";
 import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
-import { canAccess, hasAllConnectPlusPerks } from "@/lib/plans";
+import { canAccess, hasBizListPlusPerks } from "@/lib/plans";
 
 export default async function DashboardProfilePage() {
   const userId = await getAuthUserId();
@@ -60,9 +60,9 @@ export default async function DashboardProfilePage() {
         <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
       </div>
 
-      {hasAllConnectPlusPerks(profile.planTier) && (
+      {hasBizListPlusPerks(profile.planTier) && (
         <div className="mb-8">
-          <ProfilePreferencesPanel profile={profile} variant="AllConnect-plus" />
+          <ProfilePreferencesPanel profile={profile} variant="BizList-plus" />
         </div>
       )}
 

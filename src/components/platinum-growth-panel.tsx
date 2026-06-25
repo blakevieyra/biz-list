@@ -67,7 +67,7 @@ export function PlatinumGrowthPanel({ planTier }: { planTier: PlanTier }) {
           >
             <span className="font-semibold">Auto-post</span>
             <span className="mt-1 block text-xs text-muted">
-              Publish an AI-drafted update to your AllConnect feed.
+              Publish an AI-drafted update to your BizList feed.
             </span>
           </button>
         )}

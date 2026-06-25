@@ -27,7 +27,7 @@ export default async function DashboardLeadsPage() {
       {leads.length === 0 ? (
         <Card>
           <p className="text-sm text-muted">
-            No matched leads yet. As customers join AllConnect in your area and set interests,
+            No matched leads yet. As customers join BizList in your area and set interests,
             they will appear here.
           </p>
         </Card>

@@ -68,7 +68,7 @@ export function AiAuditPanel({
         <div>
           <h2 className="font-semibold">AI online presence audit</h2>
           <p className="mt-1 text-sm text-muted">
-            Scores your website, AllConnect profile, SEO, and local visibility.
+            Scores your website, BizList profile, SEO, and local visibility.
           </p>
         </div>
         <button

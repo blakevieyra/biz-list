@@ -66,7 +66,7 @@ export default async function HomePage() {
               Your Business. The latest. Listings. Collaboration.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
-              AllConnect helps local businesses get discovered, share updates and deals, hire talent,
+              BizList helps local businesses get discovered, share updates and deals, hire talent,
               and build B2B partnerships — all from your business location outward.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -87,7 +87,7 @@ export default async function HomePage() {
         </div>
         <div className="relative min-h-[280px] w-full sm:min-h-[360px] lg:min-h-[520px]">
           <Image
-            src="/hero-AllConnect.jpg"
+            src="/hero-BizList.jpg"
             alt="Local restaurant interior"
             fill
             priority
@@ -101,7 +101,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-bold">What you can do on AllConnect</h2>
+        <h2 className="text-2xl font-bold">What you can do on BizList</h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
             <Link

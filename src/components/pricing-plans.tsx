@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { UpgradeButton } from "@/components/upgrade-button";
-import { annualSavings, ALLCONNECT_PLUS_FEATURES, ALLCONNECT_PLUS_LABEL, formatPlanPrice, PLAN_PRICES } from "@/lib/plans";
+import { annualSavings, BIZLIST_PLUS_FEATURES, BIZLIST_PLUS_LABEL, formatPlanPrice, PLAN_PRICES } from "@/lib/plans";
 import type { BillingInterval } from "@/lib/types";
 
 const communityFeatures = [
@@ -19,7 +19,7 @@ const proFeatures = [
   "AI online presence audit with website & profile scores",
   "Lead generation from followers, interests, and job seekers",
   "Trending post boost for high engagement",
-  `All ${ALLCONNECT_PLUS_LABEL} perks included (job alerts, early deals, event notifications)`,
+  `All ${BIZLIST_PLUS_LABEL} perks included (job alerts, early deals, event notifications)`,
 ];
 
 const platinumFeatures = [
@@ -58,38 +58,38 @@ export function PricingPlans() {
         </div>
       </div>
 
-      <div className="mb-10" id="AllConnect-plus">
+      <div className="mb-10" id="BizList-plus">
         <h2 className="mb-2 text-2xl font-bold">For customers & job seekers</h2>
         <p className="mb-6 text-sm text-muted">
-          {ALLCONNECT_PLUS_LABEL} for customer accounts. Business Pro and Platinum include the same perks
+          {BIZLIST_PLUS_LABEL} for customer accounts. Business Pro and Platinum include the same perks
           at no extra charge.
         </p>
         <div className="grid gap-6 md:grid-cols-2">
           <PlanCard
-            name={ALLCONNECT_PLUS_LABEL}
+            name={BIZLIST_PLUS_LABEL}
             price={
               isAnnual ? PLAN_PRICES.customerPro.annual : PLAN_PRICES.customerPro.monthly
             }
             interval={interval}
             savings={isAnnual ? annualSavings("customerPro") : undefined}
             description="Alerts, matches, early deals, and event notifications."
-            features={[...ALLCONNECT_PLUS_FEATURES]}
+            features={[...BIZLIST_PLUS_FEATURES]}
             highlighted
             cta={{
-              label: isAnnual ? `${ALLCONNECT_PLUS_LABEL} — yearly` : `${ALLCONNECT_PLUS_LABEL} — monthly`,
+              label: isAnnual ? `${BIZLIST_PLUS_LABEL} — yearly` : `${BIZLIST_PLUS_LABEL} — monthly`,
               component: (
                 <UpgradeButton
                   tier="customer_pro"
                   interval={interval}
-                  label={`Upgrade to ${ALLCONNECT_PLUS_LABEL}`}
+                  label={`Upgrade to ${BIZLIST_PLUS_LABEL}`}
                 />
               ),
             }}
           />
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-            <h3 className="font-semibold">Why {ALLCONNECT_PLUS_LABEL}?</h3>
+            <h3 className="font-semibold">Why {BIZLIST_PLUS_LABEL}?</h3>
             <p className="mt-2 text-sm text-muted">
-              If you are job hunting or want the best local deals first, {ALLCONNECT_PLUS_LABEL} sends alerts and matches
+              If you are job hunting or want the best local deals first, {BIZLIST_PLUS_LABEL} sends alerts and matches
               straight to your profile hub — including new events from businesses you follow.
             </p>
             <p className="mt-4 text-sm text-muted">

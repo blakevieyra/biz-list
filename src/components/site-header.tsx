@@ -146,7 +146,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
           <p className="max-w-md text-sm leading-relaxed text-muted">
-            © 2026 AllConnect — local business latest, listings and partnerships.
+            © 2026 BizList — local business latest, listings and partnerships.
           </p>
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:justify-end lg:gap-x-8">
             {footerLinks.map((link) => (

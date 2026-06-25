@@ -52,7 +52,7 @@ function scoreWebsite(input: AssessmentInput): { score: number; notes: string[] 
   }
 
   if (input.phone?.trim()) score += 10;
-  else notes.push("Publish a phone number on your website and AllConnect profile.");
+  else notes.push("Publish a phone number on your website and BizList profile.");
 
   if (input.hours?.trim()) score += 10;
   else notes.push("List business hours on your website and listing.");
@@ -93,15 +93,15 @@ function scorePresence(input: AssessmentInput): { score: number; notes: string[]
     score += 20;
     notes.push("Social profiles are linked — post weekly with photos and local hashtags.");
   } else {
-    notes.push("Connect Instagram, Facebook, or LinkedIn on your AllConnect profile.");
+    notes.push("Connect Instagram, Facebook, or LinkedIn on your BizList profile.");
   }
   if ((input.mediaCount ?? 0) >= 2) score += 15;
   else notes.push("Add more photos to your listing — visuals drive local discovery.");
   if ((input.postCount ?? 0) >= 3) {
     score += 20;
-    notes.push("You're posting regularly on AllConnect — keep a weekly rhythm.");
+    notes.push("You're posting regularly on BizList — keep a weekly rhythm.");
   } else {
-    notes.push("Publish at least one AllConnect post per week with offers, jobs, or updates.");
+    notes.push("Publish at least one BizList post per week with offers, jobs, or updates.");
   }
   if ((input.followerCount ?? 0) >= 5) score += 10;
 
@@ -140,7 +140,7 @@ function scoreProfile(input: AssessmentInput): { score: number; notes: string[] 
     score += 15;
     notes.push(`You have ${input.reviewCount} review(s) — respond to build trust.`);
   } else {
-    notes.push("Ask happy customers for reviews on AllConnect.");
+    notes.push("Ask happy customers for reviews on BizList.");
   }
   if ((input.ratingAvg ?? 0) >= 4) score += 10;
   if (input.hasHiringPost || input.phone) score += 5;

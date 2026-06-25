@@ -129,7 +129,7 @@ export function EventPublishForm({ businessId }: { businessId: string }) {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && (
-        <p className="text-sm text-green-700">Event published. AllConnect Plus subscribers were notified.</p>
+        <p className="text-sm text-green-700">Event published. BizList Plus subscribers were notified.</p>
       )}
 
       <button

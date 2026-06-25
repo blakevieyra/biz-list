@@ -19,7 +19,7 @@ export async function sendAppEmail(input: SendEmailInput): Promise<void> {
   const html = buildBrandedEmailHtml(input);
 
   if (!isEmailConfigured()) {
-    console.info("[AllConnect email preview]", {
+    console.info("[BizList email preview]", {
       to: input.to,
       subject: input.subject,
       title: input.title,

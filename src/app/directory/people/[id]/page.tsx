@@ -1,138 +1,113 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { CustomerActions } from "@/components/customer-actions";
+import { redirect } from "next/navigation";
 import { Card, PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
-import { getProfileById } from "@/lib/data";
-import { FORUM_CATEGORY_LABELS } from "@/lib/types";
+import { getBusinessPosts } from "@/lib/data/business";
+import { getBusinessById, getCurrentProfile } from "@/lib/data";
+import { getAiAssessments, getLocalLeads } from "@/lib/data/pro";
+import { canAccess } from "@/lib/plans";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function PersonDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const [profile, userId] = await Promise.all([getProfileById(id), getAuthUserId()]);
+async function getOwnerBusiness(userId: string) {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("owner_id", userId)
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
 
-  if (!profile || profile.role !== "customer") {
-    notFound();
-  }
+export default async function DashboardPage() {
+  const userId = await getAuthUserId();
+  if (!userId) redirect("/auth/login");
 
-  const initials = profile.displayName
-    .split(" ")
-    .map((part) => part.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const profile = await getCurrentProfile();
+  if (!profile) redirect("/profile/create");
+
+  const businessRow = await getOwnerBusiness(userId);
+  const business = businessRow ? await getBusinessById(businessRow.id) : null;
+  const posts = business ? await getBusinessPosts(business.id) : [];
+
+  const [leads, assessments] = await Promise.all([
+    canAccess(profile.planTier, "localLeads") ? getLocalLeads(userId) : Promise.resolve([]),
+    canAccess(profile.planTier, "aiAudit") ? getAiAssessments(userId) : Promise.resolve([]),
+  ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <Link href="/community" className="text-sm text-accent hover:underline">
-        ← Back to community
-      </Link>
-
+    <>
       <PageHeader
-        title={profile.displayName}
-        description={profile.headline || "Community member on AllConnect"}
-        action={<CustomerActions userId={profile.id} currentUserId={userId} />}
+        title="Overview"
+        description="Your hub for marketing, networking, and growing locally on BizList."
       />
 
-      <div className="mb-6 flex flex-wrap gap-3 text-sm">
-        {profile.isSeekingWork && (
-          <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-800">
-            Open to work
-          </span>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <h2 className="font-semibold">Business profile</h2>
+          <p className="mt-2 text-sm text-muted">
+            {business
+              ? `${business.name} · ${business.likeCount} likes · ${business.ratingCount} reviews`
+              : "Complete your business profile to appear in listings."}
+          </p>
+          {business && (
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              <Link href={`/listings/${business.id}`} className="text-accent hover:underline">
+                View public listing →
+              </Link>
+              <Link href="/dashboard/profile" className="text-accent hover:underline">
+                Edit listing →
+              </Link>
+              <Link href="/dashboard/orders" className="text-accent hover:underline">
+                Service orders →
+              </Link>
+              {business.isHiring && (
+                <Link href="/dashboard/applications" className="text-accent hover:underline">
+                  Job applications →
+                </Link>
+              )}
+            </div>
+          )}
+        </Card>
+
+        {canAccess(profile.planTier, "businessPosts") && (
+          <Card>
+            <h2 className="font-semibold">Posts & marketing</h2>
+            <p className="mt-2 text-sm text-muted">
+              {posts.length > 0
+                ? `${posts.length} published post${posts.length === 1 ? "" : "s"} on your feed.`
+                : "Publish updates, jobs, deals, and video to reach local customers."}
+            </p>
+            <Link
+              href="/dashboard/posts"
+              className="mt-4 inline-block rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              Create content →
+            </Link>
+          </Card>
         )}
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-muted">
-          {profile.city}, {profile.state}
-        </span>
+
+        {canAccess(profile.planTier, "localLeads") && (
+          <Card>
+            <h2 className="font-semibold">Local leads</h2>
+            <p className="mt-4 text-3xl font-bold">{leads.length}</p>
+            <Link href="/dashboard/leads" className="mt-4 inline-block text-sm text-accent hover:underline">
+              View leads →
+            </Link>
+          </Card>
+        )}
+
+        {canAccess(profile.planTier, "aiAudit") && (
+          <Card>
+            <h2 className="font-semibold">AI audits</h2>
+            <p className="mt-4 text-3xl font-bold">{assessments.length}</p>
+            <Link href="/dashboard/assessment" className="mt-4 inline-block text-sm text-accent hover:underline">
+              Run audit →
+            </Link>
+          </Card>
+        )}
       </div>
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <div className="flex items-start gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-teal-50 text-xl font-bold text-accent">
-                {initials || "?"}
-              </div>
-              <div>
-                <h2 className="font-semibold">About</h2>
-                <p className="mt-3 text-sm leading-relaxed">
-                  {profile.bio || "No bio yet."}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {profile.skills.length > 0 && (
-            <Card>
-              <h2 className="font-semibold">Skills</h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded-full bg-slate-100 px-3 py-1 text-sm text-muted"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {profile.interestTags.length > 0 && (
-            <Card>
-              <h2 className="font-semibold">Interests</h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.interestTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-border px-3 py-1 text-sm"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {profile.forumInterests.length > 0 && (
-            <Card>
-              <h2 className="font-semibold">Forum topics</h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.forumInterests.map((category) => (
-                  <span
-                    key={category}
-                    className="rounded-full bg-blue-50 px-3 py-1 text-sm text-accent"
-                  >
-                    {FORUM_CATEGORY_LABELS[category]}
-                  </span>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <h2 className="font-semibold">Connect</h2>
-            <p className="mt-3 text-sm text-muted">
-              Message {profile.displayName.split(" ")[0]} to learn more, ask about opportunities,
-              or start a local collaboration.
-            </p>
-            <div className="mt-4">
-              <CustomerActions userId={profile.id} currentUserId={userId} />
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="font-semibold">Location</h2>
-            <p className="mt-3 text-sm font-medium">
-              {profile.city}, {profile.state}
-            </p>
-          </Card>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

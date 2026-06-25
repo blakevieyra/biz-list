@@ -12,7 +12,7 @@ export function generateAutomatedPost(business: BusinessProfile): {
     return {
       postType: "job",
       title: `${business.name} is hiring in ${location}`,
-      body: `We're growing our team at ${business.name}. ${business.tagline || business.description.slice(0, 120)} Apply through our AllConnect listing or message us directly.`,
+      body: `We're growing our team at ${business.name}. ${business.tagline || business.description.slice(0, 120)} Apply through our BizList listing or message us directly.`,
     };
   }
 
@@ -27,7 +27,7 @@ export function generateAutomatedPost(business: BusinessProfile): {
   return {
     postType: "update",
     title: `Update from ${business.name}`,
-    body: `${business.tagline || business.description.slice(0, 160)} Follow us on AllConnect for local updates in ${location}.`,
+    body: `${business.tagline || business.description.slice(0, 160)} Follow us on BizList for local updates in ${location}.`,
   };
 }
 
@@ -36,11 +36,11 @@ export function generateOutreachMessage(
   lead: Pick<LocalLead, "displayName" | "matchReasons">,
 ): string {
   const reason = lead.matchReasons[0] ?? "your local interests";
-  return `Hi ${lead.displayName.split(" ")[0] || "there"}, this is ${business.name} in ${business.city}. We noticed ${reason.toLowerCase()} and thought our ${business.category.toLowerCase()} offerings might be a fit. Happy to share details or answer questions here on AllConnect.`;
+  return `Hi ${lead.displayName.split(" ")[0] || "there"}, this is ${business.name} in ${business.city}. We noticed ${reason.toLowerCase()} and thought our ${business.category.toLowerCase()} offerings might be a fit. Happy to share details or answer questions here on BizList.`;
 }
 
 export function generateOnboardingWelcome(business: BusinessProfile, customerName: string): string {
-  return `Welcome to ${business.name}! Thanks for connecting with us on AllConnect. We serve ${business.city} and nearby areas with ${business.category.toLowerCase()} services. Reply anytime with questions — we're glad you're here, ${customerName.split(" ")[0] || "friend"}.`;
+  return `Welcome to ${business.name}! Thanks for connecting with us on BizList. We serve ${business.city} and nearby areas with ${business.category.toLowerCase()} services. Reply anytime with questions — we're glad you're here, ${customerName.split(" ")[0] || "friend"}.`;
 }
 
 export function generateMarketingCampaignDraft(
@@ -51,17 +51,17 @@ export function generateMarketingCampaignDraft(
   if (channel === "email") {
     return {
       title: `${business.name} — ${post.title}`,
-      content: `Subject: ${post.title}\n\n${post.body}\n\nVisit our listing: AllConnect.app/listings/${business.id}`,
+      content: `Subject: ${post.title}\n\n${post.body}\n\nVisit our listing: BizList.app/listings/${business.id}`,
     };
   }
   if (channel === "social") {
     return {
       title: `Social: ${post.title}`,
-      content: `${post.body}\n\n#${business.city.replace(/\s+/g, "")} #ShopLocal #AllConnect`,
+      content: `${post.body}\n\n#${business.city.replace(/\s+/g, "")} #ShopLocal #BizList`,
     };
   }
   return {
     title: `Local promo: ${business.name}`,
-    content: `${post.body}\n\nServing ${business.city}, ${business.state}. Find us on AllConnect.`,
+    content: `${post.body}\n\nServing ${business.city}, ${business.state}. Find us on BizList.`,
   };
 }

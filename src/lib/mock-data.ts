@@ -914,7 +914,7 @@ export const SEED_BUSINESS_POSTS: BusinessPost[] = [
     authorName: "Elena Vasquez",
     postType: "deal",
     title: "Grand opening banner bundle — 15% off in May",
-    body: "New shop opening? We bundled yard signs, window clings, and Instagram-ready photo backdrops for local launches. Mention AllConnect for 15% off.",
+    body: "New shop opening? We bundled yard signs, window clings, and Instagram-ready photo backdrops for local launches. Mention BizList for 15% off.",
     mediaUrls: [DEMO_IMAGES.print],
     engagementScore: 24,
     isTrending: false,

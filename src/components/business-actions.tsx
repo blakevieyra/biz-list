@@ -95,7 +95,7 @@ export function BusinessActions({
     if (!shareUrl) return;
     if (navigator.share) {
       try {
-        await navigator.share({ title: shareTitle ?? "AllConnect listing", url: shareUrl });
+        await navigator.share({ title: shareTitle ?? "BizList listing", url: shareUrl });
         return;
       } catch {
         /* user cancelled */

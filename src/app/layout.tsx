@@ -9,18 +9,18 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://AllConnect.app"),
-  title: "AllConnect — Local Listings, Feed & Partnerships",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://BizList.app"),
+  title: "BizList — Local Listings, Feed & Partnerships",
   description:
-    "Discover local businesses on AllConnect. Browse listings, follow the feed for jobs and deals, and create B2B partnerships.",
+    "Discover local businesses on BizList. Browse listings, follow the feed for jobs and deals, and create B2B partnerships.",
   icons: {
-    icon: "/AllConnect-logo.png",
-    apple: "/AllConnect-logo.png",
+    icon: "/BizList-logo.png",
+    apple: "/BizList-logo.png",
   },
   openGraph: {
-    title: "AllConnect",
+    title: "BizList",
     description: "Listings. Feed. Partnerships.",
-    images: ["/AllConnect-logo.png"],
+    images: ["/BizList-logo.png"],
   },
 };
 

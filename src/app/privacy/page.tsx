@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Privacy"
-        description="How AllConnect handles your information."
+        description="How BizList handles your information."
       />
       <Card className="space-y-4 text-sm leading-relaxed text-muted">
         <p>

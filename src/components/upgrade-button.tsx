@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { startCheckout } from "@/lib/actions/billing";
 import type { BillingInterval, PaidPlanTier } from "@/lib/types";
-import { ALLCONNECT_PLUS_LABEL, PLAN_LABELS } from "@/lib/plans";
+import { BIZLIST_PLUS_LABEL, PLAN_LABELS } from "@/lib/plans";
 
 function planLabel(tier: PaidPlanTier): string {
-  if (tier === "customer_pro") return ALLCONNECT_PLUS_LABEL;
+  if (tier === "customer_pro") return BIZLIST_PLUS_LABEL;
   return PLAN_LABELS[tier];
 }
 

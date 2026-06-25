@@ -92,7 +92,7 @@ export default function DashboardAssessmentPage() {
               <Score label="SEO" value={result.seoScore} />
               <Score label="Online presence" value={result.onlinePresenceScore} />
               <Score label="Clarity" value={result.businessClarityScore} />
-              <Score label="AllConnect profile" value={result.profileScore ?? result.businessClarityScore} />
+              <Score label="BizList profile" value={result.profileScore ?? result.businessClarityScore} />
             </div>
           </Card>
           <Card>
