@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CommentForm } from "@/components/comment-form";
+import { ForumPostLikeButton } from "@/components/forum-post-like-button";
 import { Card, CategoryBadge, formatDate } from "@/components/ui";
 import { getCommentsForPost, getForumPostById } from "@/lib/data";
 import { getAuthUserId } from "@/lib/actions/auth";
@@ -11,9 +12,9 @@ export async function ForumPostThreadPanel({
   postId: string;
   closeHref: string;
 }) {
-  const [post, userId, comments] = await Promise.all([
-    getForumPostById(postId),
-    getAuthUserId(),
+  const userId = await getAuthUserId();
+  const [post, comments] = await Promise.all([
+    getForumPostById(postId, userId),
     getCommentsForPost(postId),
   ]);
 
@@ -28,7 +29,19 @@ export async function ForumPostThreadPanel({
             <span className="text-xs text-muted">{formatDate(post.createdAt)}</span>
           </div>
           <h2 className="mt-2 text-xl font-semibold">{post.title}</h2>
-          <p className="mt-1 text-sm text-muted">Posted by {post.authorName}</p>
+              <div className="mt-1 flex items-center gap-2">
+            {post.authorAvatarUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={post.authorAvatarUrl} alt="" className="h-5 w-5 rounded-full object-cover border border-border" />
+            )}
+            {post.businessId ? (
+              <Link href={`/listings/${post.businessId}`} className="text-sm text-accent hover:underline">
+                {post.authorName}
+              </Link>
+            ) : (
+              <p className="text-sm text-muted">Posted by {post.authorName}</p>
+            )}
+          </div>
         </div>
         <Link
           href={closeHref}
@@ -38,7 +51,21 @@ export async function ForumPostThreadPanel({
         </Link>
       </div>
 
+      {post.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={post.imageUrl} alt="" className="mt-4 w-full rounded-xl border border-border object-cover max-h-72" />
+      )}
+
       <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-muted">{post.body}</p>
+
+      <div className="mt-4">
+        <ForumPostLikeButton
+          postId={post.id}
+          initialLiked={post.likedByViewer ?? false}
+          initialCount={post.likeCount}
+          requiresAuth={!userId}
+        />
+      </div>
 
       <div className="mt-6 border-t border-border pt-6">
         <h3 className="font-semibold">Comments ({comments.length})</h3>

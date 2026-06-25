@@ -263,10 +263,15 @@ export interface ForumPost {
   id: string;
   authorId: string;
   authorName: string;
+  authorAvatarUrl?: string;
+  businessId?: string;
   category: ForumCategory;
   title: string;
   body: string;
+  imageUrl?: string;
   commentIds: string[];
+  likeCount?: number;
+  likedByViewer?: boolean;
   createdAt: string;
 }
 

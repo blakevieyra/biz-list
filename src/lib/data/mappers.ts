@@ -82,14 +82,21 @@ type BusinessRow = {
   created_at: string;
 };
 
+type PostProfileSummary = {
+  display_name: string;
+  avatar_url?: string | null;
+  businesses?: { id: string } | { id: string }[] | null;
+};
+
 type PostRow = {
   id: string;
   author_id: string;
   category: ForumCategory;
   title: string;
   body: string;
+  image_url?: string | null;
   created_at: string;
-  profiles?: { display_name: string } | { display_name: string }[] | null;
+  profiles?: PostProfileSummary | PostProfileSummary[] | null;
 };
 
 type CommentRow = {
@@ -211,15 +218,29 @@ export function mapBusiness(
   };
 }
 
-export function mapPost(row: PostRow, commentIds: string[] = []): ForumPost {
+export function mapPost(
+  row: PostRow,
+  commentIds: string[] = [],
+  extras: { likeCount?: number; likedByViewer?: boolean } = {},
+): ForumPost {
+  const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+  const business = profile?.businesses
+    ? Array.isArray(profile.businesses) ? profile.businesses[0] : profile.businesses
+    : null;
+
   return {
     id: row.id,
     authorId: row.author_id,
     authorName: profileName(row.profiles),
+    authorAvatarUrl: profile?.avatar_url ?? undefined,
+    businessId: business?.id ?? undefined,
     category: row.category,
     title: row.title,
     body: row.body,
+    imageUrl: row.image_url ?? undefined,
     commentIds,
+    likeCount: extras.likeCount,
+    likedByViewer: extras.likedByViewer,
     createdAt: row.created_at,
   };
 }

@@ -422,7 +422,7 @@ export async function getBusinessConnectionState(
   };
 }
 
-export async function getForumPosts(category?: ForumCategory): Promise<ForumPost[]> {
+export async function getForumPosts(category?: ForumCategory, userId?: string | null): Promise<ForumPost[]> {
   const supabase = await getSupabase();
   if (!supabase) {
     const posts = category
@@ -433,7 +433,7 @@ export async function getForumPosts(category?: ForumCategory): Promise<ForumPost
 
   let query = supabase
     .from("forum_posts")
-    .select("*, profiles(display_name)")
+    .select("*, profiles(display_name, avatar_url, businesses(id))")
     .order("created_at", { ascending: false });
 
   if (category) query = query.eq("category", category);
@@ -442,43 +442,60 @@ export async function getForumPosts(category?: ForumCategory): Promise<ForumPost
   if (!rows?.length) return [];
 
   const postIds = rows.map((r) => r.id);
-  const { data: commentCounts } = await supabase
-    .from("forum_comments")
-    .select("post_id")
-    .in("post_id", postIds);
 
-  const countMap = new Map<string, number>();
+  const [{ data: commentCounts }, { data: likeCounts }, { data: userLikes }] = await Promise.all([
+    supabase.from("forum_comments").select("post_id").in("post_id", postIds),
+    supabase.from("forum_post_likes").select("post_id").in("post_id", postIds),
+    userId
+      ? supabase.from("forum_post_likes").select("post_id").eq("user_id", userId).in("post_id", postIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const commentCountMap = new Map<string, number>();
   for (const c of commentCounts ?? []) {
-    countMap.set(c.post_id, (countMap.get(c.post_id) ?? 0) + 1);
+    commentCountMap.set(c.post_id, (commentCountMap.get(c.post_id) ?? 0) + 1);
   }
+  const likeCountMap = new Map<string, number>();
+  for (const l of likeCounts ?? []) {
+    likeCountMap.set(l.post_id, (likeCountMap.get(l.post_id) ?? 0) + 1);
+  }
+  const likedSet = new Set((userLikes ?? []).map((l) => l.post_id));
 
   return (rows as PostRow[]).map((row) => {
-    const count = countMap.get(row.id) ?? 0;
+    const count = commentCountMap.get(row.id) ?? 0;
     return mapPost(
       row,
       Array.from({ length: count }, (_, i) => `${row.id}-comment-${i}`),
+      { likeCount: likeCountMap.get(row.id) ?? 0, likedByViewer: likedSet.has(row.id) },
     );
   });
 }
 
-export async function getForumPostById(id: string): Promise<ForumPost | null> {
+export async function getForumPostById(id: string, userId?: string | null): Promise<ForumPost | null> {
   const supabase = await getSupabase();
   if (!supabase) return SEED_POSTS.find((p) => p.id === id) ?? null;
 
   const { data: row } = await supabase
     .from("forum_posts")
-    .select("*, profiles(display_name)")
+    .select("*, profiles(display_name, avatar_url, businesses(id))")
     .eq("id", id)
     .single();
 
   if (!row) return null;
 
-  const { data: comments } = await supabase
-    .from("forum_comments")
-    .select("id")
-    .eq("post_id", id);
+  const [{ data: comments }, { data: likeCounts }, { data: userLike }] = await Promise.all([
+    supabase.from("forum_comments").select("id").eq("post_id", id),
+    supabase.from("forum_post_likes").select("id").eq("post_id", id),
+    userId
+      ? supabase.from("forum_post_likes").select("id").eq("post_id", id).eq("user_id", userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  return mapPost(row as PostRow, (comments ?? []).map((c) => c.id));
+  return mapPost(
+    row as PostRow,
+    (comments ?? []).map((c) => c.id),
+    { likeCount: likeCounts?.length ?? 0, likedByViewer: Boolean(userLike) },
+  );
 }
 
 export async function getCommentsForPost(postId: string): Promise<Comment[]> {

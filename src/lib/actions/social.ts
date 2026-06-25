@@ -529,6 +529,7 @@ export async function createForumPost(input: {
   category: ForumCategory;
   title: string;
   body: string;
+  imageUrl?: string;
 }) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to publish forum posts." };
@@ -540,6 +541,8 @@ export async function createForumPost(input: {
     const moderation = moderateMultiple({ Title: input.title, Post: input.body });
     if (!moderation.ok) return { error: moderation.reason };
 
+    const imageUrl = input.imageUrl?.trim() || null;
+
     const { data, error } = await supabase
       .from("forum_posts")
       .insert({
@@ -547,6 +550,7 @@ export async function createForumPost(input: {
         category: input.category,
         title: input.title,
         body: input.body,
+        image_url: imageUrl,
       })
       .select("id")
       .single();
@@ -627,6 +631,40 @@ export async function createComment(postId: string, body: string) {
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to post comment." };
+  }
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function toggleForumPostLike(postId: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to like posts." };
+  if (!UUID_RE.test(postId)) return { liked: false, likeCount: 0 };
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: existing } = await supabase
+      .from("forum_post_likes")
+      .select("id")
+      .eq("post_id", postId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("forum_post_likes").delete().eq("id", existing.id);
+    } else {
+      await supabase.from("forum_post_likes").insert({ post_id: postId, user_id: user.id });
+    }
+
+    const { data: counts } = await supabase
+      .from("forum_post_likes")
+      .select("id")
+      .eq("post_id", postId);
+
+    revalidatePath("/forum");
+    return { liked: !existing, likeCount: counts?.length ?? 0 };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to toggle interest." };
   }
 }
 

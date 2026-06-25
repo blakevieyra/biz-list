@@ -3,6 +3,7 @@ import { ForumPostCard } from "@/components/forum-post-card";
 import { ForumPostThreadPanel } from "@/components/forum-post-thread-panel";
 import { Card } from "@/components/ui";
 import { getForumPosts } from "@/lib/data";
+import { getAuthUserId } from "@/lib/actions/auth";
 import type { ForumCategory } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
@@ -44,7 +45,8 @@ export async function ForumDiscussionsSection({
   query?: string;
   selectedPostId?: string;
 }) {
-  const posts = filterForumPosts(await getForumPosts(category), query);
+  const userId = await getAuthUserId();
+  const posts = filterForumPosts(await getForumPosts(category, userId), query);
   const formAction = pathWithoutQuery(basePath);
   const preservedParams = hiddenParamsFromBasePath(basePath);
 
@@ -139,6 +141,7 @@ export async function ForumDiscussionsSection({
               key={post.id}
               post={post}
               href={buildHref({ post: post.id })}
+              currentUserId={userId}
             />
           ))}
         </div>

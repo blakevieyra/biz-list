@@ -13,6 +13,7 @@ export default function NewForumPostPage() {
   const [category, setCategory] = useState<ForumCategory>("general");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -32,16 +33,17 @@ export default function NewForumPostPage() {
             e.preventDefault();
             startTransition(async () => {
               setError(null);
-              const result = await createForumPost({ category, title, body });
+              const result = await createForumPost({
+                category,
+                title,
+                body,
+                imageUrl: imageUrl.trim() || undefined,
+              });
               if (result.error) {
                 setError(result.error);
                 return;
               }
-              router.push(
-                result.id
-                  ? `/forum&post=${result.id}`
-                  : "/forum",
-              );
+              router.push(result.id ? `/forum?post=${result.id}` : "/forum");
             });
           }}
         >
@@ -53,13 +55,11 @@ export default function NewForumPostPage() {
               className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
               required
             >
-              {(Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[]).map(
-                (cat) => (
-                  <option key={cat} value={cat}>
-                    {FORUM_CATEGORY_LABELS[cat]}
-                  </option>
-                ),
-              )}
+              {(Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[]).map((cat) => (
+                <option key={cat} value={cat}>
+                  {FORUM_CATEGORY_LABELS[cat]}
+                </option>
+              ))}
             </select>
           </label>
           <label className="block text-sm">
@@ -80,6 +80,16 @@ export default function NewForumPostPage() {
               rows={6}
               required
               placeholder="Share details, context, or lessons learned..."
+              className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium">Photo URL <span className="font-normal text-muted">(optional)</span></span>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
               className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
             />
           </label>
