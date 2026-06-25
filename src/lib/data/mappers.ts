@@ -106,6 +106,7 @@ type CollaborationRow = {
   summary: string;
   looking_for: string;
   location: string;
+  collaboration_type?: CollaborationIdea["collaborationType"];
   status: CollaborationIdea["status"];
   created_at: string;
   profiles?: { display_name: string } | { display_name: string }[] | null;
@@ -239,6 +240,10 @@ export function mapCollaboration(row: CollaborationRow): CollaborationIdea {
     summary: row.summary,
     lookingFor: row.looking_for,
     location: row.location,
+    collaborationType:
+      row.collaboration_type === "contract" || row.collaboration_type === "b2b_sale"
+        ? row.collaboration_type
+        : "proposal",
     status: row.status,
     createdAt: row.created_at,
   };

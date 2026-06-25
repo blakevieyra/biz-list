@@ -259,6 +259,8 @@ export interface Comment {
   createdAt: string;
 }
 
+export type CollaborationType = "proposal" | "contract" | "b2b_sale";
+
 export interface CollaborationIdea {
   id: string;
   authorId: string;
@@ -268,7 +270,17 @@ export interface CollaborationIdea {
   summary: string;
   lookingFor: string;
   location: string;
+  collaborationType: CollaborationType;
   status: "open" | "in_discussion" | "closed";
+  createdAt: string;
+}
+
+export interface CollaborationComment {
+  id: string;
+  collaborationId: string;
+  authorId: string;
+  authorName: string;
+  body: string;
   createdAt: string;
 }
 

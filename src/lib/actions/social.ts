@@ -622,6 +622,7 @@ export async function createCollaboration(input: {
   lookingFor: string;
   location: string;
   businessId?: string;
+  collaborationType?: import("@/lib/types").CollaborationType;
 }) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to publish collaboration ideas." };
@@ -638,6 +639,11 @@ export async function createCollaboration(input: {
     });
     if (!moderation.ok) return { error: moderation.reason };
 
+    const collaborationType =
+      input.collaborationType === "contract" || input.collaborationType === "b2b_sale"
+        ? input.collaborationType
+        : "proposal";
+
     const { error } = await supabase.from("collaborations").insert({
       author_id: user.id,
       business_id: input.businessId ?? null,
@@ -645,6 +651,7 @@ export async function createCollaboration(input: {
       summary: input.summary.trim().slice(0, 2000),
       looking_for: input.lookingFor.trim().slice(0, 500),
       location: input.location.trim().slice(0, 200),
+      collaboration_type: collaborationType,
     });
 
     if (error) return { error: error.message };
@@ -667,6 +674,35 @@ export async function createCollaboration(input: {
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to create collaboration." };
+  }
+}
+
+export async function commentOnCollaboration(collaborationId: string, body: string) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Connect Supabase to comment." };
+  }
+
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 1000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+
+    const moderation = moderateUserContent(trimmed, "Comment");
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const { error } = await supabase.from("collaboration_comments").insert({
+      collaboration_id: collaborationId,
+      author_id: user.id,
+      body: trimmed,
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/partnerships");
+    revalidatePath(`/partnerships/${collaborationId}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to post comment." };
   }
 }
 

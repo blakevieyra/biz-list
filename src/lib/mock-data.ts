@@ -3,6 +3,7 @@ import type {
   BusinessPostComment,
   BusinessProfile,
   BusinessReview,
+  CollaborationComment,
   CollaborationIdea,
   Comment,
   ForumPost,
@@ -563,6 +564,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
       "Partner with a local roaster to sell weekend breakfast boxes: pastry, loaf, and beans.",
     lookingFor: "Coffee shop or roaster within 10 miles of Austin",
     location: "Austin, TX",
+    collaborationType: "proposal",
     status: "open",
     createdAt: "2026-03-01T10:00:00Z",
   },
@@ -576,6 +578,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
       "Pilot a punch-card style rewards program across 5–8 small shops in Williamson County.",
     lookingFor: "Retail owners interested in cross-promotion",
     location: "Round Rock / Georgetown, TX",
+    collaborationType: "b2b_sale",
     status: "in_discussion",
     createdAt: "2026-03-06T15:00:00Z",
   },
@@ -588,8 +591,28 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     summary: "Partner with a bakery for post-class recovery snacks and co-branded morning events.",
     lookingFor: "Food business near Cedar Park / Leander",
     location: "Cedar Park, TX",
+    collaborationType: "contract",
     status: "open",
     createdAt: "2026-04-18T09:00:00Z",
+  },
+];
+
+export const SEED_COLLABORATION_COMMENTS: CollaborationComment[] = [
+  {
+    id: "cc-1",
+    collaborationId: "collab-1",
+    authorId: "user-4",
+    authorName: "Alex Rivera",
+    body: "We roast in South Austin — interested in testing a weekend box.",
+    createdAt: "2026-03-02T11:00:00Z",
+  },
+  {
+    id: "cc-2",
+    collaborationId: "collab-1",
+    authorId: "user-1",
+    authorName: "Maria Chen",
+    body: "Great — let's compare margins and pickup logistics.",
+    createdAt: "2026-03-02T14:30:00Z",
   },
 ];
 

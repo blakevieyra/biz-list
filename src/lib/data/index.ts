@@ -1,6 +1,7 @@
 import {
   SEED_BUSINESSES,
   SEED_COLLABORATIONS,
+  SEED_COLLABORATION_COMMENTS,
   SEED_COMMENTS,
   SEED_POSTS,
   SEED_USERS,
@@ -10,6 +11,7 @@ import type {
   BusinessConnectionState,
   BusinessIntent,
   BusinessProfile,
+  CollaborationComment,
   CollaborationIdea,
   Comment,
   DiscoveryRadius,
@@ -492,16 +494,77 @@ export async function getCommentsForPost(postId: string): Promise<Comment[]> {
   return (rows as CommentRow[] | null)?.map(mapComment) ?? [];
 }
 
-export async function getCollaborations(): Promise<CollaborationIdea[]> {
+export async function getCollaborations(
+  type?: CollaborationIdea["collaborationType"],
+): Promise<CollaborationIdea[]> {
   const supabase = await getSupabase();
-  if (!supabase) return SEED_COLLABORATIONS;
+  if (!supabase) {
+    return type
+      ? SEED_COLLABORATIONS.filter((item) => item.collaborationType === type)
+      : SEED_COLLABORATIONS;
+  }
 
-  const { data: rows } = await supabase
+  let query = supabase
     .from("collaborations")
     .select("*, profiles(display_name)")
     .order("created_at", { ascending: false });
 
+  if (type) {
+    query = query.eq("collaboration_type", type);
+  }
+
+  const { data: rows } = await query;
   return (rows as CollaborationRow[] | null)?.map(mapCollaboration) ?? [];
+}
+
+export async function getCollaborationById(id: string): Promise<CollaborationIdea | null> {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return SEED_COLLABORATIONS.find((item) => item.id === id) ?? null;
+  }
+
+  const { data: row } = await supabase
+    .from("collaborations")
+    .select("*, profiles(display_name)")
+    .eq("id", id)
+    .maybeSingle();
+
+  return row ? mapCollaboration(row as CollaborationRow) : null;
+}
+
+type CollaborationCommentRow = {
+  id: string;
+  collaboration_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  profiles?: { display_name: string } | { display_name: string }[] | null;
+};
+
+export async function getCollaborationComments(
+  collaborationId: string,
+): Promise<CollaborationComment[]> {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    return SEED_COLLABORATION_COMMENTS.filter((c) => c.collaborationId === collaborationId);
+  }
+
+  const { data: rows } = await supabase
+    .from("collaboration_comments")
+    .select("*, profiles(display_name)")
+    .eq("collaboration_id", collaborationId)
+    .order("created_at", { ascending: true });
+
+  return ((rows as CollaborationCommentRow[] | null) ?? []).map((row) => ({
+    id: row.id,
+    collaborationId: row.collaboration_id,
+    authorId: row.author_id,
+    authorName: Array.isArray(row.profiles)
+      ? row.profiles[0]?.display_name ?? "Unknown"
+      : row.profiles?.display_name ?? "Unknown",
+    body: row.body,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function getNotifications(userId: string): Promise<Notification[]> {
