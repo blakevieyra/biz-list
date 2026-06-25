@@ -6,6 +6,13 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { canAccess } from "@/lib/plans";
 import { sanitizeMediaUrls, getSafeExternalUrl } from "@/lib/security/safe-url";
 import { sanitizeServices, sanitizeSocialLinks } from "@/lib/security/sanitize-business";
+import {
+  buildApplicationSummary,
+  parseJobApplicationForm,
+  resolveJobApplicationForm,
+  sanitizeJobApplicationForm,
+  validateApplicationAnswers,
+} from "@/lib/job-application-form";
 import { moderateMultiple, moderateUserContent } from "@/lib/moderation/content-policy";
 import {
   validateBusinessCategory,
@@ -225,6 +232,7 @@ export async function saveBusinessDashboardProfile(input: {
   services: BusinessService[];
   mediaUrls: string[];
   intents: BusinessIntent[];
+  jobApplicationForm?: import("@/lib/types").JobApplicationFormConfig;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to update profile." };
 
@@ -268,6 +276,7 @@ export async function saveBusinessDashboardProfile(input: {
 
     const services = sanitizeServices(input.services);
     const socialLinks = sanitizeSocialLinks(input.socialLinks);
+    const jobApplicationForm = sanitizeJobApplicationForm(input.jobApplicationForm);
     const website = getSafeExternalUrl(input.website.trim()) ?? null;
 
     const { error } = await supabase
@@ -290,6 +299,7 @@ export async function saveBusinessDashboardProfile(input: {
         services,
         media_urls: sanitizeMediaUrls(input.mediaUrls),
         intents: input.intents,
+        job_application_form: jobApplicationForm,
       })
       .eq("id", input.businessId);
 
@@ -467,16 +477,16 @@ export async function createWorkGroup(input: {
 export async function submitJobApplication(input: {
   businessId: string;
   coverLetter: string;
+  formAnswers: Record<string, string>;
+  resumeAttached: boolean;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to apply." };
 
   try {
     const { supabase, user } = await requireUser();
-    const coverLetter = input.coverLetter.trim().slice(0, 2000);
-    if (!coverLetter) return { error: "Add a short cover letter before applying." };
-
-    const moderation = moderateUserContent(coverLetter, "Cover letter");
-    if (!moderation.ok) return { error: moderation.reason };
+    if (!input.resumeAttached) {
+      return { error: "Attach your resume before submitting." };
+    }
 
     const { data: profileRow } = await supabase
       .from("profiles")
@@ -489,15 +499,38 @@ export async function submitJobApplication(input: {
     }
 
     const profile = mapProfile(profileRow);
+    const resumeSnapshot = buildResumeSnapshot(profile);
+    if (!resumeSnapshot.trim()) {
+      return { error: "Add a resume in My profile before attaching." };
+    }
 
     const { data: business } = await supabase
       .from("businesses")
-      .select("owner_id, name, is_hiring")
+      .select("owner_id, name, is_hiring, job_application_form")
       .eq("id", input.businessId)
       .single();
 
     if (!business?.is_hiring) return { error: "This business is not accepting applications." };
     if (business.owner_id === user.id) return { error: "You cannot apply to your own business." };
+
+    const formConfig = resolveJobApplicationForm({
+      isHiring: business.is_hiring,
+      jobApplicationForm: parseJobApplicationForm(business.job_application_form),
+    });
+    const validation = validateApplicationAnswers(
+      formConfig,
+      input.formAnswers,
+      input.resumeAttached,
+    );
+    if (!validation.ok) return { error: validation.error };
+
+    const coverLetter = (
+      input.coverLetter.trim() || buildApplicationSummary(formConfig, input.formAnswers)
+    ).slice(0, 2000);
+    if (!coverLetter) return { error: "Complete the application questions before submitting." };
+
+    const moderation = moderateUserContent(coverLetter, "Application");
+    if (!moderation.ok) return { error: moderation.reason };
 
     const { data: existing } = await supabase
       .from("job_applications")
@@ -513,7 +546,9 @@ export async function submitJobApplication(input: {
       };
     }
 
-    const resumeSnapshot = buildResumeSnapshot(profile);
+    const sanitizedAnswers = Object.fromEntries(
+      Object.entries(input.formAnswers).map(([key, value]) => [key.slice(0, 64), value.slice(0, 2000)]),
+    );
 
     const { data: inserted, error } = await supabase
       .from("job_applications")
@@ -523,6 +558,8 @@ export async function submitJobApplication(input: {
         message: coverLetter,
         cover_letter: coverLetter,
         resume_snapshot: resumeSnapshot,
+        form_answers: sanitizedAnswers,
+        resume_attached: true,
         status: "pending",
       })
       .select("id")

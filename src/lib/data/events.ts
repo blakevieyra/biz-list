@@ -228,6 +228,38 @@ export async function getBusinessEvents(filters?: {
   return attachRsvpCounts(events, filters?.userId);
 }
 
+export async function getUserSavedEvents(
+  userId: string,
+  limit = 6,
+): Promise<BusinessEvent[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+
+  const { data: rsvps } = await supabase
+    .from("event_rsvps")
+    .select("event_id")
+    .eq("user_id", userId)
+    .in("status", ["going", "interested"]);
+
+  if (!rsvps?.length) return [];
+
+  const eventIds = [...new Set(rsvps.map((row) => row.event_id))];
+
+  const { data: rows } = await supabase
+    .from("business_events")
+    .select("*, businesses(name, media_urls)")
+    .in("id", eventIds)
+    .eq("status", "published")
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+
+  if (!rows?.length) return [];
+
+  const events = (rows as EventRow[]).map((row) => mapEventRow(row));
+  return attachRsvpCounts(events, userId);
+}
+
 export async function getBusinessEventById(
   id: string,
   userId?: string | null,

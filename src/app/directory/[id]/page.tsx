@@ -90,6 +90,7 @@ export default async function BusinessDetailPage({
           <JobApplySection
             businessId={business.id}
             businessName={business.name}
+            business={business}
             isHiring={business.isHiring}
             currentUserId={userId}
             isOwner={isOwner}

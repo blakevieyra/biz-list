@@ -12,7 +12,7 @@ export default function HelpPage() {
         <p>
           Browse <Link href="/listings" className="text-accent hover:underline">listings</Link>, follow
           businesses from the{" "}
-          <Link href="/home?tab=latest" className="text-accent hover:underline">latest feed</Link>, and
+          <Link href="/home" className="text-accent hover:underline">home</Link>, and
           manage your account from{" "}
           <Link href="/profile" className="text-accent hover:underline">My profile</Link>.
         </p>

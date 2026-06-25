@@ -44,7 +44,7 @@ const features = [
 export default async function HomePage() {
   const profile = await getCurrentProfile();
   if (profile) {
-    redirect("/home?tab=latest");
+    redirect("/home");
   }
 
   const viewer = null;

@@ -161,7 +161,7 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
   revalidatePath("/", "layout");
 
-  redirect(profile?.role === "customer" ? "/home?tab=latest" : "/dashboard");
+  redirect(profile?.role === "customer" ? "/home" : "/dashboard");
 
 }
 

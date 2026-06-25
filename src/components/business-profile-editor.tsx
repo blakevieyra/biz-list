@@ -7,9 +7,16 @@ import { saveBusinessDashboardProfile } from "@/lib/actions/business";
 import { CategoryPicker, parseStoredCategory } from "@/components/industry-picker";
 import { ImageUpload } from "@/components/image-upload";
 import { SocialLinksEditor } from "@/components/social-links-editor";
+import { JobApplicationFormEditor } from "@/components/job-application-form-editor";
 import { ServicesEditor } from "@/components/services-editor";
 import { Card } from "@/components/ui";
-import type { BusinessIntent, BusinessProfile, BusinessService, BusinessSocialLinks } from "@/lib/types";
+import type {
+  BusinessIntent,
+  BusinessProfile,
+  BusinessService,
+  BusinessSocialLinks,
+  JobApplicationFormConfig,
+} from "@/lib/types";
 import { INTENT_LABELS } from "@/lib/types";
 
 const intents: BusinessIntent[] = [
@@ -47,6 +54,7 @@ export function BusinessProfileEditor({
     hours: business.hours,
     importantInfo: business.importantInfo,
     isHiring: business.isHiring,
+    jobApplicationForm: business.jobApplicationForm ?? { questions: [] },
     services: business.services.length ? business.services : [{ name: "", description: "", price: "" }],
     mediaUrls: business.mediaUrls,
     intents: business.intents,
@@ -84,6 +92,7 @@ export function BusinessProfileEditor({
         hours: form.hours,
         importantInfo: form.importantInfo,
         isHiring: form.isHiring,
+        jobApplicationForm: form.jobApplicationForm,
         services,
         mediaUrls: form.mediaUrls,
         intents: form.intents,
@@ -196,6 +205,17 @@ export function BusinessProfileEditor({
           </label>
         </div>
       </Card>
+
+      {form.isHiring && (
+        <Card>
+          <JobApplicationFormEditor
+            form={form.jobApplicationForm}
+            onChange={(jobApplicationForm: JobApplicationFormConfig) =>
+              setForm({ ...form, jobApplicationForm })
+            }
+          />
+        </Card>
+      )}
 
       <Card>
         <h2 className="font-semibold">What you&apos;re looking for</h2>

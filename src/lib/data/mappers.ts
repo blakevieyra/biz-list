@@ -13,6 +13,7 @@ import type {
 } from "@/lib/types";
 import { resolveAreaScope } from "@/lib/feed/location-scope";
 import { parseSocialLinks } from "@/lib/social-platforms";
+import { parseJobApplicationForm } from "@/lib/job-application-form";
 import type { AreaScope } from "@/lib/types";
 
 type ProfileRow = {
@@ -68,6 +69,7 @@ type BusinessRow = {
   hours?: string;
   important_info?: string;
   is_hiring?: boolean;
+  job_application_form?: unknown;
   services?: unknown;
   media_urls?: string[];
   like_count?: number;
@@ -190,6 +192,7 @@ export function mapBusiness(
     hours: row.hours ?? "",
     importantInfo: row.important_info ?? "",
     isHiring: row.is_hiring ?? false,
+    jobApplicationForm: parseJobApplicationForm(row.job_application_form),
     services: parseServices(row.services),
     mediaUrls: row.media_urls ?? [],
     likeCount: row.like_count ?? 0,

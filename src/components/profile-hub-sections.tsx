@@ -57,10 +57,7 @@ export function ProfileHubNav({
 
   function tabHref(tabId: HubTab) {
     if (tabId === "overview") return basePath;
-    if (basePath.startsWith("/home")) {
-      return `/home?tab=profile&profileTab=${tabId}`;
-    }
-    return `/profile?tab=${tabId}`;
+    return `${basePath}?tab=${tabId}`;
   }
 
   return (

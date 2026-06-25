@@ -8,7 +8,7 @@ import {
 
   BusinessActivitySection,
 
-  BusinessPhotosSection,
+  BusinessGallerySection,
 
   BusinessReviewsSection,
 
@@ -18,7 +18,7 @@ import { GoogleMapEmbed } from "@/components/google-map-embed";
 
 import { JobApplySection } from "@/components/job-apply-section";
 
-import { ServiceListing } from "@/components/service-listing";
+import { ShopOfferingsSection } from "@/components/shop-offerings-section";
 
 import { SafeExternalLink } from "@/components/safe-external-link";
 
@@ -247,6 +247,20 @@ export default async function BusinessDetailPage({
 
 
 
+      <BusinessGallerySection
+
+        businessId={business.id}
+
+        mediaUrls={business.mediaUrls}
+
+        owner={owner ? { id: owner.id, displayName: owner.displayName, bio: owner.bio } : null}
+
+        contentLikes={contentLikes}
+
+      />
+
+
+
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -265,145 +279,23 @@ export default async function BusinessDetailPage({
 
               contentLikes={contentLikes}
 
+              maxPosts={1}
+
             />
 
 
 
-            {business.services.length > 0 && (
-
-              <Card id="shop">
-
-                <h2 className="font-semibold">Shop & services</h2>
-
-                <ul className="mt-4 space-y-4">
-
-                  {business.services.map((service) => {
-
-                    const likeKey = contentLikeKey("service", service.name);
-
-                    return (
-
-                      <li
-
-                        key={service.name}
-
-                        className="flex flex-col gap-4 rounded-xl border border-border p-4 sm:flex-row"
-
-                      >
-
-                        {service.imageUrl ? (
-
-                          <div className="h-32 w-full shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-28 sm:w-28">
-
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-
-                            <img
-
-                              src={service.imageUrl}
-
-                              alt=""
-
-                              className="h-full w-full object-cover"
-
-                            />
-
-                          </div>
-
-                        ) : (
-
-                          <div className="flex h-32 w-full shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-50 to-slate-50 sm:h-28 sm:w-28">
-
-                            <span className="text-2xl font-bold text-accent/30">
-
-                              {service.name.charAt(0)}
-
-                            </span>
-
-                          </div>
-
-                        )}
-
-                        <div className="min-w-0 flex-1">
-
-                          <p className="font-semibold">{service.name}</p>
-
-                          {service.price && (
-
-                            <p className="mt-1 text-sm font-medium text-accent">{service.price}</p>
-
-                          )}
-
-                          {service.description && (
-
-                            <p className="mt-2 text-sm leading-relaxed text-muted">
-
-                              {service.description}
-
-                            </p>
-
-                          )}
-
-                          <div className="mt-3 flex flex-wrap items-center gap-3">
-
-                            <ServiceListing
-
-                              service={service}
-
-                              businessId={business.id}
-
-                              businessWebsite={business.website}
-
-                              currentUserId={userId}
-
-                              isOwner={isOwner}
-
-                              likeCount={contentLikes.counts[likeKey] ?? 0}
-
-                              liked={isContentLiked(contentLikes, "service", service.name)}
-
-                            />
-
-                          </div>
-
-                        </div>
-
-                      </li>
-
-                    );
-
-                  })}
-
-                </ul>
-
-              </Card>
-
-            )}
-
-
-
-            <BusinessReviewsSection
+            <ShopOfferingsSection
 
               businessId={business.id}
 
-              reviews={reviews}
+              services={business.services}
 
-              ratingAvg={business.ratingAvg}
-
-              ratingCount={business.ratingCount}
+              businessWebsite={business.website}
 
               currentUserId={userId}
 
               isOwner={isOwner}
-
-            />
-
-
-
-            <BusinessPhotosSection
-
-              businessId={business.id}
-
-              mediaUrls={business.mediaUrls}
 
               contentLikes={contentLikes}
 
@@ -411,23 +303,59 @@ export default async function BusinessDetailPage({
 
 
 
-            <JobApplySection
+            <div
+              className={
+                business.isHiring && !isOwner
+                  ? "grid gap-6 lg:grid-cols-2 lg:items-stretch"
+                  : "max-w-2xl"
+              }
+            >
 
-              businessId={business.id}
+              <BusinessReviewsSection
 
-              businessName={business.name}
+                businessId={business.id}
 
-              isHiring={business.isHiring}
+                reviews={reviews}
 
-              currentUserId={userId}
+                ratingAvg={business.ratingAvg}
 
-              isOwner={isOwner}
+                ratingCount={business.ratingCount}
 
-              resumePreview={resumePreview}
+                currentUserId={userId}
 
-              existingApplication={existingApplication}
+                isOwner={isOwner}
 
-            />
+              />
+
+
+
+              {business.isHiring && !isOwner && (
+
+                <JobApplySection
+
+                businessId={business.id}
+
+                businessName={business.name}
+
+                business={business}
+
+                isHiring={business.isHiring}
+
+                currentUserId={userId}
+
+                isOwner={isOwner}
+
+                resumePreview={resumePreview}
+
+                existingApplication={existingApplication}
+
+                compact
+
+              />
+
+              )}
+
+            </div>
 
           </div>
 

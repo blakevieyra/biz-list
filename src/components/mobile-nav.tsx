@@ -6,10 +6,9 @@ import { signOut } from "@/lib/actions/auth";
 import type { UserRole } from "@/lib/types";
 
 const publicLinks = [
-  { href: "/home?tab=latest", label: "Home", authOnly: true },
-  { href: "/feed", label: "Post" },
-  { href: "/listings", label: "Listing" },
-  { href: "/partnerships", label: "Collaboration" },
+  { href: "/home", label: "Home", authOnly: true },
+  { href: "/listings", label: "Listings" },
+  { href: "/partnerships", label: "Collaborations" },
   { href: "/events", label: "Events" },
 ];
 

@@ -267,10 +267,48 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Tue–Sun 7am–3pm",
     importantInfo: "Wholesale orders need 48hr notice.",
     isHiring: true,
+    jobApplicationForm: {
+      questions: [
+        {
+          id: "short-fit",
+          kind: "short",
+          label: "Why do you want to work early mornings at a bakery?",
+          required: true,
+          placeholder: "Share relevant experience…",
+        },
+        {
+          id: "short-availability",
+          kind: "short",
+          label: "Which days Tue–Sat can you work?",
+          required: true,
+          placeholder: "e.g. Tue, Thu, Sat",
+        },
+        {
+          id: "important-food-handler",
+          kind: "important",
+          label: "Do you have a valid Texas food handler certificate?",
+          required: true,
+          placeholder: "Yes / No / In progress",
+        },
+        {
+          id: "legal-work-auth",
+          kind: "legal",
+          label: "I am legally authorized to work in the United States.",
+          required: true,
+        },
+        {
+          id: "legal-scheduling",
+          kind: "legal",
+          label: "I understand scheduling may include early-morning shifts starting at 4am.",
+          required: true,
+        },
+      ],
+    },
     services: [
       {
         name: "Wholesale loaves",
         description: "Sourdough and country loaves for cafés",
+        imageUrl: DEMO_IMAGES.bakery2,
         serviceType: "Food & drink",
         actionType: "link",
         actionUrl: "https://riverbendbakery.example/order",
@@ -279,6 +317,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
       {
         name: "Event catering",
         description: "Pastry trays for offices and events",
+        imageUrl: DEMO_IMAGES.bakery,
         serviceType: "Service",
         actionType: "form",
         actionLabel: "Place catering order",
@@ -311,6 +350,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Mon–Fri 9am–5pm",
     importantInfo: "Free 15-minute intro call for new clients.",
     isHiring: false,
+    jobApplicationForm: { questions: [] },
     services: [
       { name: "Contract review", description: "Flat-fee vendor and client agreements" },
       { name: "Lease review", description: "Commercial lease negotiation support" },
@@ -342,6 +382,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Wed–Sat 10am–6pm",
     importantInfo: "Vendor applications reviewed monthly.",
     isHiring: true,
+    jobApplicationForm: { questions: [] },
     services: [
       { name: "Pop-up retail", description: "Short-term shelf space for makers" },
       { name: "Community events", description: "Markets and maker showcases" },
@@ -374,6 +415,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Mon–Sat 5am–9pm",
     importantInfo: "First class free for new members.",
     isHiring: true,
+    jobApplicationForm: { questions: [] },
     services: [
       { name: "Corporate wellness", description: "On-site stretch and mobility sessions", price: "From $199/mo" },
       { name: "Small-group training", description: "6-person strength and conditioning", price: "$149/mo" },
@@ -405,6 +447,7 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Mon–Fri 8am–6pm",
     importantInfo: "Rush jobs available with 24hr notice.",
     isHiring: false,
+    jobApplicationForm: { questions: [] },
     services: [
       { name: "Menu & signage printing", description: "Restaurant and retail signage", price: "From $89" },
       { name: "Event banners", description: "Vinyl banners for markets and pop-ups", price: "From $120" },

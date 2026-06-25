@@ -126,16 +126,21 @@ export function BusinessActivitySection({
   currentUserId,
   isOwner,
   contentLikes = { counts: {}, userLiked: [] },
+  maxPosts,
 }: {
   businessId: string;
   posts: BusinessPost[];
   currentUserId: string | null;
   isOwner: boolean;
   contentLikes?: ContentLikeState;
+  maxPosts?: number;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [commentBodies, setCommentBodies] = useState<Record<string, string>>({});
+  const visiblePosts = maxPosts ? posts.slice(0, maxPosts) : posts;
+  const hiddenCount = maxPosts ? Math.max(0, posts.length - maxPosts) : 0;
+  const compact = maxPosts === 1;
 
   function handleComment(postId: string) {
     if (!currentUserId) {
@@ -155,46 +160,48 @@ export function BusinessActivitySection({
 
   return (
     <Card id="activity">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Business activity</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">{compact ? "Latest update" : "Business activity"}</h2>
         {isOwner && (
-          <a href="/dashboard/posts" className="text-sm text-accent hover:underline">
-            Create post →
+          <a href="/dashboard/posts" className="text-xs text-accent hover:underline">
+            Manage posts →
           </a>
         )}
       </div>
 
-      <ul className="mt-4 space-y-6">
-        {posts.length === 0 && (
+      <ul className="mt-3 space-y-4">
+        {visiblePosts.length === 0 && (
           <li className="text-sm text-muted">
             No activity yet.{" "}
-            {isOwner ? "Publish updates, jobs, deals, or video from Posts & marketing." : ""}
+            {isOwner ? "Publish updates from Posts & marketing." : ""}
           </li>
         )}
-        {posts.map((post) => {
+        {visiblePosts.map((post) => {
           const likeKey = contentLikeKey("post", post.id);
           return (
             <li
               key={post.id}
               id={`post-${post.id}`}
-              className="scroll-mt-24 rounded-xl border border-border p-4"
+              className={`scroll-mt-24 rounded-xl border border-border ${compact ? "p-3" : "p-4"}`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <PostTypeBadge type={post.postType} />
-                <h3 className="font-medium">{post.title}</h3>
-                {post.isTrending && (
+                <h3 className={`font-medium ${compact ? "text-sm" : ""}`}>{post.title}</h3>
+                {!compact && post.isTrending && (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                     Trending
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-sm leading-relaxed">{post.body}</p>
-              {post.mediaUrls.length > 0 && (
+              <p className={`mt-2 leading-relaxed text-muted ${compact ? "line-clamp-3 text-xs" : "text-sm"}`}>
+                {post.body}
+              </p>
+              {!compact && post.mediaUrls.length > 0 && (
                 <div className="mt-3">
                   <PostMediaGallery urls={post.mediaUrls} />
                 </div>
               )}
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
                 <ContentLikeButton
                   businessId={businessId}
                   targetType="post"
@@ -207,7 +214,7 @@ export function BusinessActivitySection({
                 </p>
               </div>
 
-              {(post.recentComments?.length ?? 0) > 0 && (
+              {!compact && (post.recentComments?.length ?? 0) > 0 && (
                 <div className="mt-3 rounded-lg border border-border bg-slate-50/70 p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Comments
@@ -218,29 +225,41 @@ export function BusinessActivitySection({
                 </div>
               )}
 
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="text"
-                  value={commentBodies[post.id] ?? ""}
-                  onChange={(e) =>
-                    setCommentBodies((prev) => ({ ...prev, [post.id]: e.target.value }))
-                  }
-                  placeholder="Join the thread..."
-                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => handleComment(post.id)}
-                  className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-                >
-                  Reply
-                </button>
-              </div>
+              {!compact && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={commentBodies[post.id] ?? ""}
+                    onChange={(e) =>
+                      setCommentBodies((prev) => ({ ...prev, [post.id]: e.target.value }))
+                    }
+                    placeholder="Join the thread..."
+                    className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => handleComment(post.id)}
+                    className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                  >
+                    Reply
+                  </button>
+                </div>
+              )}
             </li>
           );
         })}
       </ul>
+
+      {hiddenCount > 0 && (
+        <p className="mt-3 text-xs text-muted">
+          {hiddenCount} more update{hiddenCount === 1 ? "" : "s"} on the{" "}
+          <a href="/feed" className="text-accent hover:underline">
+            feed
+          </a>
+          .
+        </p>
+      )}
     </Card>
   );
 }
@@ -287,5 +306,70 @@ export function BusinessPhotosSection({
         })}
       </div>
     </Card>
+  );
+}
+
+export function BusinessGallerySection({
+  businessId,
+  mediaUrls,
+  owner,
+  contentLikes,
+}: {
+  businessId: string;
+  mediaUrls: string[];
+  owner: { id: string; displayName: string; bio?: string } | null;
+  contentLikes: ContentLikeState;
+}) {
+  const galleryUrls = mediaUrls.length > 1 ? mediaUrls.slice(1) : mediaUrls;
+  if (galleryUrls.length === 0 && !owner) return null;
+
+  const ownerInitials = owner?.displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return (
+    <section className="border-b border-border bg-card">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <h2 className="text-sm font-semibold">Photos</h2>
+        <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+          {galleryUrls.map((url, index) => {
+            const likeKey = contentLikeKey("photo", url);
+            return (
+              <div
+                key={`${url}-${index}`}
+                className="w-36 shrink-0 overflow-hidden rounded-xl border border-border"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="aspect-square w-full object-cover" />
+                <div className="border-t border-border p-1.5">
+                  <ContentLikeButton
+                    businessId={businessId}
+                    targetType="photo"
+                    targetId={url}
+                    initialCount={contentLikes.counts[likeKey] ?? 0}
+                    initialLiked={isContentLiked(contentLikes, "photo", url)}
+                    size="sm"
+                  />
+                </div>
+              </div>
+            );
+          })}
+          {owner && (
+            <div className="flex w-36 shrink-0 flex-col rounded-xl border border-border p-3 text-center">
+              <div className="mx-auto flex aspect-square w-full max-w-[7rem] items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-slate-100 text-lg font-bold text-accent">
+                {ownerInitials || "?"}
+              </div>
+              <p className="mt-2 text-xs font-medium leading-tight">{owner.displayName}</p>
+              <p className="mt-0.5 text-[11px] text-muted">Owner</p>
+              {owner.bio && (
+                <p className="mt-2 line-clamp-3 text-[11px] leading-snug text-muted">{owner.bio}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

@@ -85,6 +85,20 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export type JobApplicationQuestionKind = "short" | "legal" | "important";
+
+export type JobApplicationQuestion = {
+  id: string;
+  kind: JobApplicationQuestionKind;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+};
+
+export type JobApplicationFormConfig = {
+  questions: JobApplicationQuestion[];
+};
+
 export interface BusinessProfile {
   id: string;
   ownerId: string;
@@ -105,6 +119,7 @@ export interface BusinessProfile {
   hours: string;
   importantInfo: string;
   isHiring: boolean;
+  jobApplicationForm: JobApplicationFormConfig;
   services: BusinessService[];
   mediaUrls: string[];
   likeCount: number;
@@ -125,6 +140,8 @@ export interface JobApplication {
   message: string;
   coverLetter: string;
   resumeSnapshot: string;
+  resumeAttached: boolean;
+  formAnswers: Record<string, string>;
   status: "pending" | "reviewed" | "accepted" | "declined";
   createdAt: string;
   commentCount?: number;

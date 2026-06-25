@@ -90,18 +90,37 @@ export function JobApplicationDetail({
         )}
 
         <div className="mt-6 space-y-4">
+          {Object.keys(application.formAnswers).length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold">Application answers</h2>
+              <dl className="mt-2 space-y-3">
+                {Object.entries(application.formAnswers).map(([questionId, answer]) => (
+                  <div key={questionId}>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted">
+                      {questionId}
+                    </dt>
+                    <dd className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-muted">
+                      {answer}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           <div>
-            <h2 className="text-sm font-semibold">Cover letter</h2>
+            <h2 className="text-sm font-semibold">Application summary</h2>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">
               {application.coverLetter || application.message}
             </p>
           </div>
-          <div>
-            <h2 className="text-sm font-semibold">Resume snapshot</h2>
-            <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-sm leading-relaxed text-muted">
-              {application.resumeSnapshot || "No resume saved on profile yet."}
-            </pre>
-          </div>
+          {application.resumeAttached && (
+            <div>
+              <h2 className="text-sm font-semibold">Resume</h2>
+              <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-sm leading-relaxed text-muted">
+                {application.resumeSnapshot || "No resume saved on profile yet."}
+              </pre>
+            </div>
+          )}
         </div>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       </Card>

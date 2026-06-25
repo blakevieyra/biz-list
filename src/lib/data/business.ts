@@ -22,6 +22,7 @@ import type {
 } from "@/lib/types";
 import { parsePostType } from "@/lib/media/post-media";
 import { getPostLikeCounts } from "@/lib/data/content-likes";
+import { parseFormAnswers } from "@/lib/job-application-form";
 import {
   matchesDiscoveryRadius,
   type DiscoveryViewer,
@@ -519,6 +520,8 @@ type JobApplicationRow = {
   message: string;
   cover_letter?: string;
   resume_snapshot?: string;
+  form_answers?: unknown;
+  resume_attached?: boolean;
   status: JobApplication["status"];
   created_at: string;
   profiles?: { display_name: string } | { display_name: string }[] | null;
@@ -537,6 +540,8 @@ function mapJobApplicationRow(row: JobApplicationRow): JobApplication {
     message: row.message,
     coverLetter: row.cover_letter ?? "",
     resumeSnapshot: row.resume_snapshot ?? "",
+    resumeAttached: row.resume_attached ?? Boolean(row.resume_snapshot),
+    formAnswers: parseFormAnswers(row.form_answers),
     status: row.status,
     createdAt: row.created_at,
   };
