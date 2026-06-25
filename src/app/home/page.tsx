@@ -13,14 +13,11 @@ import { HomeHubNav } from "@/components/home-hub-nav";
 import { CustomerProUpsell } from "@/components/customer-pro-upsell";
 import { PageHeader, Card } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
-import { getCurrentProfile, getFollowedBusinesses, getForumPosts } from "@/lib/data";
+import { getCurrentProfile, getFollowedBusinesses } from "@/lib/data";
 import { getFeedBusinessPosts } from "@/lib/data/business";
 import { getBusinessEvents, getUserSavedEvents } from "@/lib/data/events";
-import {
-  resolveActiveDiscoveryFilter,
-} from "@/lib/feed/location-scope";
+import { resolveActiveDiscoveryFilter } from "@/lib/feed/location-scope";
 import { canAccessCustomerFeature } from "@/lib/plans";
-import type { ForumCategory } from "@/lib/types";
 
 export default async function HomeHubPage({
   searchParams,
@@ -31,7 +28,6 @@ export default async function HomeHubPage({
     scope?: string;
     miles?: string;
     q?: string;
-    category?: string;
   }>;
 }) {
   const userId = await getAuthUserId();
@@ -51,7 +47,6 @@ export default async function HomeHubPage({
     profileDefault: profile.discoveryRadius,
   });
   const query = params.q ?? "";
-  const categoryFilter = params.category as ForumCategory | undefined;
 
   const viewer = {
     city: profile.city,
@@ -67,11 +62,11 @@ export default async function HomeHubPage({
   const isBusinessAccount = profile.role === "business" || profile.role === "organization";
   const isCustomerPro = canAccessCustomerFeature(profile.planTier, "jobAlerts");
 
-  const [following, savedEvents, nearbyEvents, businessPosts, forumPosts] = await Promise.all([
+  const [following, savedEvents, nearbyEvents, businessPosts] = await Promise.all([
     getFollowedBusinesses(userId),
     getUserSavedEvents(userId, 8),
     getBusinessEvents({ viewer, userId, limit: 8 }),
-    view === "activity" && activityTab !== "discussions"
+    view === "activity"
       ? getFeedBusinessPosts({
           viewer,
           discoveryRadius,
@@ -80,30 +75,21 @@ export default async function HomeHubPage({
           limit: 30,
         })
       : Promise.resolve([]),
-    view === "activity" && activityTab === "discussions"
-      ? getForumPosts(categoryFilter)
-      : Promise.resolve([]),
   ]);
 
   const carouselEvents = savedEvents.length > 0 ? savedEvents : nearbyEvents;
   const eventsHeading = savedEvents.length > 0 ? "Your saved events" : "Events near you";
 
-  function filterByQuery<T extends { title: string; body: string }>(
-    items: T[],
-    extra?: (item: T) => string,
-  ) {
-    if (!query) return items;
-    const q = query.toLowerCase();
-    return items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.body.toLowerCase().includes(q) ||
-        (extra?.(item).toLowerCase().includes(q) ?? false),
-    );
-  }
-
-  const posts = filterByQuery(businessPosts, (p) => p.businessName ?? "");
-  const discussionPosts = filterByQuery(forumPosts, (p) => p.authorName);
+  const posts = query
+    ? businessPosts.filter((p) => {
+        const q = query.toLowerCase();
+        return (
+          p.title.toLowerCase().includes(q) ||
+          p.body.toLowerCase().includes(q) ||
+          (p.businessName ?? "").toLowerCase().includes(q)
+        );
+      })
+    : businessPosts;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -111,7 +97,7 @@ export default async function HomeHubPage({
         title={`Welcome back, ${profile.displayName}`}
         description={
           view === "activity"
-            ? "Business posts and discussions filtered by distance and area near you."
+            ? "Business posts filtered by distance and area near you."
             : "Saved events and businesses you follow — all in one place."
         }
         action={
@@ -142,9 +128,7 @@ export default async function HomeHubPage({
           milesParam={params.miles}
           scopeParam={params.scope}
           query={query}
-          categoryFilter={categoryFilter}
           posts={posts}
-          discussionPosts={discussionPosts}
           currentUserId={userId}
         />
       ) : (

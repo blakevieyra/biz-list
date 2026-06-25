@@ -8,7 +8,6 @@ export default async function FeedPage({
     scope?: string;
     miles?: string;
     q?: string;
-    category?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -19,7 +18,6 @@ export default async function FeedPage({
   if (params.scope) search.set("scope", params.scope);
   if (params.miles) search.set("miles", params.miles);
   if (params.q) search.set("q", params.q);
-  if (params.category) search.set("category", params.category);
 
   redirect(`/home?${search.toString()}`);
 }

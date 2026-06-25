@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ForumPostCard } from "@/components/forum-post-card";
 import { FeedPostCard } from "@/components/feed-post-card";
 import {
   AREA_SCOPE_LABELS,
@@ -16,11 +15,8 @@ import type {
   BusinessPost,
   BusinessPostType,
   DiscoveryRadius,
-  ForumCategory,
-  ForumPost,
   MileRadius,
 } from "@/lib/types";
-import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
 export const ACTIVITY_TABS = [
   { id: "all", label: "All" },
@@ -29,7 +25,6 @@ export const ACTIVITY_TABS = [
   { id: "sales", label: "Sales & deals" },
   { id: "help", label: "Help needed" },
   { id: "free", label: "Free" },
-  { id: "discussions", label: "Discussions" },
 ] as const;
 
 export type ActivityTab = (typeof ACTIVITY_TABS)[number]["id"];
@@ -42,8 +37,6 @@ export const ACTIVITY_TAB_POST_TYPES: Partial<Record<ActivityTab, BusinessPostTy
   free: ["free"],
 };
 
-const forumCategories = Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[];
-
 export function ActivityFeedPanel({
   basePath,
   tab,
@@ -51,9 +44,7 @@ export function ActivityFeedPanel({
   milesParam,
   scopeParam,
   query,
-  categoryFilter,
   posts,
-  discussionPosts,
   currentUserId,
   showProfilePrompt = false,
 }: {
@@ -63,9 +54,7 @@ export function ActivityFeedPanel({
   milesParam?: string;
   scopeParam?: string;
   query: string;
-  categoryFilter?: ForumCategory;
   posts: BusinessPost[];
-  discussionPosts: ForumPost[];
   currentUserId: string | null;
   showProfilePrompt?: boolean;
 }) {
@@ -77,7 +66,6 @@ export function ActivityFeedPanel({
       view: "activity",
       tab: tab !== "all" ? tab : undefined,
       q: query || undefined,
-      category: categoryFilter,
       miles: milesParam,
       scope: scopeParam,
       ...next,
@@ -125,7 +113,7 @@ export function ActivityFeedPanel({
         {ACTIVITY_TABS.map((t) => (
           <Link
             key={t.id}
-            href={buildHref({ tab: t.id === "all" ? undefined : t.id, category: undefined })}
+            href={buildHref({ tab: t.id === "all" ? undefined : t.id })}
             className={`rounded-full px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
               tab === t.id
                 ? "bg-accent text-white"
@@ -175,46 +163,15 @@ export function ActivityFeedPanel({
         ))}
       </div>
 
-      {tab === "discussions" && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <Link
-            href={buildHref({ category: undefined })}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-              !categoryFilter
-                ? "bg-accent text-white"
-                : "border border-border bg-card text-muted hover:text-foreground"
-            }`}
-          >
-            All topics
-          </Link>
-          {forumCategories.map((category) => (
-            <Link
-              key={category}
-              href={buildHref({ category })}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                categoryFilter === category
-                  ? "bg-accent text-white"
-                  : "border border-border bg-card text-muted hover:text-foreground"
-              }`}
-            >
-              {FORUM_CATEGORY_LABELS[category]}
-            </Link>
-          ))}
-        </div>
-      )}
-
       <form action="/home" method="get" className="mb-6 flex flex-col gap-3 sm:flex-row">
         <input type="hidden" name="view" value="activity" />
         {tab !== "all" && <input type="hidden" name="tab" value={tab} />}
         {scopeParam && <input type="hidden" name="scope" value={scopeParam} />}
         {milesParam && <input type="hidden" name="miles" value={milesParam} />}
-        {categoryFilter && tab === "discussions" && (
-          <input type="hidden" name="category" value={categoryFilter} />
-        )}
         <input
           name="q"
           defaultValue={query}
-          placeholder="Search latest business posts..."
+          placeholder="Search business posts..."
           className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
         />
         <button
@@ -226,23 +183,15 @@ export function ActivityFeedPanel({
       </form>
 
       <div className="space-y-4">
-        {tab !== "discussions" &&
-          (posts.length ? (
-            posts.map((post) => (
-              <FeedPostCard key={post.id} post={post} currentUserId={currentUserId} />
-            ))
-          ) : (
-            <p className="text-center text-muted">
-              No business posts in this area yet. Try widening your distance or area filters.
-            </p>
-          ))}
-
-        {tab === "discussions" &&
-          (discussionPosts.length ? (
-            discussionPosts.map((post) => <ForumPostCard key={post.id} post={post} />)
-          ) : (
-            <p className="text-center text-muted">No discussions in this topic yet.</p>
-          ))}
+        {posts.length ? (
+          posts.map((post) => (
+            <FeedPostCard key={post.id} post={post} currentUserId={currentUserId} />
+          ))
+        ) : (
+          <p className="text-center text-muted">
+            No business posts in this area yet. Try widening your distance or area filters.
+          </p>
+        )}
       </div>
     </>
   );
