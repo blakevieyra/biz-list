@@ -115,25 +115,33 @@ export function StarRating({
   rating,
   count,
   size = "sm",
+  compact = false,
 }: {
   rating: number;
   count?: number;
   size?: "sm" | "md";
+  compact?: boolean;
 }) {
   const filled = Math.min(5, Math.max(0, Math.round(rating)));
-  const textSize = size === "md" ? "text-base" : "text-sm";
+  const textSize = compact ? "text-xs" : size === "md" ? "text-base" : "text-sm";
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-800 ${textSize}`}
+      className={`inline-flex shrink-0 items-center gap-0.5 font-semibold text-amber-800 ${
+        compact
+          ? "text-xs"
+          : `rounded-full bg-amber-50 px-2 py-0.5 ${textSize}`
+      }`}
       aria-label={`${rating.toFixed(1)} out of 5 stars${count ? `, ${count} reviews` : ""}`}
     >
-      <span aria-hidden className="tracking-tight">
+      <span aria-hidden className={compact ? "text-[10px] tracking-tighter" : "tracking-tight"}>
         {"★".repeat(filled)}
         {"☆".repeat(5 - filled)}
       </span>
       {count !== undefined && count > 0 ? (
-        <span className="text-xs font-medium">({count})</span>
+        <span className={compact ? "text-[10px] font-medium text-muted" : "text-xs font-medium"}>
+          ({count})
+        </span>
       ) : null}
     </span>
   );

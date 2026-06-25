@@ -24,8 +24,6 @@ export async function SiteHeader() {
   const notificationCount = userId ? await getUnreadNotificationCount(userId) : 0;
   const profileHref = profile ? "/profile" : "/profile/create";
   const messageCount = userId ? await getUnreadMessageCount(userId) : 0;
-  const showPlansLink = Boolean(profile);
-  const isCustomer = profile?.role === "customer";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -36,7 +34,6 @@ export async function SiteHeader() {
             userId={userId}
             displayName={profile?.displayName}
             profileRole={profile?.role}
-            showPlansLink={showPlansLink}
           />
         </div>
 
@@ -95,11 +92,6 @@ export async function SiteHeader() {
                 <Link href={profileHref} className="max-w-[120px] truncate text-sm font-medium">
                   {profile.displayName}
                 </Link>
-                {showPlansLink && (
-                  <Link href={isCustomer ? "/pricing#bizlist-plus" : "/pricing"} className="text-sm text-muted transition hover:text-foreground">
-                    Plans
-                  </Link>
-                )}
               </div>
 
               <form action={signOut}>

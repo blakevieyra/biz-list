@@ -21,9 +21,11 @@ const badgeLabels: Record<FeedPostBadge, string> = {
 function LazyAvatar({
   src,
   alt,
+  fill = false,
 }: {
   src?: string;
   alt: string;
+  fill?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -43,6 +45,21 @@ function LazyAvatar({
     observer.observe(node);
     return () => observer.disconnect();
   }, [src]);
+
+  if (fill) {
+    return (
+      <div ref={ref} className="absolute inset-0 bg-slate-100">
+        {visible && src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-slate-100 text-3xl font-bold text-accent/25">
+            {alt.charAt(0)}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -96,12 +113,17 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7rem_minmax(0,1fr)]">
-        <div className="border-b border-border bg-slate-50/80 p-3 sm:border-b-0 sm:border-r">
-          <Link href={`/listings/${post.businessId}`} className="block">
-            <LazyAvatar src={avatarSrc} alt={post.businessName ?? "Business"} />
-          </Link>
-        </div>
+      <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7.5rem_minmax(0,1fr)]">
+        <Link
+          href={`/listings/${post.businessId}`}
+          className="relative block min-h-[7.5rem] overflow-hidden border-r border-border bg-slate-100 sm:min-h-full"
+        >
+          <LazyAvatar
+            fill
+            src={avatarSrc}
+            alt={post.businessName ?? "Business"}
+          />
+        </Link>
 
         <div className="min-w-0 p-4">
           <div className="flex items-start justify-between gap-3">
@@ -114,12 +136,21 @@ export function FeedPostCard({
                   </span>
                 )}
               </div>
-              <Link
-                href={`/listings/${post.businessId}`}
-                className="mt-1 block truncate text-sm font-semibold text-accent hover:underline"
-              >
-                {post.businessName ?? "Local business"}
-              </Link>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <Link
+                  href={`/listings/${post.businessId}`}
+                  className="truncate text-sm font-semibold text-accent hover:underline"
+                >
+                  {post.businessName ?? "Local business"}
+                </Link>
+                {(post.businessRatingCount ?? 0) > 0 && (
+                  <StarRating
+                    rating={post.businessRatingAvg ?? 0}
+                    count={post.businessRatingCount}
+                    compact
+                  />
+                )}
+              </div>
               {post.businessCategory && (
                 <p className="truncate text-xs text-muted">{post.businessCategory}</p>
               )}
@@ -128,15 +159,6 @@ export function FeedPostCard({
               {formatPostDateTime(post.createdAt)}
             </span>
           </div>
-
-          {(post.businessRatingCount ?? 0) > 0 && (
-            <div className="mt-2">
-              <StarRating
-                rating={post.businessRatingAvg ?? 0}
-                count={post.businessRatingCount}
-              />
-            </div>
-          )}
 
           <h3 className="mt-2 text-base font-semibold leading-snug">{post.title}</h3>
           <p className="mt-1 text-sm leading-relaxed text-muted">{post.body}</p>

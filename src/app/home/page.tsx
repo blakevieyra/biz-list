@@ -12,6 +12,7 @@ import {
   ProfileHubNav,
   type HubTab,
 } from "@/components/profile-hub-sections";
+import { ProfilePlansPanel } from "@/components/profile-plans-panel";
 import { ProfilePreferencesPanel } from "@/components/profile-preferences-panel";
 import { BusinessGrowthHub } from "@/components/business-growth-hub";
 import { HomeHubNav, type HomeTab } from "@/components/home-hub-nav";
@@ -52,6 +53,7 @@ import { canAccess, canAccessCustomerFeature } from "@/lib/plans";
 const homeTabs = new Set<HomeTab>(["latest", "listings", "collaboration", "profile"]);
 const profileTabs = new Set<HubTab>([
   "overview",
+  "plans",
   "following",
   "applications",
   "messages",
@@ -464,6 +466,9 @@ export default async function HomeHubPage({
                   <Link href="/home?tab=profile&profileTab=alerts" className="text-accent hover:underline">
                     Alerts{unreadAlerts > 0 ? ` (${unreadAlerts})` : ""}
                   </Link>
+                  <Link href="/home?tab=profile&profileTab=plans" className="text-accent hover:underline">
+                    Plans & billing
+                  </Link>
                 </div>
               </Card>
               {isBusinessAccount ? (
@@ -472,6 +477,10 @@ export default async function HomeHubPage({
                 <ProfilePreferencesPanel profile={profile} />
               )}
             </div>
+          )}
+
+          {profileTab === "plans" && (
+            <ProfilePlansPanel role={profile.role} planTier={profile.planTier} />
           )}
 
           {profileTab === "growth" &&

@@ -23,12 +23,10 @@ export function MobileNav({
   userId,
   displayName,
   profileRole,
-  showPlansLink,
 }: {
   userId?: string | null;
   displayName?: string | null;
   profileRole?: UserRole | null;
-  showPlansLink?: boolean;
 }) {
   const profileHref = profileRole ? "/profile" : "/profile/create";
   const [open, setOpen] = useState(false);
@@ -104,17 +102,8 @@ export function MobileNav({
                       onClick={() => setOpen(false)}
                       className="flex min-h-11 items-center justify-center rounded-full border border-border text-sm font-medium"
                     >
-                      Edit profile
+                      My profile
                     </Link>
-                    {showPlansLink && (
-                      <Link
-                        href={profileRole === "customer" ? "/pricing#bizlist-plus" : "/pricing"}
-                        onClick={() => setOpen(false)}
-                        className="flex min-h-11 items-center justify-center rounded-full border border-border text-sm font-medium"
-                      >
-                        Plans & billing
-                      </Link>
-                    )}
                     <form action={signOut}>
                       <button
                         type="submit"

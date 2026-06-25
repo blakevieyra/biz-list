@@ -18,6 +18,7 @@ type ConversationPreview = {
 
 const tabs = [
   { id: "overview", label: "Overview" },
+  { id: "plans", label: "Plans" },
   { id: "growth", label: "Growth", businessOnly: true },
   { id: "following", label: "Following" },
   { id: "applications", label: "Applications", customerOnly: true },
@@ -25,7 +26,7 @@ const tabs = [
   { id: "alerts", label: "Alerts" },
 ] as const;
 
-type HubTab = (typeof tabs)[number]["id"] | "growth";
+export type HubTab = (typeof tabs)[number]["id"];
 
 export function ProfileHubNav({
   active,
@@ -230,5 +231,3 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
     </div>
   );
 }
-
-export type { HubTab };
