@@ -12,6 +12,7 @@
     "supabase:push": "supabase db push",
     "supabase:status": "supabase projects list",
     "db:migrate": "node scripts/run-migrations.mjs",
+    "db:migrate:pending": "node scripts/run-pending-migrations.mjs",
     "db:seed": "node scripts/seed-demo-data.mjs"
   },
   "dependencies": {
