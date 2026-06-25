@@ -7,7 +7,7 @@ export default function PricingPage() {
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Plans for people and businesses"
-        description="Community is free. Customers upgrade to BizList Plus; businesses upgrade to Pro or Platinum — monthly or yearly."
+        description="Community is free. Customers upgrade to AllConnect Plus; businesses upgrade to Pro or Platinum — monthly or yearly."
       />
 
       <Suspense fallback={<p className="text-center text-sm text-muted">Loading plans...</p>}>

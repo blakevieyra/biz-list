@@ -1,7 +1,6 @@
 import { haversineMiles } from "@/lib/geo/geocode";
 import type { AreaScope, DiscoveryRadius, MileRadius, UserProfile } from "@/lib/types";
 
-/** @deprecated Use DiscoveryRadius */
 export type FeedScope = DiscoveryRadius;
 
 export type LocationProfile = Pick<
@@ -142,7 +141,6 @@ export function resolveMileRadius(miles: string | undefined): MileRadius | undef
   return MILE_VALUES.has(normalized) ? (normalized as MileRadius) : undefined;
 }
 
-/** @deprecated Use resolveAreaScope */
 export function resolveDiscoveryRadius(
   urlRadius: string | undefined,
   profileRadius?: DiscoveryRadius | string,

@@ -18,7 +18,7 @@ export default function NewForumPostPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <Link href="/forum" className="text-sm text-accent hover:underline">
+      <Link href="/partnerships?tab=forum" className="text-sm text-accent hover:underline">
         ← Back
       </Link>
       <PageHeader
@@ -37,7 +37,11 @@ export default function NewForumPostPage() {
                 setError(result.error);
                 return;
               }
-              router.push(result.id ? `/forum/${result.id}` : "/forum");
+              router.push(
+                result.id
+                  ? `/partnerships?tab=forum&post=${result.id}`
+                  : "/partnerships?tab=forum",
+              );
             });
           }}
         >

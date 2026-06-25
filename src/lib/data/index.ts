@@ -206,7 +206,6 @@ export async function getBusinesses(filters?: {
   areaScope?: AreaScope;
   mileRadius?: MileRadius;
   discoveryRadius?: DiscoveryRadius;
-  /** @deprecated use discoveryRadius */
   scope?: FeedScope;
   viewer?: DiscoveryViewer | null;
 }): Promise<BusinessProfile[]> {
@@ -495,8 +494,44 @@ export async function getCommentsForPost(postId: string): Promise<Comment[]> {
   return (rows as CommentRow[] | null)?.map(mapComment) ?? [];
 }
 
+async function attachCollaborationInterests(
+  collaborations: CollaborationIdea[],
+  userId?: string | null,
+): Promise<CollaborationIdea[]> {
+  if (!collaborations.length) return collaborations;
+
+  const supabase = await getSupabase();
+  if (!supabase) return collaborations;
+
+  const ids = collaborations.map((item) => item.id);
+  const { data: interests } = await supabase
+    .from("collaboration_interests")
+    .select("collaboration_id, user_id")
+    .in("collaboration_id", ids);
+
+  const countByCollab = new Map<string, number>();
+  const userInterestedByCollab = new Map<string, boolean>();
+
+  for (const row of interests ?? []) {
+    countByCollab.set(
+      row.collaboration_id,
+      (countByCollab.get(row.collaboration_id) ?? 0) + 1,
+    );
+    if (userId && row.user_id === userId) {
+      userInterestedByCollab.set(row.collaboration_id, true);
+    }
+  }
+
+  return collaborations.map((item) => ({
+    ...item,
+    interestedCount: countByCollab.get(item.id) ?? item.interestedCount ?? 0,
+    userInterested: userInterestedByCollab.get(item.id) ?? false,
+  }));
+}
+
 export async function getCollaborations(
   type?: CollaborationIdea["collaborationType"],
+  userId?: string | null,
 ): Promise<CollaborationIdea[]> {
   const supabase = await getSupabase();
   if (!supabase) {
@@ -518,10 +553,16 @@ export async function getCollaborations(
 
   const { data: rows } = await query;
   const mapped = (rows as CollaborationRow[] | null)?.map(mapCollaboration) ?? [];
-  return mapped.filter((item) => item.businessId);
+  return attachCollaborationInterests(
+    mapped.filter((item) => item.businessId),
+    userId,
+  );
 }
 
-export async function getCollaborationById(id: string): Promise<CollaborationIdea | null> {
+export async function getCollaborationById(
+  id: string,
+  userId?: string | null,
+): Promise<CollaborationIdea | null> {
   const supabase = await getSupabase();
   if (!supabase) {
     return SEED_COLLABORATIONS.find((item) => item.id === id) ?? null;
@@ -533,7 +574,12 @@ export async function getCollaborationById(id: string): Promise<CollaborationIde
     .eq("id", id)
     .maybeSingle();
 
-  return row ? mapCollaboration(row as CollaborationRow) : null;
+  if (!row) return null;
+  const [withInterests] = await attachCollaborationInterests(
+    [mapCollaboration(row as CollaborationRow)],
+    userId,
+  );
+  return withInterests ?? null;
 }
 
 type CollaborationCommentRow = {

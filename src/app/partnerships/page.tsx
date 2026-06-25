@@ -25,7 +25,7 @@ const allTabs: { id: CollaborateTab; label: string }[] = [
 export default async function CollaboratePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; category?: string; q?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string; q?: string; post?: string }>;
 }) {
   const params = await searchParams;
   const tab: CollaborateTab = allTabs.some((t) => t.id === params.tab)
@@ -35,13 +35,16 @@ export default async function CollaboratePage({
     ? (params.category as ForumCategory)
     : undefined;
   const forumQuery = params.q ?? "";
+  const selectedPostId = params.post?.trim() || undefined;
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const isBusinessAccount =
     profile?.role === "business" || profile?.role === "organization";
 
   const collaborations =
-    tab === "forum" ? [] : await getCollaborations(tab as CollaborationType);
+    tab === "forum"
+      ? []
+      : await getCollaborations(tab as CollaborationType, userId);
   const commentsById: Map<string, CollaborationComment[]> =
     tab === "forum"
       ? new Map()
@@ -120,6 +123,7 @@ export default async function CollaboratePage({
           basePath="/partnerships?tab=forum"
           category={forumCategory}
           query={forumQuery}
+          selectedPostId={selectedPostId}
         />
       ) : collaborations.length === 0 ? (
         <Card>

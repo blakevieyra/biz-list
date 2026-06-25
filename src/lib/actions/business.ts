@@ -144,11 +144,11 @@ export async function submitBusinessReview(input: {
     const { supabase, user } = await requireUser();
 
     const rating = Math.min(5, Math.max(1, Math.round(input.rating)));
-    const body = input.body.trim().slice(0, 2000);
-    if (!body) return { error: "Review cannot be empty." };
-
-    const moderation = moderateUserContent(body, "Review");
+    const rawBody = input.body.trim();
+    if (!rawBody) return { error: "Review cannot be empty." };
+    const moderation = moderateUserContent(rawBody, "Review");
     if (!moderation.ok) return { error: moderation.reason };
+    const body = rawBody.slice(0, 2000);
 
     const { data: business } = await supabase
       .from("businesses")
@@ -442,11 +442,13 @@ export async function commentOnBusinessPost(
 
     if (!post) return { error: "Post not found." };
 
-    const trimmed = body.trim().slice(0, 2000);
-    const moderation = moderateUserContent(trimmed, "Comment");
+    const rawComment = body.trim();
+    if (!rawComment) return { error: "Comment cannot be empty." };
+    const moderation = moderateUserContent(rawComment, "Comment");
     if (!moderation.ok) return { error: moderation.reason };
+    const trimmed = rawComment.slice(0, 2000);
 
-    let parentId: string | null = options?.parentCommentId?.trim() || null;
+    const parentId: string | null = options?.parentCommentId?.trim() || null;
     if (parentId) {
       const { data: parent } = await supabase
         .from("business_post_comments")

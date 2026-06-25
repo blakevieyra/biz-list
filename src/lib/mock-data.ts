@@ -7,6 +7,7 @@ import type {
   CollaborationComment,
   CollaborationIdea,
   Comment,
+  EventComment,
   ForumPost,
   UserProfile,
 } from "./types";
@@ -36,7 +37,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "none",
     forumInterests: [],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-01-10T10:00:00Z",
     avatarUrl: DEMO_IMAGES.avatarMaria,
@@ -64,7 +64,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "none",
     forumInterests: [],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-01-12T14:00:00Z",
   },
@@ -91,7 +90,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "none",
     forumInterests: [],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-02-01T09:00:00Z",
   },
@@ -118,7 +116,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: true,
     followDigestFrequency: "weekly",
     forumInterests: ["hiring", "local"],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-03-15T11:00:00Z",
     avatarUrl: DEMO_IMAGES.avatarAlex,
@@ -146,7 +143,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "none",
     forumInterests: [],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-04-01T08:00:00Z",
   },
@@ -173,7 +169,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: true,
     followDigestFrequency: "weekly",
     forumInterests: ["partnerships", "local"],
-    feedScope: "state" as const,
     discoveryRadius: "state" as const,
     createdAt: "2026-04-10T09:00:00Z",
   },
@@ -200,7 +195,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: true,
     followDigestFrequency: "monthly",
     forumInterests: ["partnerships", "hiring"],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-04-12T14:00:00Z",
   },
@@ -227,7 +221,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "none",
     forumInterests: ["local", "partnerships"],
-    feedScope: "state" as const,
     discoveryRadius: "state" as const,
     createdAt: "2026-02-20T10:00:00Z",
   },
@@ -254,7 +247,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "none",
     forumInterests: ["local"],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-03-01T11:00:00Z",
   },
@@ -281,7 +273,6 @@ export const SEED_USERS: UserProfile[] = [
     jobAlertOptIn: false,
     followDigestFrequency: "weekly",
     forumInterests: ["local"],
-    feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-05-01T12:00:00Z",
     avatarUrl: DEMO_IMAGES.avatarBlake,
@@ -395,8 +386,8 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     isHiring: false,
     jobApplicationForm: { questions: [] },
     services: [
-      { name: "Contract review", description: "Flat-fee vendor and client agreements" },
-      { name: "Lease review", description: "Commercial lease negotiation support" },
+      { name: "Contract review", description: "Flat-fee vendor and client agreements", serviceType: "Service" },
+      { name: "Lease review", description: "Commercial lease negotiation support", serviceType: "Service" },
     ],
     mediaUrls: [DEMO_IMAGES.legal],
     likeCount: 8,
@@ -428,8 +419,18 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     isHiring: true,
     jobApplicationForm: { questions: [] },
     services: [
-      { name: "Pop-up retail", description: "Short-term shelf space for makers", imageUrl: DEMO_IMAGES.retail },
-      { name: "Community events", description: "Markets and maker showcases", imageUrl: DEMO_IMAGES.retail },
+      {
+        name: "Pop-up retail",
+        description: "Short-term shelf space for makers",
+        imageUrl: DEMO_IMAGES.retail,
+        serviceType: "Retail",
+      },
+      {
+        name: "Community events",
+        description: "Markets and maker showcases",
+        imageUrl: DEMO_IMAGES.retail,
+        serviceType: "Event / experience",
+      },
     ],
     mediaUrls: [DEMO_IMAGES.retail],
     likeCount: 5,
@@ -637,6 +638,33 @@ export const SEED_BUSINESS_EVENTS: BusinessEvent[] = [
   },
 ];
 
+export const SEED_EVENT_COMMENTS: EventComment[] = [
+  {
+    id: "event-comment-1",
+    eventId: "event-1",
+    authorId: "user-4",
+    authorName: "Alex Rivera",
+    body: "Will gluten-free loaves be available this week?",
+    createdAt: "2026-06-20T15:30:00Z",
+  },
+  {
+    id: "event-comment-2",
+    eventId: "event-1",
+    authorId: "user-1",
+    authorName: "Maria Chen",
+    body: "Yes — we usually have one GF option on Saturday drops. Follow the listing Thursday for the flavor list.",
+    createdAt: "2026-06-20T16:05:00Z",
+  },
+  {
+    id: "event-comment-3",
+    eventId: "event-2",
+    authorId: "user-6",
+    authorName: "Sam Nguyen",
+    body: "Can vendors bring sample products to swap?",
+    createdAt: "2026-06-18T11:00:00Z",
+  },
+];
+
 export const SEED_COMMENTS: Comment[] = [
   {
     id: "comment-1",
@@ -686,6 +714,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     collaborationType: "proposal",
     status: "open",
     createdAt: "2026-03-01T10:00:00Z",
+    interestedCount: 4,
   },
   {
     id: "collab-2",
@@ -700,6 +729,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     collaborationType: "b2b_sale",
     status: "in_discussion",
     createdAt: "2026-03-06T15:00:00Z",
+    interestedCount: 7,
   },
   {
     id: "collab-3",
@@ -713,6 +743,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     collaborationType: "contract",
     status: "open",
     createdAt: "2026-04-18T09:00:00Z",
+    interestedCount: 2,
   },
 ];
 
@@ -883,7 +914,7 @@ export const SEED_BUSINESS_POSTS: BusinessPost[] = [
     authorName: "Elena Vasquez",
     postType: "deal",
     title: "Grand opening banner bundle — 15% off in May",
-    body: "New shop opening? We bundled yard signs, window clings, and Instagram-ready photo backdrops for local launches. Mention BizList for 15% off.",
+    body: "New shop opening? We bundled yard signs, window clings, and Instagram-ready photo backdrops for local launches. Mention AllConnect for 15% off.",
     mediaUrls: [DEMO_IMAGES.print],
     engagementScore: 24,
     isTrending: false,

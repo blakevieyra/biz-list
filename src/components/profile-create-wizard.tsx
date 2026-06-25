@@ -9,7 +9,7 @@ import { SocialLinksEditor } from "@/components/social-links-editor";
 import { ServicesEditor } from "@/components/services-editor";
 import { CategoryPicker, IndustryPicker } from "@/components/industry-picker";
 import { Card, PageHeader } from "@/components/ui";
-import type { BusinessIntent, BusinessService, BusinessSocialLinks, FeedScope, ForumCategory, UserRole } from "@/lib/types";
+import type { BusinessIntent, BusinessService, BusinessSocialLinks, DiscoveryRadius, ForumCategory, UserRole } from "@/lib/types";
 import { FEED_SCOPE_LABELS } from "@/lib/feed/location-scope";
 import {
   FORUM_CATEGORY_LABELS,
@@ -47,7 +47,7 @@ type FormState = {
   headline: string;
   skills: string[];
   isSeekingWork: boolean;
-  feedScope: FeedScope;
+  discoveryRadius: DiscoveryRadius;
   businessName: string;
   tagline: string;
   description: string;
@@ -92,7 +92,7 @@ export function ProfileCreateWizard({
     headline: "",
     skills: [],
     isSeekingWork: false,
-    feedScope: "city",
+    discoveryRadius: "city",
     businessName: "",
     tagline: "",
     description: "",
@@ -219,8 +219,7 @@ export function ProfileCreateWizard({
         headline: form.headline.trim(),
         skills: form.skills,
         isSeekingWork: form.isSeekingWork,
-        discoveryRadius: form.feedScope,
-        feedScope: form.feedScope,
+        discoveryRadius: form.discoveryRadius,
         businessName: isBusiness ? form.businessName.trim() : undefined,
         tagline: isBusiness ? form.tagline.trim() : undefined,
         description: isBusiness ? form.description.trim() : undefined,
@@ -257,9 +256,9 @@ export function ProfileCreateWizard({
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12 sm:px-6">
         <Card>
           <p className="text-sm font-semibold uppercase tracking-wide text-accent">You&apos;re in</p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Welcome to BizList</h1>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Welcome to AllConnect</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-            Your profile is live. Here&apos;s what you can do next on BizList:
+            Your profile is live. Here&apos;s what you can do next on AllConnect:
           </p>
 
           <ul className="mt-6 space-y-3">
@@ -279,7 +278,7 @@ export function ProfileCreateWizard({
               {isBusiness ? "Open dashboard" : "Browse directory"}
             </Link>
             <Link
-              href="/forum"
+              href="/partnerships?tab=forum"
               className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:border-accent/40"
             >
               Explore forum
@@ -315,7 +314,7 @@ export function ProfileCreateWizard({
 
       <Card>
         {step === "welcome" && (
-          <StepBlock title="How will you use BizList?">
+          <StepBlock title="How will you use AllConnect?">
             <div className="grid gap-3 sm:grid-cols-2">
               {(["business", "organization", "customer"] as UserRole[]).map((role) => (
                 <button
@@ -422,13 +421,13 @@ export function ProfileCreateWizard({
               <p className="text-sm font-medium">Community feed range</p>
               <p className="mt-1 text-xs text-muted">Choose how far you want to discover people and businesses.</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {(Object.keys(FEED_SCOPE_LABELS) as FeedScope[]).map((scope) => (
+                {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((scope) => (
                   <button
                     key={scope}
                     type="button"
-                    onClick={() => setForm({ ...form, feedScope: scope })}
+                    onClick={() => setForm({ ...form, discoveryRadius: scope })}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                      form.feedScope === scope
+                      form.discoveryRadius === scope
                         ? "bg-accent text-white"
                         : "border border-border bg-card text-muted"
                     }`}

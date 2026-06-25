@@ -22,8 +22,8 @@ export function Logo({
 
   const content = (
     <Image
-      src="/bizlist-logo.png"
-      alt={showText ? "BizList" : "BizList home"}
+      src="/AllConnect-logo.png"
+      alt={showText ? "AllConnect" : "AllConnect home"}
       width={dims.width}
       height={dims.height}
       className={`object-contain ${dims.className}`}
@@ -61,8 +61,8 @@ export function LogoMark({
   return (
     <div className={`text-center ${className}`}>
       <Image
-        src="/bizlist-logo.png"
-        alt="BizList"
+        src="/AllConnect-logo.png"
+        alt="AllConnect"
         width={dims.width}
         height={dims.height}
         className={`mx-auto object-contain ${dims.className}`}

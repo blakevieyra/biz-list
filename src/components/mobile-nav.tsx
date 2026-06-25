@@ -3,21 +3,40 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { signOut } from "@/lib/actions/auth";
+import { SITE_NAV_LINKS, useSiteNavActive } from "@/components/site-nav-links";
 import type { UserRole } from "@/lib/types";
-
-const publicLinks = [
-  { href: "/home", label: "Home", authOnly: true },
-  { href: "/listings", label: "Listings" },
-  { href: "/partnerships", label: "Collaborations" },
-  { href: "/partnerships?tab=forum", label: "Forum" },
-  { href: "/events", label: "Events" },
-];
 
 const authLinks = [
   { href: "/messages", label: "Messages" },
   { href: "/notifications", label: "Notifications" },
   { href: "/dashboard", label: "Dashboard" },
 ];
+
+function MobileNavLink({
+  href,
+  label,
+  match,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  match: (typeof SITE_NAV_LINKS)[number]["match"];
+  onNavigate: () => void;
+}) {
+  const active = useSiteNavActive(match);
+
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={`flex min-h-11 items-center rounded-xl px-3 text-sm font-medium ${
+        active ? "bg-blue-50 text-accent underline decoration-accent underline-offset-4" : "hover:bg-blue-50"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export function MobileNav({
   userId,
@@ -66,19 +85,25 @@ export function MobileNav({
                 </p>
               )}
               <ul className="space-y-1">
-                {publicLinks
-                  .filter((link) => !link.authOnly || userId)
-                  .map((link) => (
-                  <li key={link.href}>
-                    <Link
+                {SITE_NAV_LINKS.filter((link) => !link.authOnly || userId).map((link) => (
+                  <li key={link.match}>
+                    <MobileNavLink
                       href={link.href}
-                      onClick={() => setOpen(false)}
-                      className="flex min-h-11 items-center rounded-xl px-3 text-sm font-medium hover:bg-blue-50"
-                    >
-                      {link.label}
-                    </Link>
+                      label={link.label}
+                      match={link.match}
+                      onNavigate={() => setOpen(false)}
+                    />
                   </li>
                 ))}
+                <li>
+                  <Link
+                    href="/partnerships?tab=forum"
+                    onClick={() => setOpen(false)}
+                    className="flex min-h-11 items-center rounded-xl px-3 text-sm font-medium hover:bg-blue-50"
+                  >
+                    Forum
+                  </Link>
+                </li>
                 {userId &&
                   authLinks
                     .filter((link) => link.href !== "/dashboard" || profileRole !== "customer")

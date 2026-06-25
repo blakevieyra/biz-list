@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toggleEventRsvp } from "@/lib/actions/events";
 
@@ -12,6 +13,7 @@ export function EventRsvpButton({
   initialGoing: boolean;
   requiresAuth?: boolean;
 }) {
+  const router = useRouter();
   const [going, setGoing] = useState(initialGoing);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +42,7 @@ export function EventRsvpButton({
             setError(result.error);
           } else {
             setGoing((v) => !v);
+            router.refresh();
           }
           setPending(false);
         }}

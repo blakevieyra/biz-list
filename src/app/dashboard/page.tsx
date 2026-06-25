@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Overview"
-        description="Your hub for marketing, networking, and growing locally on BizList."
+        description="Your hub for marketing, networking, and growing locally on AllConnect."
       />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

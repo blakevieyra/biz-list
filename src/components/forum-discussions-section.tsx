@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ForumPostCard } from "@/components/forum-post-card";
+import { ForumPostThreadPanel } from "@/components/forum-post-thread-panel";
 import { Card } from "@/components/ui";
 import { getForumPosts } from "@/lib/data";
 import type { ForumCategory } from "@/lib/types";
@@ -36,10 +37,12 @@ export async function ForumDiscussionsSection({
   basePath,
   category,
   query,
+  selectedPostId,
 }: {
   basePath: string;
   category?: ForumCategory;
   query?: string;
+  selectedPostId?: string;
 }) {
   const posts = filterForumPosts(await getForumPosts(category), query);
   const formAction = pathWithoutQuery(basePath);
@@ -50,6 +53,7 @@ export async function ForumDiscussionsSection({
       ...preservedParams,
       category: category ?? undefined,
       q: query || undefined,
+      post: selectedPostId,
       ...next,
     };
     const search = new URLSearchParams();
@@ -57,16 +61,23 @@ export async function ForumDiscussionsSection({
       if (value) search.set(key, value);
     }
     const qs = search.toString();
-    return qs ? `${basePath}?${qs}` : basePath;
+    const base = pathWithoutQuery(basePath);
+    return qs ? `${base}?${qs}` : base;
   }
+
+  const closeThreadHref = buildHref({ post: undefined });
 
   return (
     <div>
+      {selectedPostId && (
+        <ForumPostThreadPanel postId={selectedPostId} closeHref={closeThreadHref} />
+      )}
+
       <section className="mb-6">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Topic</p>
         <div className="filter-scroll">
           <Link
-            href={buildHref({ category: undefined })}
+            href={buildHref({ category: undefined, post: undefined })}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${
               !category
                 ? "bg-accent text-white"
@@ -78,7 +89,7 @@ export async function ForumDiscussionsSection({
           {forumCategories.map((cat) => (
             <Link
               key={cat}
-              href={buildHref({ category: cat })}
+              href={buildHref({ category: cat, post: undefined })}
               className={`rounded-full px-3 py-1.5 text-xs font-medium ${
                 category === cat
                   ? "bg-accent text-white"
@@ -124,7 +135,11 @@ export async function ForumDiscussionsSection({
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
-            <ForumPostCard key={post.id} post={post} />
+            <ForumPostCard
+              key={post.id}
+              post={post}
+              href={buildHref({ post: post.id })}
+            />
           ))}
         </div>
       )}

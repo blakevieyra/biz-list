@@ -104,7 +104,7 @@ export function ServicesEditor({
                       : "border border-border text-muted"
                   }`}
                 >
-                  Custom form on BizList
+                  Custom form on AllConnect
                 </button>
                 <button
                   type="button"

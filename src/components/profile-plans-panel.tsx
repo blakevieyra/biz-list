@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { CustomerProUpsell } from "@/components/customer-pro-upsell";
 import { ManageBillingButton } from "@/components/manage-billing-button";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { Card } from "@/components/ui";
 import {
-  BIZLIST_PLUS_FEATURES,
-  BIZLIST_PLUS_LABEL,
+  ALLCONNECT_PLUS_FEATURES,
+  ALLCONNECT_PLUS_LABEL,
   isBusinessPlan,
   isCustomerPro,
   PLAN_LABELS,
@@ -26,7 +27,7 @@ export function ProfilePlansPanel({
   const currentLabel = isBusinessAccount
     ? PLAN_LABELS[planTier]
     : isCustomerPro(planTier)
-      ? BIZLIST_PLUS_LABEL
+      ? ALLCONNECT_PLUS_LABEL
       : PLAN_LABELS[planTier];
 
   return (
@@ -49,7 +50,7 @@ export function ProfilePlansPanel({
           <Card>
             <h3 className="font-semibold">Upgrade your business</h3>
             <p className="mt-2 text-sm text-muted">
-              Unlock leads, AI audits, marketing tools, and {BIZLIST_PLUS_LABEL} alerts with Pro or
+              Unlock leads, AI audits, marketing tools, and {ALLCONNECT_PLUS_LABEL} alerts with Pro or
               Platinum.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -66,14 +67,14 @@ export function ProfilePlansPanel({
           <Card>
             <h3 className="font-semibold">Your {PLAN_LABELS[planTier]} plan</h3>
             <p className="mt-2 text-sm text-muted">
-              Business growth tools are active. {BIZLIST_PLUS_LABEL} perks are included at no extra
+              Business growth tools are active. {ALLCONNECT_PLUS_LABEL} perks are included at no extra
               charge.
             </p>
             <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">
-              Included {BIZLIST_PLUS_LABEL} perks
+              Included {ALLCONNECT_PLUS_LABEL} perks
             </p>
             <ul className="mt-2 space-y-1.5 text-sm">
-              {BIZLIST_PLUS_FEATURES.map((feature) => (
+              {ALLCONNECT_PLUS_FEATURES.map((feature) => (
                 <li key={feature} className="flex gap-2">
                   <span className="text-accent">✓</span>
                   <span>{feature}</span>
@@ -81,7 +82,11 @@ export function ProfilePlansPanel({
               ))}
             </ul>
             <p className="mt-4 text-sm text-muted">
-              Use Manage billing above to change or cancel your plan.
+              Use Manage billing above to change or cancel your plan. Manage alert preferences on{" "}
+              <Link href="/dashboard/profile" className="text-accent hover:underline">
+                Dashboard → Profile
+              </Link>
+              .
             </p>
           </Card>
         )
@@ -90,7 +95,7 @@ export function ProfilePlansPanel({
       ) : (
         <Card>
           <p className="text-sm text-muted">
-            You are on {BIZLIST_PLUS_LABEL}. Use Manage billing above to change or cancel.
+            You are on {ALLCONNECT_PLUS_LABEL}. Use Manage billing above to change or cancel.
           </p>
         </Card>
       )}

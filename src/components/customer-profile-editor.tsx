@@ -7,7 +7,7 @@ import { updateUserProfile } from "@/lib/actions/social";
 import { IndustryPicker } from "@/components/industry-picker";
 import { ImageUpload } from "@/components/image-upload";
 import { Card } from "@/components/ui";
-import type { FeedScope, ForumCategory, UserProfile } from "@/lib/types";
+import type { DiscoveryRadius, ForumCategory, UserProfile } from "@/lib/types";
 import { FEED_SCOPE_LABELS } from "@/lib/feed/location-scope";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
@@ -37,7 +37,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
     interestTags: profile.interestTags.join(", "),
     industryInterests: profile.industryInterests,
     forumInterests: profile.forumInterests,
-    feedScope: profile.discoveryRadius ?? profile.feedScope,
+    discoveryRadius: profile.discoveryRadius,
     avatarUrl: profile.avatarUrl ?? "",
   });
 
@@ -65,8 +65,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
           .filter(Boolean),
         industryInterests: form.industryInterests,
         forumInterests: form.forumInterests,
-        discoveryRadius: form.feedScope,
-        feedScope: form.feedScope,
+        discoveryRadius: form.discoveryRadius,
         avatarUrl: form.avatarUrl || null,
       });
 
@@ -182,15 +181,15 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
 
       <Card>
         <h2 className="font-semibold">Discovery radius</h2>
-        <p className="mt-1 text-sm text-muted">How far from your location BizList shows listings and feed content.</p>
+        <p className="mt-1 text-sm text-muted">How far from your location AllConnect shows listings and feed content.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {(Object.keys(FEED_SCOPE_LABELS) as FeedScope[]).map((scope) => (
+          {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((scope) => (
             <button
               key={scope}
               type="button"
-              onClick={() => setForm({ ...form, feedScope: scope })}
+              onClick={() => setForm({ ...form, discoveryRadius: scope })}
               className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                form.feedScope === scope
+                form.discoveryRadius === scope
                   ? "bg-accent text-white"
                   : "border border-border bg-card text-muted hover:text-foreground"
               }`}

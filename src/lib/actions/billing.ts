@@ -73,7 +73,7 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
       return { error: "Business plans are for business and organization accounts." };
     }
   } else if (tier === "customer_pro") {
-    return { error: "BizList Plus is for customer accounts." };
+    return { error: "AllConnect Plus is for customer accounts." };
   }
 
 
@@ -103,7 +103,9 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
 
   const isProduction =
-    process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+    process.env.VERCEL_ENV === "production" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "preview";
   const allowDevBypass =
     !isProduction && process.env.ALLOW_DEV_BILLING_BYPASS === "true";
 
@@ -152,7 +154,7 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
   if (profile?.email) {
 
     const label =
-      tier === "customer_pro" ? "BizList Plus" : PLAN_LABELS[tier as keyof typeof PLAN_LABELS];
+      tier === "customer_pro" ? "AllConnect Plus" : PLAN_LABELS[tier as keyof typeof PLAN_LABELS];
     await emailProUpgrade(profile.email, profile.display_name ?? "there", label);
 
   }

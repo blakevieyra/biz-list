@@ -27,7 +27,7 @@ export default async function ListingsPage({
   const query = params.q ?? "";
   const discoveryFilter = resolveDiscoveryFilter(
     params.near ?? params.miles ?? params.scope,
-    profile?.discoveryRadius ?? profile?.feedScope,
+    profile?.discoveryRadius,
   );
 
   const viewer = profile
@@ -70,14 +70,6 @@ export default async function ListingsPage({
       <PageHeader
         title="Listings"
         description="Browse local businesses ranked nearest and most relevant to you."
-        action={
-          <Link
-            href="/feed"
-            className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-          >
-            Open feed →
-          </Link>
-        }
       />
 
       {!profile && (

@@ -9,7 +9,7 @@ export function getAppUrl(): string {
 }
 
 export function getEmailFrom(): string {
-  return process.env.EMAIL_FROM ?? "BizList <hello@allconnect.app>";
+  return process.env.EMAIL_FROM ?? "AllConnect <hello@allconnect.app>";
 }
 
 export function isEmailConfigured(): boolean {
@@ -17,5 +17,5 @@ export function isEmailConfigured(): boolean {
 }
 
 export function getLogoUrl(): string {
-  return `${getAppUrl()}/bizlist-logo.png`;
+  return `${getAppUrl()}/AllConnect-logo.png`;
 }

@@ -43,6 +43,7 @@ export function EventCard({ event }: { event: BusinessEvent }) {
             {event.goingCount} going
             {event.userRsvp === "going" ? " · You're going" : ""}
           </p>
+          <p className="mt-3 text-sm font-medium text-accent">View event details →</p>
         </div>
       </Link>
     </Card>

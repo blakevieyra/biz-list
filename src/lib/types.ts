@@ -36,7 +36,7 @@ export type MileRadius = "5" | "10" | "25" | "50";
 export type AreaScope = "city" | "county" | "state" | "nation";
 export type FeedScope = DiscoveryRadius;
 
-export type PlanTier = "free" | "basic" | "pro" | "platinum";
+export type PlanTier = "free" | "pro" | "platinum";
 
 export type UserRole = "business" | "organization" | "customer";
 
@@ -81,8 +81,6 @@ export interface UserProfile {
   followDigestFrequency: FollowDigestFrequency;
   forumInterests: ForumCategory[];
   discoveryRadius: DiscoveryRadius;
-  /** @deprecated use discoveryRadius */
-  feedScope: FeedScope;
   createdAt: string;
   avatarUrl?: string;
 }
@@ -294,6 +292,8 @@ export interface CollaborationIdea {
   location: string;
   collaborationType: CollaborationType;
   status: "open" | "in_discussion" | "closed";
+  interestedCount: number;
+  userInterested?: boolean;
   createdAt: string;
 }
 

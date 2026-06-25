@@ -7,6 +7,23 @@ import { getCurrentProfile } from "@/lib/data";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { canAccess } from "@/lib/plans";
 
+async function generateDraftAction() {
+  "use server";
+  await generatePlatinumMarketingDraft("email");
+  redirect("/dashboard/marketing");
+}
+
+async function createCampaignAction(formData: FormData) {
+  "use server";
+  await createMarketingCampaign({
+    title: String(formData.get("title") ?? ""),
+    channel: String(formData.get("channel") ?? "email"),
+    content: String(formData.get("content") ?? ""),
+    scheduledFor: String(formData.get("scheduledFor") ?? "") || undefined,
+  });
+  redirect("/dashboard/marketing");
+}
+
 export default async function MarketingPage() {
   const userId = await getAuthUserId();
   if (!userId) redirect("/auth/login");
@@ -28,13 +45,7 @@ export default async function MarketingPage() {
         <p className="mt-1 text-sm text-muted">
           Draft campaigns manually or generate one from your business profile with AI.
         </p>
-        <form
-          action={async () => {
-            "use server";
-            await generatePlatinumMarketingDraft("email");
-          }}
-          className="mt-3"
-        >
+        <form action={generateDraftAction} className="mt-3">
           <button
             type="submit"
             className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
@@ -42,18 +53,7 @@ export default async function MarketingPage() {
             Generate email campaign from profile
           </button>
         </form>
-        <form
-          action={async (formData) => {
-            "use server";
-            await createMarketingCampaign({
-              title: String(formData.get("title") ?? ""),
-              channel: String(formData.get("channel") ?? "email"),
-              content: String(formData.get("content") ?? ""),
-              scheduledFor: String(formData.get("scheduledFor") ?? "") || undefined,
-            });
-          }}
-          className="mt-4 space-y-3"
-        >
+        <form action={createCampaignAction} className="mt-4 space-y-3">
           <input
             name="title"
             required
@@ -69,7 +69,7 @@ export default async function MarketingPage() {
             name="content"
             required
             rows={5}
-            placeholder="Campaign message — we’ll personalize this using your business profile."
+            placeholder="Campaign message — we'll personalize this using your business profile."
             className="w-full rounded-lg border border-border px-3 py-2 text-sm"
           />
           <input

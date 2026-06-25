@@ -9,7 +9,6 @@ export const PLAN_PRICES = {
 
 export const PLAN_LABELS: Record<PlanTier, string> = {
   free: "Community",
-  basic: "Community",
   pro: "Pro",
   platinum: "Platinum",
 };
@@ -48,7 +47,6 @@ const FREE_BUSINESS_FEATURES: PlanFeature[] = [
 
 const FEATURE_MATRIX: Record<PlanTier, PlanFeature[]> = {
   free: ["messaging", "networking", "customerLikes", "reviews", ...FREE_BUSINESS_FEATURES],
-  basic: ["messaging", "networking", "customerLikes", "reviews", ...FREE_BUSINESS_FEATURES],
   pro: [...FREE_BUSINESS_FEATURES, "localLeads", "aiAudit", "trendingBoost"],
   platinum: [
     ...FREE_BUSINESS_FEATURES,
@@ -72,8 +70,8 @@ export function isCustomerPro(plan: PlanTier): boolean {
   return plan === "pro" || plan === "platinum";
 }
 
-/** BizList Plus perks (alerts, deals, events) — included with Pro/Platinum for any account type. */
-export const hasBizListPlusPerks = isCustomerPro;
+/** AllConnect Plus perks (alerts, deals, events) — included with Pro/Platinum for any account type. */
+export const hasAllConnectPlusPerks = isCustomerPro;
 
 const CUSTOMER_PRO_FEATURES: CustomerPlanFeature[] = [
   "jobAlerts",
@@ -86,7 +84,7 @@ export function canAccessCustomerFeature(
   plan: PlanTier,
   feature: CustomerPlanFeature,
 ): boolean {
-  if (!hasBizListPlusPerks(plan)) return false;
+  if (!hasAllConnectPlusPerks(plan)) return false;
   return CUSTOMER_PRO_FEATURES.includes(feature);
 }
 
@@ -113,10 +111,10 @@ export function formatPlanPrice(price: number): string {
   return Number.isInteger(price) ? String(price) : price.toFixed(2);
 }
 
-export const BIZLIST_PLUS_LABEL = "BizList Plus";
-export const CUSTOMER_PRO_LABEL = BIZLIST_PLUS_LABEL;
+export const ALLCONNECT_PLUS_LABEL = "AllConnect Plus";
+export const CUSTOMER_PRO_LABEL = ALLCONNECT_PLUS_LABEL;
 
-export const BIZLIST_PLUS_FEATURES = [
+export const ALLCONNECT_PLUS_FEATURES = [
   "Job alerts and business matches based on your skills and interests",
   "First pick on deals, sales, and new product releases",
   "Notifications when followed businesses publish local events",

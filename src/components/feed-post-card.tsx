@@ -88,8 +88,8 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid min-h-[22rem] grid-cols-1 md:grid-cols-2">
-        <div className="flex min-h-[18rem] min-w-0 flex-col border-b border-border md:min-h-[22rem] md:border-b-0 md:border-r">
+      <div className="grid grid-cols-1 md:grid-cols-2 md:h-[28rem]">
+        <div className="flex min-h-[18rem] min-w-0 flex-col border-b border-border md:h-full md:min-h-0 md:overflow-hidden md:border-b-0 md:border-r">
           <div className="grid h-full min-h-0 flex-1 grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7.5rem_minmax(0,1fr)]">
             <Link
               href={`/listings/${post.businessId}`}
@@ -133,7 +133,7 @@ export function FeedPostCard({
                 </span>
               </div>
 
-              <div className="mt-2 min-h-0 flex-1">
+              <div className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
                 <p className="mt-1 line-clamp-4 text-sm leading-relaxed text-muted sm:line-clamp-5">
                   {post.body}
@@ -172,11 +172,11 @@ export function FeedPostCard({
           </div>
         </div>
 
-        <div className="flex min-h-[16rem] flex-col bg-slate-50/60 md:min-h-[22rem] md:h-full">
+        <div className="flex h-80 max-h-80 flex-col overflow-hidden bg-slate-50/60 md:h-full md:max-h-none">
           <p className="shrink-0 border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
             Comments
           </p>
-          <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-3">
             <BusinessPostCommentThread
               postId={post.id}
               businessId={post.businessId}

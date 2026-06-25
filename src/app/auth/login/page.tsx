@@ -25,7 +25,7 @@ export default async function LoginPage({
       )}
       <SignInForm />
       <p className="mt-6 text-center text-sm text-muted">
-        New to BizList?{" "}
+        New to AllConnect?{" "}
         <Link href="/auth/signup" className="text-accent hover:underline">
           Create an account
         </Link>

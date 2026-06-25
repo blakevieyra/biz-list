@@ -22,6 +22,7 @@ const PENDING = [
   "supabase/migrations/20260624320000_profile_avatar_url.sql",
   "supabase/migrations/20260624330000_profile_country.sql",
   "supabase/migrations/20260624340000_event_comments.sql",
+  "supabase/migrations/20260624350000_collaboration_interests.sql",
 ];
 
 function loadEnvFile(filePath) {

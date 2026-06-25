@@ -100,7 +100,7 @@ function CommentItem({
         <div className="flex gap-2">
           <CommentAuthorAvatar name={comment.authorName} avatarUrl={comment.authorAvatarUrl} />
           <div className="min-w-0 flex-1">
-            <p className="text-sm leading-relaxed">
+            <p className="text-sm leading-snug">
               <span className="font-medium text-foreground">{comment.authorName}</span>
               <span className="text-xs text-muted">
                 {" "}
@@ -111,27 +111,31 @@ function CommentItem({
                   Reply from business
                 </span>
               )}
-              <span className="text-muted"> {comment.body}</span>
             </p>
-            {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <ContentLikeButton
-                businessId={businessId}
-                targetType="comment"
-                targetId={comment.id}
-                initialCount={comment.likeCount ?? 0}
-                initialLiked={comment.likedByViewer ?? false}
-                size="sm"
-              />
-              {currentUserId && (
-                <button
-                  type="button"
-                  onClick={() => onReply(comment.id)}
-                  className="text-xs font-medium text-accent hover:underline"
-                >
-                  Reply
-                </button>
-              )}
+            <div className="mt-0.5 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
+                {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
+              </div>
+              <div className="flex shrink-0 items-center gap-2 self-start">
+                <ContentLikeButton
+                  businessId={businessId}
+                  targetType="comment"
+                  targetId={comment.id}
+                  initialCount={comment.likeCount ?? 0}
+                  initialLiked={comment.likedByViewer ?? false}
+                  size="sm"
+                />
+                {currentUserId && (
+                  <button
+                    type="button"
+                    onClick={() => onReply(comment.id)}
+                    className="text-xs font-medium text-accent hover:underline"
+                  >
+                    Reply
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -242,7 +246,7 @@ export function BusinessPostCommentThread({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+      <div className="min-h-0 max-h-full flex-1 overflow-y-auto overscroll-contain pr-1">
         {threaded.length > 0 ? (
           <ul className="space-y-2.5">
             {threaded.map((comment) => (
@@ -328,8 +332,8 @@ export function BusinessPostCommentThread({
             {pending ? "…" : submitLabel}
           </button>
         </div>
+        {error && <p className="shrink-0 text-xs text-red-600">{error}</p>}
       </form>
-      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

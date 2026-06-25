@@ -51,7 +51,7 @@ async function notifyCustomerProUsers(params: {
   const admin = getSupabaseAdmin();
   if (!admin) return;
 
-  let userQuery = admin
+  const userQuery = admin
     .from("profiles")
     .select("id, role, plan_tier, city, state, job_alert_opt_in")
     .in("plan_tier", ["pro", "platinum"]);
@@ -70,11 +70,7 @@ async function notifyCustomerProUsers(params: {
     if (params.type === "job_match" && !canAccessCustomerFeature(plan, "jobAlerts")) {
       return false;
     }
-    if (
-      params.type === "job_match" &&
-      profile.role === "customer" &&
-      !profile.job_alert_opt_in
-    ) {
+    if (params.type === "job_match" && !profile.job_alert_opt_in) {
       return false;
     }
     if (params.followerIds?.length && !params.followerIds.includes(profile.id)) {
@@ -298,7 +294,7 @@ export async function notifyDealToCustomerPro(input: {
   await notifyCustomerProUsers({
     type: "deal_alert",
     title: `Early deal: ${input.postTitle}`,
-    body: `${input.businessName} shared a deal for BizList Plus subscribers first.`,
+    body: `${input.businessName} shared a deal for AllConnect Plus subscribers first.`,
     link: `/feed?tab=sales`,
     followerIds: (followers ?? []).map((f) => f.follower_id),
     city: input.city,

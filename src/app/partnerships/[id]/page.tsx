@@ -10,9 +10,9 @@ export default async function CollaborationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [idea, userId, comments] = await Promise.all([
-    getCollaborationById(id),
-    getAuthUserId(),
+  const userId = await getAuthUserId();
+  const [idea, comments] = await Promise.all([
+    getCollaborationById(id, userId),
     getCollaborationComments(id),
   ]);
 

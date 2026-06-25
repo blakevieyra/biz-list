@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { SEED_BUSINESS_EVENTS } from "@/lib/mock-data";
+import { SEED_BUSINESS_EVENTS, SEED_EVENT_COMMENTS } from "@/lib/mock-data";
 import {
   type DiscoveryViewer,
 } from "@/lib/feed/location-scope";
@@ -351,7 +351,9 @@ function commentAuthorName(
 
 export async function getEventComments(eventId: string): Promise<import("@/lib/types").EventComment[]> {
   const supabase = await createClient();
-  if (!supabase) return [];
+  if (!supabase) {
+    return SEED_EVENT_COMMENTS.filter((comment) => comment.eventId === eventId);
+  }
 
   const { data: rows } = await supabase
     .from("event_comments")

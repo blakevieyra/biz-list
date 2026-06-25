@@ -89,7 +89,7 @@ export async function signUp(formData: FormData) {
   await emailSignupVerification(email, displayName, verifyUrl);
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[BizList signup verify link]", verifyUrl);
+    console.info("[AllConnect signup verify link]", verifyUrl);
   }
 
   redirect(`/auth/check-email?email=${encodeURIComponent(email)}`);
@@ -140,7 +140,7 @@ export async function resendSignupVerification(emailInput: string) {
   await emailSignupVerification(email, pending.display_name, verifyUrl);
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[BizList signup verify link]", verifyUrl);
+    console.info("[AllConnect signup verify link]", verifyUrl);
   }
 
   return { success: true };
@@ -245,7 +245,7 @@ export async function signIn(formData: FormData) {
     if (error.message.toLowerCase().includes("email not confirmed")) {
       return {
         error:
-          "Please verify your email first. Check your inbox for the BizList verification link.",
+          "Please verify your email first. Check your inbox for the AllConnect verification link.",
       };
     }
     return { error: error.message };

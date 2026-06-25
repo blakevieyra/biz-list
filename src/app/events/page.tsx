@@ -5,16 +5,12 @@ import { getAuthUserId } from "@/lib/actions/auth";
 import { getCurrentProfile } from "@/lib/data";
 import { getBusinessEvents } from "@/lib/data/events";
 import {
-  AREA_SCOPE_LABELS,
-  AREA_SCOPE_OPTIONS,
-  isAreaFilterActive,
-  isMileFilterActive,
-  MILE_RADIUS_LABELS,
-  MILE_RADIUS_OPTIONS,
-  resolveActiveDiscoveryFilter,
+  DISCOVERY_FILTER_OPTIONS,
+  DISCOVERY_RADIUS_LABELS,
+  discoveryFilterHrefValue,
+  resolveDiscoveryFilter,
 } from "@/lib/feed/location-scope";
 import { INDUSTRY_OPTIONS, isIndustryOption } from "@/lib/industries";
-import type { AreaScope, MileRadius } from "@/lib/types";
 
 export default async function EventsPage({
   searchParams,
@@ -22,6 +18,7 @@ export default async function EventsPage({
   searchParams: Promise<{
     scope?: string;
     miles?: string;
+    near?: string;
     q?: string;
     category?: string;
   }>;
@@ -29,15 +26,12 @@ export default async function EventsPage({
   const params = await searchParams;
   const profile = await getCurrentProfile();
   const userId = await getAuthUserId();
-  const discoveryRadius = resolveActiveDiscoveryFilter({
-    miles: params.miles,
-    scope: params.scope,
-    profileDefault: profile?.discoveryRadius ?? profile?.feedScope,
-  });
+  const discoveryFilter = resolveDiscoveryFilter(
+    params.near ?? params.miles ?? params.scope,
+    profile?.discoveryRadius,
+  );
   const query = params.q ?? "";
   const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
-  const mileMode = isMileFilterActive(params.miles, params.scope);
-  const areaMode = isAreaFilterActive(params.miles, params.scope);
 
   const viewer = profile
     ? {
@@ -54,7 +48,7 @@ export default async function EventsPage({
 
   const events = await getBusinessEvents({
     viewer,
-    discoveryRadius,
+    discoveryRadius: discoveryFilter,
     query: query || undefined,
     category: categoryFilter,
     userId,
@@ -63,14 +57,11 @@ export default async function EventsPage({
 
   function buildHref(next: Record<string, string | undefined>) {
     const merged: Record<string, string | undefined> = {
-      scope: params.scope,
-      miles: params.miles,
       q: query || undefined,
       category: categoryFilter,
+      near: discoveryFilterHrefValue(discoveryFilter),
       ...next,
     };
-    if (next.miles === "") merged.miles = undefined;
-    if (next.scope === "") merged.scope = undefined;
 
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(merged)) {
@@ -80,25 +71,13 @@ export default async function EventsPage({
     return qs ? `/events?${qs}` : "/events";
   }
 
-  function mileIsActive(m: MileRadius): boolean {
-    if (mileMode) return params.miles === m;
-    if (!areaMode && !params.miles && !params.scope) return discoveryRadius === m;
-    return false;
-  }
-
-  function areaIsActive(s: AreaScope): boolean {
-    if (areaMode) return params.scope === s;
-    if (!mileMode && !params.miles && !params.scope) return discoveryRadius === s;
-    return false;
-  }
-
   const isBusinessAccount = profile?.role === "business" || profile?.role === "organization";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Local events"
-        description="Discover events hosted by businesses near you. Mark going to save your spot and comment with questions."
+        description="Discover events hosted by businesses near you. Events are published by local businesses — customers can RSVP, save events, and leave comments."
         action={
           isBusinessAccount ? (
             <Link
@@ -118,56 +97,35 @@ export default async function EventsPage({
         }
       />
 
-      {!isBusinessAccount && (
-        <p className="mb-4 text-sm text-muted">
-          Events are published by local businesses. Customers can RSVP, save events, and leave comments.
-        </p>
-      )}
-
       <section className="mb-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Distance</p>
-        <div className="filter-scroll">
-          {MILE_RADIUS_OPTIONS.map((m) => (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
+            Near
+          </span>
+          {DISCOVERY_FILTER_OPTIONS.map((option) => (
             <Link
-              key={m}
-              href={buildHref({ miles: m, scope: "" })}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                mileIsActive(m)
+              key={option}
+              href={buildHref({ near: discoveryFilterHrefValue(option) })}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
+                discoveryFilter === option
                   ? "bg-accent text-white"
                   : "border border-border bg-card text-muted hover:text-foreground"
               }`}
             >
-              {MILE_RADIUS_LABELS[m]}
+              {DISCOVERY_RADIUS_LABELS[option]}
             </Link>
           ))}
         </div>
       </section>
 
       <section className="mb-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Area</p>
-        <div className="filter-scroll">
-          {AREA_SCOPE_OPTIONS.map((s) => (
-            <Link
-              key={s}
-              href={buildHref({ scope: s, miles: "" })}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                areaIsActive(s)
-                  ? "bg-accent text-white"
-                  : "border border-border bg-card text-muted hover:text-foreground"
-              }`}
-            >
-              {AREA_SCOPE_LABELS[s]}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Industry</p>
-        <div className="filter-scroll">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
+            Industry
+          </span>
           <Link
             href={buildHref({ category: undefined })}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
               !categoryFilter
                 ? "bg-accent text-white"
                 : "border border-border bg-card text-muted hover:text-foreground"
@@ -179,7 +137,7 @@ export default async function EventsPage({
             <Link
               key={category}
               href={buildHref({ category })}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
                 categoryFilter === category
                   ? "bg-accent text-white"
                   : "border border-border bg-card text-muted hover:text-foreground"
@@ -191,20 +149,21 @@ export default async function EventsPage({
         </div>
       </section>
 
-      <form action="/events" method="get" className="mb-6 flex flex-col gap-3 sm:flex-row">
-        {params.scope && <input type="hidden" name="scope" value={params.scope} />}
-        {params.miles && <input type="hidden" name="miles" value={params.miles} />}
+      <form action="/events" method="get" className="mb-8 flex flex-col gap-3 sm:flex-row">
+        {discoveryFilterHrefValue(discoveryFilter) && (
+          <input type="hidden" name="near" value={discoveryFilterHrefValue(discoveryFilter)} />
+        )}
         {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
         <input
           type="search"
           name="q"
           defaultValue={query}
           placeholder="Search events by name, business, or location..."
-          className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
+          className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
         />
         <button
           type="submit"
-          className="rounded-xl bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-hover"
+          className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
         >
           Search
         </button>

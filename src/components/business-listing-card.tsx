@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { startMessageWithBusinessOwner, toggleFollowBusiness } from "@/lib/actions/social";
+import { toggleFollowBusiness } from "@/lib/actions/social";
+import { BusinessMessageModal } from "@/components/business-message-modal";
 import { ServiceListing } from "@/components/service-listing";
 import { displayCategoryLabel } from "@/lib/industries";
 import type { BusinessPost, BusinessProfile } from "@/lib/types";
@@ -35,6 +36,7 @@ export function BusinessListingCard({
     currentUserId ? business.followerIds.includes(currentUserId) : false,
   );
   const [error, setError] = useState<string | null>(null);
+  const [messageOpen, setMessageOpen] = useState(false);
   const cover = business.mediaUrls[0];
   const topServices = business.services.filter((s) => s.name.trim()).slice(0, 2);
   const isOwner = currentUserId === business.ownerId;
@@ -66,18 +68,12 @@ export function BusinessListingCard({
       router.push("/auth/login");
       return;
     }
-    startTransition(async () => {
-      setError(null);
-      const result = await startMessageWithBusinessOwner(business.id);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-      if (result.conversationId) router.push(`/messages/${result.conversationId}`);
-    });
+    setError(null);
+    setMessageOpen(true);
   }
 
   return (
+    <>
     <Card className="flex h-full flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
       <Link href={`/listings/${business.id}`} className="block h-36 shrink-0">
         {cover ? (
@@ -119,6 +115,23 @@ export function BusinessListingCard({
           </div>
         </Link>
 
+        <div className="mt-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest</p>
+          {latestPost ? (
+            <Link
+              href={`/listings/${business.id}#post-${latestPost.id}`}
+              className="mt-1 block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
+            >
+              <p className="line-clamp-2 text-xs font-medium leading-snug">{latestPost.title}</p>
+              <p className="mt-0.5 text-[11px] text-muted">
+                {formatPostDateTime(latestPost.createdAt)}
+              </p>
+            </Link>
+          ) : (
+            <p className="mt-1 text-xs text-muted">No posts yet.</p>
+          )}
+        </div>
+
         {topServices.length > 0 && (
           <div className="mt-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Offerings</p>
@@ -156,23 +169,6 @@ export function BusinessListingCard({
             </ul>
           </div>
         )}
-
-        <div className="mt-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest</p>
-          {latestPost ? (
-            <Link
-              href={`/listings/${business.id}#post-${latestPost.id}`}
-              className="mt-1 block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
-            >
-              <p className="line-clamp-2 text-xs font-medium leading-snug">{latestPost.title}</p>
-              <p className="mt-0.5 text-[11px] text-muted">
-                {formatPostDateTime(latestPost.createdAt)}
-              </p>
-            </Link>
-          ) : (
-            <p className="mt-1 text-xs text-muted">No posts yet.</p>
-          )}
-        </div>
 
         <div className="mt-auto pt-3">
           {!isOwner && (
@@ -212,5 +208,14 @@ export function BusinessListingCard({
         </div>
       </div>
     </Card>
+
+    <BusinessMessageModal
+      businessId={business.id}
+      businessName={business.name}
+      open={messageOpen}
+      onClose={() => setMessageOpen(false)}
+      currentUserId={currentUserId}
+    />
+    </>
   );
 }

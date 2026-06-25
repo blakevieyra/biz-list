@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   getCurrentProfile,
   getUnreadMessageCount,
@@ -8,14 +9,8 @@ import { getAuthUserId, signOut } from "@/lib/actions/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Logo } from "@/components/logo";
 import { MobileNav } from "@/components/mobile-nav";
+import { SiteNavLinks } from "@/components/site-nav-links";
 import { isBusinessPlan, PLAN_LABELS } from "@/lib/plans";
-
-const links = [
-  { href: "/home", label: "Home", authOnly: true },
-  { href: "/listings", label: "Listings" },
-  { href: "/partnerships", label: "Collaborations" },
-  { href: "/events", label: "Events" },
-];
 
 export async function SiteHeader() {
   const userId = await getAuthUserId();
@@ -29,22 +24,28 @@ export async function SiteHeader() {
       <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
         <div className="flex min-w-0 items-center gap-3">
           <Logo size="lg" href={userId ? "/home" : "/"} />
-          <MobileNav
-            userId={userId}
-            displayName={profile?.displayName}
-            profileRole={profile?.role}
-          />
+          <Suspense fallback={null}>
+            <MobileNav
+              userId={userId}
+              displayName={profile?.displayName}
+              profileRole={profile?.role}
+            />
+          </Suspense>
         </div>
 
-        <nav className="hidden items-center gap-5 text-sm font-medium text-muted lg:flex">
-          {links
-            .filter((link) => !link.authOnly || userId)
-            .map((link) => (
-            <Link key={link.href} href={link.href} className="transition hover:text-foreground">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <Suspense
+          fallback={
+            <nav className="hidden items-center gap-5 text-sm font-medium text-muted lg:flex">
+              <span>Home</span>
+              <span>Listings</span>
+              <span>Feed</span>
+              <span>Collaborations</span>
+              <span>Events</span>
+            </nav>
+          }
+        >
+          <SiteNavLinks userId={userId} />
+        </Suspense>
 
         <div className="flex shrink-0 items-center gap-2">
           {!isSupabaseConfigured() && (
@@ -145,7 +146,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
           <p className="max-w-md text-sm leading-relaxed text-muted">
-            © 2026 BizList — local business latest, listings and partnerships.
+            © 2026 AllConnect — local business latest, listings and partnerships.
           </p>
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:justify-end lg:gap-x-8">
             {footerLinks.map((link) => (

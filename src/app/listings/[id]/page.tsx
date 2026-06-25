@@ -244,7 +244,7 @@ export default async function BusinessDetailPage({
 
         <div className="grid gap-8 lg:grid-cols-3">
 
-          <div className="space-y-6 lg:col-span-2">
+          <div className="space-y-6 lg:col-span-2 lg:row-start-1">
 
             <BusinessActivitySection
 
@@ -278,63 +278,11 @@ export default async function BusinessDetailPage({
 
             />
 
-
-
-            <div
-              className={
-                business.isHiring && !isOwner
-                  ? "grid gap-6 lg:grid-cols-2 lg:items-stretch"
-                  : "max-w-2xl"
-              }
-            >
-
-              <BusinessReviewsSection
-
-                businessId={business.id}
-
-                reviews={reviews}
-
-                currentUserId={userId}
-
-                isOwner={isOwner}
-
-              />
-
-
-
-              {business.isHiring && !isOwner && (
-
-                <JobApplySection
-
-                businessId={business.id}
-
-                businessName={business.name}
-
-                business={business}
-
-                isHiring={business.isHiring}
-
-                currentUserId={userId}
-
-                isOwner={isOwner}
-
-                resumePreview={resumePreview}
-
-                existingApplication={existingApplication}
-
-                compact
-
-              />
-
-              )}
-
-            </div>
-
           </div>
 
 
 
-          <div className="space-y-6">
+          <div className="space-y-6 lg:col-start-3 lg:row-start-1">
 
             <Card id="about">
 
@@ -533,6 +481,50 @@ export default async function BusinessDetailPage({
               </div>
 
             </Card>
+
+          </div>
+
+
+
+          <div className="space-y-6 lg:col-span-3 lg:row-start-2">
+
+            <BusinessReviewsSection
+
+              businessId={business.id}
+
+              reviews={reviews}
+
+              currentUserId={userId}
+
+              isOwner={isOwner}
+
+            />
+
+
+
+            {business.isHiring && !isOwner && (
+
+              <JobApplySection
+
+                businessId={business.id}
+
+                businessName={business.name}
+
+                business={business}
+
+                isHiring={business.isHiring}
+
+                currentUserId={userId}
+
+                isOwner={isOwner}
+
+                resumePreview={resumePreview}
+
+                existingApplication={existingApplication}
+
+              />
+
+            )}
 
           </div>
 

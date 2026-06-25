@@ -21,7 +21,7 @@ type ProfileRow = {
   display_name: string;
   email: string;
   role: UserRole;
-  plan_tier?: PlanTier;
+  plan_tier?: PlanTier | "basic";
   bio: string;
   city: string;
   state: string;
@@ -129,7 +129,7 @@ export function mapProfile(row: ProfileRow): UserProfile {
     displayName: row.display_name,
     email: row.email,
     role: row.role,
-    planTier: row.plan_tier ?? "free",
+    planTier: row.plan_tier === "basic" ? "free" : (row.plan_tier ?? "free"),
     bio: row.bio,
     city: row.city,
     state: row.state,
@@ -150,7 +150,6 @@ export function mapProfile(row: ProfileRow): UserProfile {
     followDigestFrequency: row.follow_digest_frequency ?? "none",
     forumInterests: row.forum_interests ?? [],
     discoveryRadius: mapDiscoveryRadius(row),
-    feedScope: mapDiscoveryRadius(row),
     createdAt: row.created_at,
     avatarUrl: row.avatar_url ?? undefined,
   };
@@ -251,6 +250,7 @@ export function mapCollaboration(row: CollaborationRow): CollaborationIdea {
         ? row.collaboration_type
         : "proposal",
     status: row.status,
+    interestedCount: 0,
     createdAt: row.created_at,
   };
 }

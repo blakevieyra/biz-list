@@ -30,7 +30,7 @@ export default async function CheckEmailPage({
         </p>
         <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Check your email</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-          We sent a verification link from BizList
+          We sent a verification link from AllConnect
           {email ? (
             <>
               {" "}

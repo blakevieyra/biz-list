@@ -2,11 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BusinessGrowthHub } from "@/components/business-growth-hub";
 import { BusinessProfileEditor } from "@/components/business-profile-editor";
+import { ProfilePreferencesPanel } from "@/components/profile-preferences-panel";
 import { PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessByOwnerId, getCurrentProfile } from "@/lib/data";
 import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
-import { canAccess } from "@/lib/plans";
+import { canAccess, hasAllConnectPlusPerks } from "@/lib/plans";
 
 export default async function DashboardProfilePage() {
   const userId = await getAuthUserId();
@@ -58,6 +59,12 @@ export default async function DashboardProfilePage() {
       <div className="mb-8">
         <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
       </div>
+
+      {hasAllConnectPlusPerks(profile.planTier) && (
+        <div className="mb-8">
+          <ProfilePreferencesPanel profile={profile} variant="AllConnect-plus" />
+        </div>
+      )}
 
       <BusinessProfileEditor business={business} displayName={profile.displayName} />
     </>

@@ -37,7 +37,7 @@ export default async function DashboardPostsPage() {
     <>
       <PageHeader
         title="Posts & marketing"
-        description="Publish updates, job openings, sales, and video content to your BizList feed and listing."
+        description="Publish updates, job openings, sales, and video content to your AllConnect feed and listing."
         action={
           business ? (
             <Link
@@ -64,7 +64,7 @@ export default async function DashboardPostsPage() {
           <Card className="lg:col-span-3">
             <h2 className="font-semibold">Create a post</h2>
             <p className="mt-1 text-sm text-muted">
-              Content appears on your public listing and in the local BizList feed.
+              Content appears on your public listing and in the local AllConnect feed.
             </p>
             <div className="mt-6">
               <BusinessPostComposer businessId={business.id} />

@@ -28,7 +28,7 @@ export function buildBrandedEmailHtml(input: {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #dbe4f0;">
             <tr>
               <td style="padding:28px 28px 16px;text-align:center;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);">
-                <img src="${logoUrl}" alt="BizList" width="180" style="max-width:180px;height:auto;display:block;margin:0 auto;" />
+                <img src="${logoUrl}" alt="AllConnect" width="180" style="max-width:180px;height:auto;display:block;margin:0 auto;" />
               </td>
             </tr>
             <tr>
@@ -41,9 +41,9 @@ export function buildBrandedEmailHtml(input: {
             </tr>
             <tr>
               <td style="padding:18px 28px;background:#001B44;color:#cbd5e1;font-size:12px;line-height:1.6;text-align:center;">
-                ${input.footerNote ?? "You're receiving this because you have an BizList account."}
+                ${input.footerNote ?? "You're receiving this because you have an AllConnect account."}
                 <br />
-                <a href="${appUrl}" style="color:#60a5fa;text-decoration:none;">Visit BizList</a>
+                <a href="${appUrl}" style="color:#60a5fa;text-decoration:none;">Visit AllConnect</a>
               </td>
             </tr>
           </table>
@@ -56,38 +56,38 @@ export function buildBrandedEmailHtml(input: {
 
 export const emailTemplates = {
   emailVerification: (name: string, verifyUrl: string) => ({
-    subject: "Verify your email to join BizList",
+    subject: "Verify your email to join AllConnect",
     title: "Confirm your email",
     greeting: `Hi ${name},`,
-    body: "Thanks for signing up for BizList — your local hub to discover businesses, join forums, and collaborate with neighbors.\n\nTap the button below to verify your email and finish creating your account. This link expires in 24 hours.",
+    body: "Thanks for signing up for AllConnect — your local hub to discover businesses, join forums, and collaborate with neighbors.\n\nTap the button below to verify your email and finish creating your account. This link expires in 24 hours.",
     ctaLabel: "Verify email & continue",
     ctaUrl: verifyUrl,
-    footerNote: "You're receiving this because you started signing up for BizList.",
+    footerNote: "You're receiving this because you started signing up for AllConnect.",
   }),
 
   welcome: (name: string) => ({
-    subject: "Welcome to BizList",
-    title: "Welcome to BizList",
+    subject: "Welcome to AllConnect",
+    title: "Welcome to AllConnect",
     greeting: `Hi ${name},`,
-    body: "Your account is ready. BizList helps local businesses and organizations get discovered, connect with neighbors, join community forums, and find collaboration opportunities.\n\nComplete your profile to appear in the directory and start building your local network.",
+    body: "Your account is ready. AllConnect helps local businesses and organizations get discovered, connect with neighbors, join community forums, and find collaboration opportunities.\n\nComplete your profile to appear in the directory and start building your local network.",
     ctaLabel: "Complete your profile",
     ctaUrl: `${getAppUrl()}/profile/create`,
   }),
 
   firstLogin: (name: string) => ({
-    subject: "You're signed in to BizList",
-    title: "Welcome back to BizList",
+    subject: "You're signed in to AllConnect",
+    title: "Welcome back to AllConnect",
     greeting: `Hi ${name},`,
-    body: "You just signed in to your BizList account. Explore the directory, join forum discussions, and connect with businesses in your area.",
+    body: "You just signed in to your AllConnect account. Explore the directory, join forum discussions, and connect with businesses in your area.",
     ctaLabel: "Open dashboard",
     ctaUrl: `${getAppUrl()}/listings`,
   }),
 
   profileComplete: (name: string) => ({
-    subject: "Your BizList profile is live",
+    subject: "Your AllConnect profile is live",
     title: "Profile published",
     greeting: `Hi ${name},`,
-    body: "Your profile is set up and you're ready to participate in the BizList community. You can now list your business, follow others, post in the forum, and message local connections.",
+    body: "Your profile is set up and you're ready to participate in the AllConnect community. You can now list your business, follow others, post in the forum, and message local connections.",
     ctaLabel: "View directory",
     ctaUrl: `${getAppUrl()}/listings`,
   }),
@@ -96,7 +96,7 @@ export const emailTemplates = {
     subject: `${actorName} followed ${businessName}`,
     title: "New follower",
     greeting: `Hi ${recipientName},`,
-    body: `${actorName} followed ${businessName} on BizList.`,
+    body: `${actorName} followed ${businessName} on AllConnect.`,
     ctaLabel: "View business",
     ctaUrl: `${getAppUrl()}${link}`,
   }),
@@ -123,7 +123,7 @@ export const emailTemplates = {
     subject: `New message from ${actorName}`,
     title: "New message",
     greeting: `Hi ${recipientName},`,
-    body: `${actorName} sent you a message on BizList.`,
+    body: `${actorName} sent you a message on AllConnect.`,
     ctaLabel: "Open conversation",
     ctaUrl: `${getAppUrl()}${link}`,
   }),
@@ -132,7 +132,7 @@ export const emailTemplates = {
     subject: `Your forum post is live: ${postTitle}`,
     title: "Forum post published",
     greeting: `Hi ${name},`,
-    body: `Your post "${postTitle}" is now live in the BizList community forum.`,
+    body: `Your post "${postTitle}" is now live in the AllConnect community forum.`,
     ctaLabel: "View post",
     ctaUrl: `${getAppUrl()}${link}`,
   }),
@@ -141,13 +141,13 @@ export const emailTemplates = {
     subject: `Collaboration idea posted: ${title}`,
     title: "Collaboration idea published",
     greeting: `Hi ${name},`,
-    body: `Your joint venture idea "${title}" is now visible to other local businesses on BizList.`,
+    body: `Your joint venture idea "${title}" is now visible to other local businesses on AllConnect.`,
     ctaLabel: "View collaborations",
     ctaUrl: `${getAppUrl()}/partnerships`,
   }),
 
   proUpgrade: (name: string, tier = "Pro") => ({
-    subject: `Welcome to BizList ${tier}`,
+    subject: `Welcome to AllConnect ${tier}`,
     title: `You're now on the ${tier} plan`,
     greeting: `Hi ${name},`,
     body: `Your ${tier} plan is active. Open your business dashboard for posts, networking, leads, and growth tools.`,
@@ -165,13 +165,13 @@ export const emailTemplates = {
   }),
 
   followDigest: (name: string, frequency: string, summary: string) => ({
-    subject: `Your ${frequency} BizList follow digest`,
+    subject: `Your ${frequency} AllConnect follow digest`,
     title: `What's new from businesses you follow`,
     greeting: `Hi ${name},`,
     body: summary,
     ctaLabel: "Open Posts feed",
     ctaUrl: `${getAppUrl()}/feed`,
-    footerNote: "Manage digest frequency in My profile on BizList.",
+    footerNote: "Manage digest frequency in My profile on AllConnect.",
   }),
 
   serviceOrderToBusiness: (
@@ -185,7 +185,7 @@ export const emailTemplates = {
     subject: `New order: ${serviceName} at ${businessName}`,
     title: "New customer order",
     greeting: `Hi ${ownerName},`,
-    body: `${customerName} placed an order for "${serviceName}" at ${businessName}.\n\n${details}\n\nView and respond from your BizList inbox.`,
+    body: `${customerName} placed an order for "${serviceName}" at ${businessName}.\n\n${details}\n\nView and respond from your AllConnect inbox.`,
     ctaLabel: "Open orders inbox",
     ctaUrl: `${getAppUrl()}${ordersLink}`,
   }),
@@ -203,6 +203,6 @@ export const emailTemplates = {
     body: `Your order for "${serviceName}" at ${businessName} was sent successfully.\n\n${details}\n\nThe business will follow up with you soon.`,
     ctaLabel: "View business",
     ctaUrl: `${getAppUrl()}${listingLink}`,
-    footerNote: "You're receiving this because you placed an order on BizList.",
+    footerNote: "You're receiving this because you placed an order on AllConnect.",
   }),
 };

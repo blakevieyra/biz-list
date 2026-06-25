@@ -48,7 +48,7 @@ export default async function HomeHubPage({
   const discoveryRadius = resolveActiveDiscoveryFilter({
     miles: params.miles,
     scope: params.scope,
-    profileDefault: profile.discoveryRadius ?? profile.feedScope,
+    profileDefault: profile.discoveryRadius,
   });
   const query = params.q ?? "";
   const categoryFilter = params.category as ForumCategory | undefined;

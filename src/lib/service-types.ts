@@ -28,8 +28,31 @@ export function offeringActionLabel(serviceType?: string, compact = false): stri
   if (normalized === "Service" || normalized === "Event / experience") {
     return compact ? "Book" : "Book now";
   }
-  if (normalized === "Other") {
-    return compact ? "See more" : "See more";
+  if (normalized === "Other" || !normalized) {
+    return "Learn more";
   }
   return compact ? "Order" : "Place order";
+}
+
+export function offeringFormTitle(serviceType?: string, serviceName?: string): string {
+  const normalized = normalizeServiceType(serviceType);
+  const name = serviceName ?? "this offering";
+  if (normalized === "Service" || normalized === "Event / experience") {
+    return `Book ${name}`;
+  }
+  if (normalized === "Other" || !normalized) {
+    return `Learn more about ${name}`;
+  }
+  return `Order ${name}`;
+}
+
+export function offeringSubmitLabel(serviceType?: string): string {
+  const normalized = normalizeServiceType(serviceType);
+  if (normalized === "Service" || normalized === "Event / experience") {
+    return "Send booking request";
+  }
+  if (normalized === "Other" || !normalized) {
+    return "Send inquiry";
+  }
+  return "Submit order";
 }

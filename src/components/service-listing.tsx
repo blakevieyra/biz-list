@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { submitServiceOrder } from "@/lib/actions/business";
-import { offeringActionLabel } from "@/lib/service-types";
+import {
+  offeringActionLabel,
+  offeringFormTitle,
+  offeringSubmitLabel,
+} from "@/lib/service-types";
 import type { BusinessService } from "@/lib/types";
 
 export function ServiceListing({
@@ -28,11 +32,8 @@ export function ServiceListing({
       businessName={businessName}
       serviceName={service.name}
       servicePrice={service.price}
-      buttonLabel={
-        compact
-          ? offeringActionLabel(service.serviceType, true)
-          : service.actionLabel || offeringActionLabel(service.serviceType, false)
-      }
+      serviceType={service.serviceType}
+      buttonLabel={offeringActionLabel(service.serviceType, compact)}
       currentUserId={currentUserId}
       compact={compact}
     />
@@ -44,6 +45,7 @@ function ServiceOrderForm({
   businessName,
   serviceName,
   servicePrice,
+  serviceType,
   buttonLabel,
   currentUserId,
   compact = false,
@@ -52,6 +54,7 @@ function ServiceOrderForm({
   businessName?: string;
   serviceName: string;
   servicePrice?: string;
+  serviceType?: string;
   buttonLabel: string;
   currentUserId: string | null;
   compact?: boolean;
@@ -129,7 +132,7 @@ function ServiceOrderForm({
             className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
           >
             <h3 id="order-form-title" className="text-lg font-semibold">
-              Order {serviceName}
+              {offeringFormTitle(serviceType, serviceName)}
             </h3>
             {businessName && (
               <p className="mt-1 text-sm text-muted">at {businessName}</p>
@@ -138,7 +141,7 @@ function ServiceOrderForm({
               <p className="mt-1 text-sm font-medium text-accent">{servicePrice}</p>
             )}
             <p className="mt-3 text-sm text-muted">
-              Your order goes straight to the business inbox. You&apos;ll get an email confirmation.
+              Your request goes straight to the business inbox. You&apos;ll get an email confirmation.
             </p>
 
             <label className="mt-4 block text-sm">
@@ -152,13 +155,13 @@ function ServiceOrderForm({
             </label>
 
             <label className="mt-3 block text-sm">
-              <span className="font-medium">Order details</span>
+              <span className="font-medium">Details</span>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
                 rows={4}
-                placeholder="What would you like to order? Include pickup time, delivery notes, etc."
+                placeholder="Share what you need, timing, pickup or delivery notes, etc."
                 className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm"
               />
             </label>
@@ -178,7 +181,7 @@ function ServiceOrderForm({
                 disabled={pending || !message.trim()}
                 className="min-h-10 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
               >
-                {pending ? "Sending…" : "Submit order"}
+                {pending ? "Sending…" : offeringSubmitLabel(serviceType)}
               </button>
             </div>
           </form>

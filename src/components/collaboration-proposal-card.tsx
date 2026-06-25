@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
 import { commentOnCollaboration } from "@/lib/actions/social";
 import type { CollaborationComment, CollaborationIdea } from "@/lib/types";
 import { Card, formatPostDateTime } from "@/components/ui";
@@ -32,6 +33,8 @@ export function CollaborationProposalCard({
   const [pending, startTransition] = useTransition();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const isAuthor = currentUserId === idea.authorId;
+  const interestCount = idea.interestedCount ?? 0;
 
   function handleComment(e: React.FormEvent) {
     e.preventDefault();
@@ -89,6 +92,25 @@ export function CollaborationProposalCard({
           >
             View proposal →
           </Link>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {!isAuthor &&
+              (currentUserId ? (
+                <CollaborationInterestedButton
+                  collaborationId={idea.id}
+                  initialInterested={Boolean(idea.userInterested)}
+                />
+              ) : (
+                <CollaborationInterestedButton
+                  collaborationId={idea.id}
+                  initialInterested={false}
+                  requiresAuth
+                />
+              ))}
+            <p className="text-sm text-muted">
+              {interestCount} {interestCount === 1 ? "person" : "people"} interested
+            </p>
+          </div>
         </div>
 
         <div className="flex max-h-80 flex-col border-t border-border bg-slate-50/60 md:max-h-none md:border-l md:border-t-0">

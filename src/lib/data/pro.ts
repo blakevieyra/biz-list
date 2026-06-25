@@ -43,7 +43,7 @@ function scoreLeadMatch(
 
   if (isFollower) {
     score += 40;
-    reasons.push("Follows your business on BizList");
+    reasons.push("Follows your business on AllConnect");
     leadSource = "follower";
   }
 
@@ -274,7 +274,7 @@ function getMockLeads(): LocalLead[] {
       industryInterests: ["Marketing & Print › Photography", "Food & Beverage › Restaurant"],
       forumInterests: ["local"],
       matchScore: 85,
-      matchReasons: ["Follows your business on BizList", "Industry interest: Food & Beverage › Restaurant"],
+      matchReasons: ["Follows your business on AllConnect", "Industry interest: Food & Beverage › Restaurant"],
       leadSource: "follower",
       isFollower: true,
     },

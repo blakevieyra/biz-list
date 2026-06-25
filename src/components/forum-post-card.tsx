@@ -2,9 +2,10 @@ import Link from "next/link";
 import type { ForumPost } from "@/lib/types";
 import { Card, CategoryBadge, formatDate } from "./ui";
 
-export function ForumPostCard({ post }: { post: ForumPost }) {
+export function ForumPostCard({ post, href }: { post: ForumPost; href?: string }) {
+  const link = href ?? `/partnerships?tab=forum&post=${post.id}`;
   return (
-    <Link href={`/forum/${post.id}`}>
+    <Link href={link}>
       <Card className="transition hover:border-accent/40 hover:shadow-md">
         <div className="flex flex-wrap items-center gap-2">
           <CategoryBadge category={post.category} />

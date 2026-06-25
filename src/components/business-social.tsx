@@ -12,7 +12,8 @@ import {
   type ContentLikeState,
 } from "@/lib/content-likes-types";
 import type { BusinessPost, BusinessReview } from "@/lib/types";
-import { Card } from "@/components/ui";
+import { Card, formatPostDateTime } from "@/components/ui";
+import { BusinessPhotoCarousel } from "@/components/business-photo-carousel";
 
 export function BusinessReviewsSection({
   businessId,
@@ -54,57 +55,81 @@ export function BusinessReviewsSection({
     <Card id="reviews" className="scroll-mt-24">
       <h2 className="font-semibold">Reviews</h2>
 
-      {currentUserId && !isOwner && (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-b border-border pb-4">
-          <label className="block text-sm">
-            Rating
-            <select
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-            >
-              {[5, 4, 3, 2, 1].map((value) => (
-                <option key={value} value={value}>
-                  {value} stars
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            Your feedback
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-              placeholder="Share your experience..."
-            />
-          </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-          >
-            Submit review
-          </button>
-        </form>
-      )}
+      <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Customer reviews</p>
+          <ul className="mt-3 space-y-4">
+            {reviews.length === 0 && (
+              <li className="text-sm text-muted">No reviews yet. Be the first to share feedback.</li>
+            )}
+            {reviews.map((review) => (
+              <li key={review.id} className="border-b border-border pb-4 last:border-0">
+                <p className="text-sm leading-relaxed text-foreground">{review.body}</p>
+                <p className="mt-2 text-xs text-muted">
+                  <span className="text-amber-700" aria-label={`${review.rating} out of 5 stars`}>
+                    {"★".repeat(review.rating)}
+                    {"☆".repeat(Math.max(0, 5 - review.rating))}
+                  </span>
+                  <span className="mx-1.5">·</span>
+                  <span className="font-medium text-foreground">{review.authorName}</span>
+                  <span className="mx-1.5">·</span>
+                  <time dateTime={review.createdAt}>{formatPostDateTime(review.createdAt)}</time>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      <ul className="mt-4 space-y-4">
-        {reviews.length === 0 && (
-          <li className="text-sm text-muted">No reviews yet. Be the first to share feedback.</li>
-        )}
-        {reviews.map((review) => (
-          <li key={review.id} className="border-b border-border pb-4 last:border-0">
-            <p className="text-sm font-medium">
-              {review.authorName} · {"★".repeat(review.rating)}
+        <div className="min-w-0 lg:border-l lg:border-border lg:pl-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Leave a review</p>
+          {currentUserId && !isOwner ? (
+            <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+              <label className="block text-sm">
+                Rating
+                <select
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                >
+                  {[5, 4, 3, 2, 1].map((value) => (
+                    <option key={value} value={value}>
+                      {value} stars
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm">
+                Your feedback
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  required
+                  rows={4}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                  placeholder="Share your experience..."
+                />
+              </label>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <button
+                type="submit"
+                disabled={pending}
+                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              >
+                Submit review
+              </button>
+            </form>
+          ) : isOwner ? (
+            <p className="mt-3 text-sm text-muted">You can&apos;t review your own business.</p>
+          ) : (
+            <p className="mt-3 text-sm text-muted">
+              <a href="/auth/login" className="text-accent hover:underline">
+                Sign in
+              </a>{" "}
+              to leave a review.
             </p>
-            <p className="mt-1 text-sm text-muted">{review.body}</p>
-          </li>
-        ))}
-      </ul>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }
@@ -219,9 +244,6 @@ export function BusinessActivitySection({
   );
 }
 
-/** @deprecated Use BusinessActivitySection */
-export const BusinessPostsSection = BusinessActivitySection;
-
 export function BusinessPhotosSection({
   businessId,
   mediaUrls,
@@ -271,27 +293,10 @@ export function BusinessGallerySection({ mediaUrls }: { mediaUrls: string[] }) {
   return (
     <section className="border-b border-border bg-card">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-        {galleryUrls.length > 0 && (
-          <>
-            <h2 className="text-sm font-semibold">Photos</h2>
-            <div className="mt-4 space-y-4">
-              {galleryUrls.map((url, index) => (
-                <div
-                  key={`${url}-${index}`}
-                  className="overflow-hidden rounded-2xl border border-border bg-slate-100"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt=""
-                    className="max-h-[32rem] w-full object-cover"
-                    loading={index === 0 ? "eager" : "lazy"}
-                  />
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        <h2 className="text-sm font-semibold">Photos</h2>
+        <div className="mt-4 px-1 sm:px-2">
+          <BusinessPhotoCarousel urls={galleryUrls} />
+        </div>
       </div>
     </section>
   );

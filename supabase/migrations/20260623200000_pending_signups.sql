@@ -12,6 +12,9 @@ create table if not exists public.pending_signups (
 
 create index if not exists pending_signups_email_idx on public.pending_signups (lower(email));
 
+-- RLS enabled with no policies = deny-all for anon/authenticated roles.
+-- The service_role (used by server-side auth actions) bypasses RLS by default.
+-- Do NOT add permissive policies here; this table must only be accessed server-side.
 alter table public.pending_signups enable row level security;
 
 create or replace function public.auth_email_exists(check_email text)

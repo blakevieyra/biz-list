@@ -23,7 +23,7 @@ import {
 import { getJobApplicationsForApplicant } from "@/lib/data/business";
 import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
 import { getConversations } from "@/lib/data/messages";
-import { canAccess } from "@/lib/plans";
+import { canAccess, hasAllConnectPlusPerks } from "@/lib/plans";
 
 const validTabs = new Set<HubTab>([
   "overview",
@@ -125,7 +125,12 @@ export default async function ProfileHubPage({
             </div>
           </Card>
           {isBusinessAccount ? (
-            <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
+            <>
+              <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
+              {hasAllConnectPlusPerks(profile.planTier) && (
+                <ProfilePreferencesPanel profile={profile} variant="AllConnect-plus" />
+              )}
+            </>
           ) : (
             <ProfilePreferencesPanel profile={profile} />
           )}

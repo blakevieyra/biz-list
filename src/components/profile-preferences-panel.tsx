@@ -8,6 +8,7 @@ import { IndustryPicker } from "@/components/industry-picker";
 import { JobTitlePicker } from "@/components/job-title-picker";
 import { Card } from "@/components/ui";
 import type { FollowDigestFrequency, UserProfile } from "@/lib/types";
+import { ALLCONNECT_PLUS_LABEL } from "@/lib/plans";
 import { buildResumeSnapshot } from "@/lib/resume";
 
 const digestOptions: { value: FollowDigestFrequency; label: string }[] = [
@@ -17,7 +18,14 @@ const digestOptions: { value: FollowDigestFrequency; label: string }[] = [
   { value: "monthly", label: "Monthly" },
 ];
 
-export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
+export function ProfilePreferencesPanel({
+  profile,
+  variant = "full",
+}: {
+  profile: UserProfile;
+  /** Lighter layout for business Pro/Platinum — alerts and matching without resume builder. */
+  variant?: "full" | "AllConnect-plus";
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +50,8 @@ export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
       .map((s) => s.trim())
       .filter(Boolean),
   });
+
+  const isAllConnectPlusVariant = variant === "AllConnect-plus";
 
   function handleSave() {
     setError(null);
@@ -72,6 +82,16 @@ export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
 
   return (
     <div className="space-y-6">
+      {isAllConnectPlusVariant && (
+        <Card>
+          <h2 className="font-semibold">{ALLCONNECT_PLUS_LABEL} alert preferences</h2>
+          <p className="mt-1 text-sm text-muted">
+            Included with your Pro or Platinum plan. Choose what you want notified about from
+            businesses you follow and local matches.
+          </p>
+        </Card>
+      )}
+
       <Card>
         <h2 className="font-semibold">Follow digest emails</h2>
         <p className="mt-1 text-sm text-muted">
@@ -97,34 +117,58 @@ export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
       </Card>
 
       <Card>
-        <h2 className="font-semibold">Job seeker profile</h2>
+        <h2 className="font-semibold">
+          {isAllConnectPlusVariant ? "Job & deal matching" : "Job seeker profile"}
+        </h2>
         <p className="mt-1 text-sm text-muted">
-          Build a reusable resume and opt into job alerts by industry and role.
+          {isAllConnectPlusVariant
+            ? "Opt into job alerts and set industries and roles so AllConnect can match you to local openings and hiring businesses."
+            : "Build a reusable resume and opt into job alerts by industry and role."}
         </p>
         <div className="mt-4 space-y-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.isSeekingWork}
-              onChange={(e) => setForm({ ...form, isSeekingWork: e.target.checked })}
-            />
-            <span>I&apos;m looking for local work</span>
-          </label>
+          {!isAllConnectPlusVariant && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.isSeekingWork}
+                onChange={(e) => setForm({ ...form, isSeekingWork: e.target.checked })}
+              />
+              <span>I&apos;m looking for local work</span>
+            </label>
+          )}
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.jobAlertOptIn}
               onChange={(e) => setForm({ ...form, jobAlertOptIn: e.target.checked })}
             />
-            <span>Email me when followed businesses post jobs in my industries</span>
+            <span>
+              {isAllConnectPlusVariant
+                ? "Notify me about local job posts and matches in my industries"
+                : "Email me when followed businesses post jobs in my industries"}
+            </span>
           </label>
+          {isAllConnectPlusVariant && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.isSeekingWork}
+                onChange={(e) => setForm({ ...form, isSeekingWork: e.target.checked })}
+              />
+              <span>I&apos;m also open to local work opportunities</span>
+            </label>
+          )}
           <label className="block text-sm">
             <span className="font-medium">Headline</span>
             <input
               value={form.headline}
               onChange={(e) => setForm({ ...form, headline: e.target.value })}
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-              placeholder="e.g. Open to part-time bakery roles"
+              placeholder={
+                isAllConnectPlusVariant
+                  ? "e.g. Open to weekend shifts or part-time roles"
+                  : "e.g. Open to part-time bakery roles"
+              }
             />
           </label>
           <label className="block text-sm">
@@ -136,26 +180,30 @@ export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
               placeholder="Comma-separated skills"
             />
           </label>
-          <label className="block text-sm">
-            <span className="font-medium">Experience</span>
-            <textarea
-              value={form.experienceText}
-              onChange={(e) => setForm({ ...form, experienceText: e.target.value })}
-              rows={4}
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-              placeholder="Summarize your work history and availability."
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium">Resume (optional override)</span>
-            <textarea
-              value={form.resumeText}
-              onChange={(e) => setForm({ ...form, resumeText: e.target.value })}
-              rows={6}
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-              placeholder="Leave blank to auto-build from the fields above."
-            />
-          </label>
+          {!isAllConnectPlusVariant && (
+            <>
+              <label className="block text-sm">
+                <span className="font-medium">Experience</span>
+                <textarea
+                  value={form.experienceText}
+                  onChange={(e) => setForm({ ...form, experienceText: e.target.value })}
+                  rows={4}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                  placeholder="Summarize your work history and availability."
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium">Resume (optional override)</span>
+                <textarea
+                  value={form.resumeText}
+                  onChange={(e) => setForm({ ...form, resumeText: e.target.value })}
+                  rows={6}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                  placeholder="Leave blank to auto-build from the fields above."
+                />
+              </label>
+            </>
+          )}
           <JobTitlePicker
             selected={form.targetJobTitles}
             onChange={(targetJobTitles) => setForm({ ...form, targetJobTitles })}
@@ -165,14 +213,16 @@ export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
             selected={form.industryInterests}
             onChange={(industryInterests) => setForm({ ...form, industryInterests })}
             label="Target industries"
-            hint="Used for job alerts and discovery."
+            hint="Used for job alerts, deal alerts, and discovery."
           />
-          <div>
-            <p className="text-sm font-medium">Resume preview (sent with applications)</p>
-            <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-xs leading-relaxed text-muted">
-              {previewResume}
-            </pre>
-          </div>
+          {!isAllConnectPlusVariant && (
+            <div>
+              <p className="text-sm font-medium">Resume preview (sent with applications)</p>
+              <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-xs leading-relaxed text-muted">
+                {previewResume}
+              </pre>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -188,12 +238,14 @@ export function ProfilePreferencesPanel({ profile }: { profile: UserProfile }) {
         >
           {pending ? "Saving..." : "Save preferences"}
         </button>
-        <Link
-          href="/profile/edit"
-          className="inline-flex min-h-11 items-center rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:border-accent/40"
-        >
-          Edit public profile
-        </Link>
+        {!isAllConnectPlusVariant && (
+          <Link
+            href="/profile/edit"
+            className="inline-flex min-h-11 items-center rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:border-accent/40"
+          >
+            Edit public profile
+          </Link>
+        )}
       </div>
     </div>
   );

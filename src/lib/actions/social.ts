@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { BusinessIntent, BusinessService, BusinessSocialLinks, ForumCategory, UserRole, FeedScope, FollowDigestFrequency } from "@/lib/types";
+import type { BusinessIntent, BusinessService, BusinessSocialLinks, DiscoveryRadius, ForumCategory, UserRole, FollowDigestFrequency } from "@/lib/types";
 import { isValidJobTitle } from "@/lib/job-titles";
 import { sanitizeMediaUrls, getSafeExternalUrl } from "@/lib/security/safe-url";
 import { sanitizeServices, sanitizeSocialLinks } from "@/lib/security/sanitize-business";
@@ -84,8 +84,7 @@ export async function saveProfile(input: {
   headline?: string;
   skills?: string[];
   isSeekingWork?: boolean;
-  feedScope?: FeedScope;
-  discoveryRadius?: FeedScope;
+  discoveryRadius?: DiscoveryRadius;
   businessName?: string;
   tagline?: string;
   description?: string;
@@ -141,7 +140,7 @@ export async function saveProfile(input: {
       subcategory = validatedCategory.subcategory;
     }
 
-    const discoveryRadius = input.discoveryRadius ?? input.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
+    const discoveryRadius = input.discoveryRadius ?? DEFAULT_DISCOVERY_RADIUS;
     const geo = await geocodeUsZipCode(location.zipCode);
 
     const { error: profileError } = await supabase
@@ -259,8 +258,7 @@ export async function updateUserProfile(input: {
   interestTags?: string[];
   industryInterests?: string[];
   forumInterests?: ForumCategory[];
-  feedScope?: FeedScope;
-  discoveryRadius?: FeedScope;
+  discoveryRadius?: DiscoveryRadius;
   avatarUrl?: string | null;
 }) {
   if (!isSupabaseConfigured()) {
@@ -290,7 +288,7 @@ export async function updateUserProfile(input: {
     const industries = validateIndustryInterests(input.industryInterests ?? []);
     if (industries.error) return { error: industries.error };
 
-    const discoveryRadius = input.discoveryRadius ?? input.feedScope ?? DEFAULT_DISCOVERY_RADIUS;
+    const discoveryRadius = input.discoveryRadius ?? DEFAULT_DISCOVERY_RADIUS;
     const geo = await geocodeUsZipCode(location.zipCode);
 
     const { error } = await supabase
@@ -317,7 +315,9 @@ export async function updateUserProfile(input: {
             : discoveryRadius === "nation"
               ? "nationwide"
               : "local",
-        ...(input.avatarUrl !== undefined ? { avatar_url: input.avatarUrl || null } : {}),
+        ...(input.avatarUrl !== undefined
+          ? { avatar_url: input.avatarUrl ? (getSafeExternalUrl(input.avatarUrl) ?? null) : null }
+          : {}),
       })
       .eq("id", user.id);
 
@@ -387,6 +387,8 @@ export async function updateProfilePreferences(input: {
 
     revalidatePath("/profile");
     revalidatePath("/profile/edit");
+    revalidatePath("/dashboard/profile");
+    revalidatePath("/home");
     revalidatePath(`/listings/people/${user.id}`);
     return { success: true };
   } catch (e) {
@@ -562,11 +564,10 @@ export async function createForumPost(input: {
         author.email,
         author.display_name ?? "there",
         input.title,
-        `/forum/${data.id}`,
+        `/partnerships?tab=forum&post=${data.id}`,
       );
     }
 
-    revalidatePath("/forum");
     revalidatePath("/feed");
     revalidatePath("/partnerships");
     return { success: true, id: data.id };
@@ -582,11 +583,11 @@ export async function createComment(postId: string, body: string) {
 
   try {
     const { supabase, user } = await requireUser();
-    const trimmed = body.trim().slice(0, 2000);
-    if (!trimmed) return { error: "Comment cannot be empty." };
-
-    const moderation = moderateUserContent(trimmed, "Comment");
+    const raw = body.trim();
+    if (!raw) return { error: "Comment cannot be empty." };
+    const moderation = moderateUserContent(raw, "Comment");
     if (!moderation.ok) return { error: moderation.reason };
+    const trimmed = raw.slice(0, 2000);
 
     const { error } = await supabase.from("forum_comments").insert({
       post_id: postId,
@@ -614,13 +615,13 @@ export async function createComment(postId: string, body: string) {
         type: "comment",
         title: "New comment on your post",
         body: `${commenter?.display_name ?? "Someone"} commented on "${post.title}"`,
-        link: `/forum/${postId}`,
+        link: `/partnerships?tab=forum&post=${postId}`,
         actorName: commenter?.display_name ?? "Someone",
         postTitle: post.title,
       });
     }
 
-    revalidatePath(`/forum/${postId}`);
+    revalidatePath("/partnerships");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to post comment." };
@@ -710,6 +711,43 @@ export async function createCollaboration(input: {
   }
 }
 
+export async function toggleCollaborationInterest(collaborationId: string) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Connect Supabase to show interest." };
+  }
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: existing } = await supabase
+      .from("collaboration_interests")
+      .select("id")
+      .eq("collaboration_id", collaborationId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("collaboration_interests")
+        .delete()
+        .eq("id", existing.id);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("collaboration_interests").insert({
+        collaboration_id: collaborationId,
+        user_id: user.id,
+      });
+      if (error) return { error: error.message };
+    }
+
+    revalidatePath("/partnerships");
+    revalidatePath(`/partnerships/${collaborationId}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update interest." };
+  }
+}
+
 export async function commentOnCollaboration(collaborationId: string, body: string) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to comment." };
@@ -717,11 +755,11 @@ export async function commentOnCollaboration(collaborationId: string, body: stri
 
   try {
     const { supabase, user } = await requireUser();
-    const trimmed = body.trim().slice(0, 1000);
-    if (!trimmed) return { error: "Comment cannot be empty." };
-
-    const moderation = moderateUserContent(trimmed, "Comment");
+    const raw = body.trim();
+    if (!raw) return { error: "Comment cannot be empty." };
+    const moderation = moderateUserContent(raw, "Comment");
     if (!moderation.ok) return { error: moderation.reason };
+    const trimmed = raw.slice(0, 1000);
 
     const { error } = await supabase.from("collaboration_comments").insert({
       collaboration_id: collaborationId,
@@ -825,11 +863,11 @@ export async function sendMessage(conversationId: string, body: string) {
   try {
     const { supabase, user } = await requireUser();
 
-    const trimmed = body.trim().slice(0, 5000);
-    if (!trimmed) return { error: "Message cannot be empty." };
-
-    const moderation = moderateUserContent(trimmed, "Message");
+    const rawMsg = body.trim();
+    if (!rawMsg) return { error: "Message cannot be empty." };
+    const moderation = moderateUserContent(rawMsg, "Message");
     if (!moderation.ok) return { error: moderation.reason };
+    const trimmed = rawMsg.slice(0, 5000);
 
     const { data: conversation } = await supabase
       .from("conversations")

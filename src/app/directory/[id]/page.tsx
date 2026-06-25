@@ -1,233 +1,113 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { BusinessActions } from "@/components/business-actions";
-import { BusinessPostsSection, BusinessReviewsSection } from "@/components/business-social";
-import { JobApplySection } from "@/components/job-apply-section";
-import { ServiceListing } from "@/components/service-listing";
-import { ShareButton } from "@/components/share-button";
-import { SafeExternalLink } from "@/components/safe-external-link";
-import { Card, IntentBadge, PageHeader } from "@/components/ui";
-import {
-  getBusinessById,
-  getBusinessConnectionState,
-  getProfileById,
-} from "@/lib/data";
-import { getBusinessPosts, getBusinessReviews } from "@/lib/data/business";
+import { redirect } from "next/navigation";
+import { Card, PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
-import { socialPlatformLabel } from "@/lib/social-platforms";
+import { getBusinessPosts } from "@/lib/data/business";
+import { getBusinessById, getCurrentProfile } from "@/lib/data";
+import { getAiAssessments, getLocalLeads } from "@/lib/data/pro";
+import { canAccess } from "@/lib/plans";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function BusinessDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const [business, userId] = await Promise.all([
-    getBusinessById(id),
-    getAuthUserId(),
+async function getOwnerBusiness(userId: string) {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("owner_id", userId)
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+export default async function DashboardPage() {
+  const userId = await getAuthUserId();
+  if (!userId) redirect("/auth/login");
+
+  const profile = await getCurrentProfile();
+  if (!profile) redirect("/profile/create");
+
+  const businessRow = await getOwnerBusiness(userId);
+  const business = businessRow ? await getBusinessById(businessRow.id) : null;
+  const posts = business ? await getBusinessPosts(business.id) : [];
+
+  const [leads, assessments] = await Promise.all([
+    canAccess(profile.planTier, "localLeads") ? getLocalLeads(userId) : Promise.resolve([]),
+    canAccess(profile.planTier, "aiAudit") ? getAiAssessments(userId) : Promise.resolve([]),
   ]);
-
-  if (!business) {
-    notFound();
-  }
-
-  const [owner, connectionState, posts, reviews] = await Promise.all([
-    getProfileById(business.ownerId),
-    getBusinessConnectionState(business.id, userId),
-    getBusinessPosts(business.id, userId),
-    getBusinessReviews(business.id),
-  ]);
-
-  const isOwner = userId === business.ownerId;
-  const socialEntries = Object.entries(business.socialLinks).filter(([, url]) => url);
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://all-connect-seven.vercel.app"}/directory/${business.id}`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <Link href="/directory" className="text-sm text-accent hover:underline">
-        ← Back to directory
-      </Link>
-
+    <>
       <PageHeader
-        title={business.name}
-        description={business.tagline}
-        action={
-          <div className="flex flex-wrap gap-2">
-            <ShareButton title={business.name} url={shareUrl} />
-            <BusinessActions
-              businessId={business.id}
-              ownerId={business.ownerId}
-              currentUserId={userId}
-              initialState={connectionState}
-            />
-          </div>
-        }
+        title="Overview"
+        description="Your hub for marketing, networking, and growing locally on AllConnect."
       />
 
-      <div className="mb-6 flex flex-wrap gap-3 text-sm">
-        {business.isHiring && (
-          <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-800">
-            Now hiring
-          </span>
-        )}
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-muted">
-          {business.likeCount} likes
-        </span>
-        {business.ratingCount > 0 && (
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">
-            {business.ratingAvg.toFixed(1)} ★ ({business.ratingCount})
-          </span>
-        )}
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <h2 className="font-semibold">About</h2>
-            <p className="mt-3 text-sm leading-relaxed">{business.description}</p>
-          </Card>
-
-          <JobApplySection
-            businessId={business.id}
-            businessName={business.name}
-            business={business}
-            isHiring={business.isHiring}
-            currentUserId={userId}
-            isOwner={isOwner}
-          />
-
-          {business.services.length > 0 && (
-            <Card>
-              <h2 className="font-semibold">Shop & services</h2>
-              <ul className="mt-3 space-y-3">
-                {business.services.map((service) => (
-                  <li key={service.name} className="rounded-xl border border-border p-3">
-                    <p className="font-medium">{service.name}</p>
-                    <p className="mt-1 text-sm text-muted">{service.description}</p>
-                    {service.price && (
-                      <p className="mt-1 text-sm font-medium">{service.price}</p>
-                    )}
-                    <ServiceListing
-                      service={service}
-                      businessId={business.id}
-                      businessName={business.name}
-                      currentUserId={userId}
-                      isOwner={isOwner}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-
-          {business.importantInfo && (
-            <Card>
-              <h2 className="font-semibold">Important information</h2>
-              <p className="mt-3 text-sm leading-relaxed">{business.importantInfo}</p>
-            </Card>
-          )}
-
-          {business.mediaUrls.length > 0 && (
-            <Card>
-              <h2 className="font-semibold">Photos</h2>
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {business.mediaUrls.map((url, index) => (
-                  <div key={`${url}-${index}`} className="overflow-hidden rounded-xl border border-border">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className="aspect-square w-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          <Card>
-            <h2 className="font-semibold">What they&apos;re looking for</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {business.intents.map((intent) => (
-                <IntentBadge key={intent} intent={intent} />
-              ))}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <h2 className="font-semibold">Business profile</h2>
+          <p className="mt-2 text-sm text-muted">
+            {business
+              ? `${business.name} · ${business.likeCount} likes · ${business.ratingCount} reviews`
+              : "Complete your business profile to appear in listings."}
+          </p>
+          {business && (
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              <Link href={`/listings/${business.id}`} className="text-accent hover:underline">
+                View public listing →
+              </Link>
+              <Link href="/dashboard/profile" className="text-accent hover:underline">
+                Edit listing →
+              </Link>
+              <Link href="/dashboard/orders" className="text-accent hover:underline">
+                Service orders →
+              </Link>
+              {business.isHiring && (
+                <Link href="/dashboard/applications" className="text-accent hover:underline">
+                  Job applications →
+                </Link>
+              )}
             </div>
-          </Card>
+          )}
+        </Card>
 
-          <BusinessPostsSection
-            businessId={business.id}
-            posts={posts}
-            currentUserId={userId}
-            isOwner={isOwner}
-          />
-
-          <BusinessReviewsSection
-            businessId={business.id}
-            reviews={reviews}
-            currentUserId={userId}
-            isOwner={isOwner}
-          />
-        </div>
-
-        <div className="space-y-6">
+        {canAccess(profile.planTier, "businessPosts") && (
           <Card>
-            <h2 className="font-semibold">Details</h2>
-            <dl className="mt-3 space-y-2 text-sm">
-              <div>
-                <dt className="text-muted">Category</dt>
-                <dd className="font-medium">{business.category}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Location</dt>
-                <dd className="font-medium">
-                  {business.city}, {business.state}
-                </dd>
-              </div>
-              {business.phone && (
-                <div>
-                  <dt className="text-muted">Phone</dt>
-                  <dd className="font-medium">{business.phone}</dd>
-                </div>
-              )}
-              {business.hours && (
-                <div>
-                  <dt className="text-muted">Hours</dt>
-                  <dd className="font-medium">{business.hours}</dd>
-                </div>
-              )}
-              {business.website && (
-                <div>
-                  <dt className="text-muted">Website</dt>
-                  <dd>
-                    <SafeExternalLink
-                      url={business.website}
-                      label="Visit site"
-                      className="font-medium text-accent hover:underline"
-                    />
-                  </dd>
-                </div>
-              )}
-              {socialEntries.length > 0 && (
-                <div>
-                  <dt className="text-muted">Social</dt>
-                  <dd className="mt-1 flex flex-wrap gap-2">
-                    {socialEntries.map(([network, url]) => (
-                      <SafeExternalLink
-                        key={network}
-                        url={url!}
-                        label={socialPlatformLabel(network)}
-                        className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium hover:bg-slate-200"
-                      />
-                    ))}
-                  </dd>
-                </div>
-              )}
-              {owner && (
-                <div>
-                  <dt className="text-muted">Profile owner</dt>
-                  <dd className="font-medium">{owner.displayName}</dd>
-                </div>
-              )}
-            </dl>
+            <h2 className="font-semibold">Posts & marketing</h2>
+            <p className="mt-2 text-sm text-muted">
+              {posts.length > 0
+                ? `${posts.length} published post${posts.length === 1 ? "" : "s"} on your feed.`
+                : "Publish updates, jobs, deals, and video to reach local customers."}
+            </p>
+            <Link
+              href="/dashboard/posts"
+              className="mt-4 inline-block rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              Create content →
+            </Link>
           </Card>
-        </div>
+        )}
+
+        {canAccess(profile.planTier, "localLeads") && (
+          <Card>
+            <h2 className="font-semibold">Local leads</h2>
+            <p className="mt-4 text-3xl font-bold">{leads.length}</p>
+            <Link href="/dashboard/leads" className="mt-4 inline-block text-sm text-accent hover:underline">
+              View leads →
+            </Link>
+          </Card>
+        )}
+
+        {canAccess(profile.planTier, "aiAudit") && (
+          <Card>
+            <h2 className="font-semibold">AI audits</h2>
+            <p className="mt-4 text-3xl font-bold">{assessments.length}</p>
+            <Link href="/dashboard/assessment" className="mt-4 inline-block text-sm text-accent hover:underline">
+              Run audit →
+            </Link>
+          </Card>
+        )}
       </div>
-    </div>
+    </>
   );
 }
