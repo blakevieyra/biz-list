@@ -137,7 +137,7 @@ export function BusinessListingCard({
                     <ServiceListing
                       service={service}
                       businessId={business.id}
-                      businessWebsite={business.website}
+                      businessName={business.name}
                       currentUserId={currentUserId}
                       isOwner={isOwner}
                       compact

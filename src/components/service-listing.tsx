@@ -3,92 +3,50 @@
 import { useState, useTransition } from "react";
 import { submitServiceOrder } from "@/lib/actions/business";
 import type { BusinessService } from "@/lib/types";
-import { ContentLikeButton } from "@/components/content-like-button";
-import { SafeExternalLink } from "@/components/safe-external-link";
 
 export function ServiceListing({
   service,
   businessId,
-  businessWebsite,
+  businessName,
   currentUserId,
   isOwner,
-  likeCount = 0,
-  liked = false,
   compact = false,
 }: {
   service: BusinessService;
   businessId: string;
-  businessWebsite?: string;
+  businessName?: string;
   currentUserId: string | null;
   isOwner: boolean;
-  likeCount?: number;
-  liked?: boolean;
   compact?: boolean;
 }) {
-  const actionType =
-    service.actionType ?? (service.actionUrl ? "link" : service.actionLabel ? "form" : undefined);
-  const orderLabel = compact ? "Order" : service.actionLabel || "Place order";
-  const linkLabel = compact ? "Order" : service.actionLabel || "Buy / order online";
+  if (isOwner) return null;
 
-  const action = (
-    <>
-      {!compact && !isOwner && (
-        <ContentLikeButton
-          businessId={businessId}
-          targetType="service"
-          targetId={service.name}
-          initialCount={likeCount}
-          initialLiked={liked}
-        />
-      )}
-      {actionType === "link" && service.actionUrl ? (
-        <SafeExternalLink
-          url={service.actionUrl}
-          label={linkLabel}
-          className={
-            compact
-              ? "inline-flex shrink-0 items-center rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium text-white hover:bg-accent-hover"
-              : "inline-flex min-h-10 items-center rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-          }
-        />
-      ) : actionType === "form" && !isOwner ? (
-        <ServiceOrderForm
-          businessId={businessId}
-          serviceName={service.name}
-          buttonLabel={orderLabel}
-          currentUserId={currentUserId}
-          compact={compact}
-        />
-      ) : businessWebsite && !isOwner ? (
-        <SafeExternalLink
-          url={businessWebsite}
-          label={compact ? "Order" : "Visit website to order"}
-          className={
-            compact
-              ? "inline-flex shrink-0 items-center rounded-full border border-border px-2.5 py-1 text-[11px] font-medium hover:border-accent/40"
-              : "inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-          }
-        />
-      ) : null}
-    </>
+  return (
+    <ServiceOrderForm
+      businessId={businessId}
+      businessName={businessName}
+      serviceName={service.name}
+      servicePrice={service.price}
+      buttonLabel={compact ? "Order" : service.actionLabel || "Place order"}
+      currentUserId={currentUserId}
+      compact={compact}
+    />
   );
-
-  if (compact) {
-    return <div className="relative shrink-0">{action}</div>;
-  }
-
-  return <div className="flex flex-wrap items-center gap-2">{action}</div>;
 }
 
 function ServiceOrderForm({
   businessId,
+  businessName,
   serviceName,
+  servicePrice,
   buttonLabel,
   currentUserId,
   compact = false,
 }: {
   businessId: string;
+  businessName?: string;
   serviceName: string;
+  servicePrice?: string;
   buttonLabel: string;
   currentUserId: string | null;
   compact?: boolean;
@@ -100,7 +58,8 @@ function ServiceOrderForm({
   const [success, setSuccess] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  function handleSubmit() {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!currentUserId) {
       window.location.href = "/auth/login";
       return;
@@ -128,76 +87,98 @@ function ServiceOrderForm({
   if (success) {
     return (
       <p className={compact ? "text-[11px] font-medium text-emerald-700" : "text-sm font-medium text-emerald-700"}>
-        Order sent.
+        Order sent — check your email.
       </p>
     );
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
         className={
           compact
-            ? "shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium text-white hover:bg-accent-hover"
+            ? "shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
             : "min-h-10 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
         }
       >
         {buttonLabel}
       </button>
-    );
-  }
 
-  return (
-    <div className={compact ? "relative" : undefined}>
-      <div
-        className={
-          compact
-            ? "absolute right-0 top-full z-10 mt-1 w-56 space-y-2 rounded-lg border border-border bg-white p-2 shadow-lg"
-            : "space-y-2 rounded-xl border border-border bg-slate-50 p-3"
-        }
-      >
-      <input
-        value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
-        placeholder="Quantity or size (optional)"
-        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-      />
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        rows={compact ? 2 : 3}
-        placeholder="Notes for the business…"
-        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-      />
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={pending}
-          onClick={handleSubmit}
-          className={
-            compact
-              ? "rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-              : "min-h-10 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-          }
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="order-form-title"
         >
-          {pending ? "Sending..." : "Submit"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className={
-            compact
-              ? "rounded-full border border-border px-2.5 py-1 text-[11px] font-medium"
-              : "min-h-10 rounded-full border border-border px-4 py-2 text-sm font-medium"
-          }
-        >
-          Cancel
-        </button>
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      </div>
-    </div>
+          <button
+            type="button"
+            aria-label="Close order form"
+            className="absolute inset-0"
+            onClick={() => setOpen(false)}
+          />
+          <form
+            onSubmit={handleSubmit}
+            className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+          >
+            <h3 id="order-form-title" className="text-lg font-semibold">
+              Order {serviceName}
+            </h3>
+            {businessName && (
+              <p className="mt-1 text-sm text-muted">at {businessName}</p>
+            )}
+            {servicePrice && (
+              <p className="mt-1 text-sm font-medium text-accent">{servicePrice}</p>
+            )}
+            <p className="mt-3 text-sm text-muted">
+              Your order goes straight to the business inbox. You&apos;ll get an email confirmation.
+            </p>
+
+            <label className="mt-4 block text-sm">
+              <span className="font-medium">Quantity or size</span>
+              <input
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="Optional — e.g. 2 loaves, size M"
+                className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm"
+              />
+            </label>
+
+            <label className="mt-3 block text-sm">
+              <span className="font-medium">Order details</span>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                rows={4}
+                placeholder="What would you like to order? Include pickup time, delivery notes, etc."
+                className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm"
+              />
+            </label>
+
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="min-h-10 rounded-full border border-border px-4 py-2 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending || !message.trim()}
+                className="min-h-10 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              >
+                {pending ? "Sending…" : "Submit order"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
   );
 }

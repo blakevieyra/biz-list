@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, PageHeader, formatDate } from "@/components/ui";
-import { getConversations } from "@/lib/data/messages";
+import { MessagesHubSection } from "@/components/profile-hub-sections";
+import { Card, PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
+import { getNotifications } from "@/lib/data";
+import { getConversations } from "@/lib/data/messages";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function MessagesPage() {
@@ -11,8 +12,11 @@ export default async function MessagesPage() {
 
   if (!isSupabaseConfigured()) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-        <PageHeader title="Messages" description="Direct messages with businesses and customers." />
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <PageHeader
+          title="Messages"
+          description="Conversations and alerts from businesses and your community."
+        />
         <Card>
           <p className="text-sm text-muted">
             Connect Supabase to enable messaging. Copy{" "}
@@ -25,58 +29,22 @@ export default async function MessagesPage() {
     );
   }
 
-  const conversations = await getConversations(userId);
+  const [conversations, notifications] = await Promise.all([
+    getConversations(userId),
+    getNotifications(userId),
+  ]);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Messages"
-        description="Chat with business owners and community members."
+        description="Chat with businesses and see your alerts in one inbox."
       />
 
-      {conversations.length === 0 ? (
-        <Card>
-          <p className="text-sm text-muted">
-            No conversations yet. Visit a business profile and click Message to start
-            chatting.
-          </p>
-          <Link
-            href="/listings"
-            className="mt-4 inline-block text-sm text-accent hover:underline"
-          >
-            Browse directory
-          </Link>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {conversations.map((conversation) => (
-            <Link key={conversation.id} href={`/messages/${conversation.id}`}>
-              <Card className="transition hover:border-accent/40 hover:shadow-md">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{conversation.otherUserName}</p>
-                    <p className="mt-1 line-clamp-1 text-sm text-muted">
-                      {conversation.lastMessage ?? "Start the conversation"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    {conversation.lastMessageAt && (
-                      <p className="text-xs text-muted">
-                        {formatDate(conversation.lastMessageAt)}
-                      </p>
-                    )}
-                    {conversation.unreadCount > 0 && (
-                      <span className="mt-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
-                        {conversation.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
+      <MessagesHubSection
+        conversations={conversations}
+        notifications={notifications.slice(0, 12)}
+      />
     </div>
   );
 }

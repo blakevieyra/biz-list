@@ -19,6 +19,10 @@ import {
   validateLocationFields,
 } from "@/lib/validation/profile-fields";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  emailServiceOrderConfirmation,
+  emailServiceOrderToBusiness,
+} from "@/lib/email/actions";
 import type { BusinessIntent, BusinessService, BusinessSocialLinks, PlanTier, BusinessPostType } from "@/lib/types";
 import type { ContentLikeTarget } from "@/lib/content-likes-types";
 import { mapProfile } from "@/lib/data/mappers";
@@ -726,8 +730,8 @@ export async function submitServiceOrder(input: {
 
     const services = sanitizeServices(business.services as BusinessService[] | undefined);
     const service = services.find((s) => s.name === serviceName);
-    if (!service || service.actionType !== "form") {
-      return { error: "This service does not accept in-app orders." };
+    if (!service) {
+      return { error: "This offering was not found." };
     }
 
     const { error } = await supabase.from("service_orders").insert({
@@ -743,9 +747,17 @@ export async function submitServiceOrder(input: {
 
     const { data: customer } = await supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name, email")
       .eq("id", user.id)
       .single();
+
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("display_name, email")
+      .eq("id", business.owner_id)
+      .single();
+
+    const customerName = customer?.display_name ?? "A customer";
 
     const admin = getSupabaseAdmin();
     if (admin) {
@@ -753,9 +765,35 @@ export async function submitServiceOrder(input: {
         user_id: business.owner_id,
         type: "message",
         title: "New service order",
-        body: `${customer?.display_name ?? "Someone"} ordered ${serviceName} at ${business.name}`,
+        body: `${customerName} ordered ${serviceName} at ${business.name}`,
         link: "/dashboard/orders",
       });
+    }
+
+    const listingLink = `/listings/${input.businessId}`;
+
+    if (ownerProfile?.email) {
+      await emailServiceOrderToBusiness(
+        ownerProfile.email,
+        ownerProfile.display_name ?? "there",
+        customerName,
+        business.name,
+        serviceName,
+        message,
+        quantity,
+      );
+    }
+
+    if (customer?.email) {
+      await emailServiceOrderConfirmation(
+        customer.email,
+        customerName,
+        business.name,
+        serviceName,
+        message,
+        quantity,
+        listingLink,
+      );
     }
 
     revalidatePath(`/listings/${input.businessId}`);

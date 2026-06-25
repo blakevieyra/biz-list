@@ -110,7 +110,7 @@ export default async function BusinessDetailPage({
                     <ServiceListing
                       service={service}
                       businessId={business.id}
-                      businessWebsite={business.website}
+                      businessName={business.name}
                       currentUserId={userId}
                       isOwner={isOwner}
                     />
@@ -160,8 +160,6 @@ export default async function BusinessDetailPage({
           <BusinessReviewsSection
             businessId={business.id}
             reviews={reviews}
-            ratingAvg={business.ratingAvg}
-            ratingCount={business.ratingCount}
             currentUserId={userId}
             isOwner={isOwner}
           />

@@ -173,4 +173,36 @@ export const emailTemplates = {
     ctaUrl: `${getAppUrl()}/feed`,
     footerNote: "Manage digest frequency in My profile on BizList.",
   }),
+
+  serviceOrderToBusiness: (
+    ownerName: string,
+    customerName: string,
+    businessName: string,
+    serviceName: string,
+    details: string,
+    ordersLink: string,
+  ) => ({
+    subject: `New order: ${serviceName} at ${businessName}`,
+    title: "New customer order",
+    greeting: `Hi ${ownerName},`,
+    body: `${customerName} placed an order for "${serviceName}" at ${businessName}.\n\n${details}\n\nView and respond from your BizList inbox.`,
+    ctaLabel: "Open orders inbox",
+    ctaUrl: `${getAppUrl()}${ordersLink}`,
+  }),
+
+  serviceOrderConfirmation: (
+    customerName: string,
+    businessName: string,
+    serviceName: string,
+    details: string,
+    listingLink: string,
+  ) => ({
+    subject: `Order confirmation — ${businessName}`,
+    title: "We received your order",
+    greeting: `Hi ${customerName},`,
+    body: `Your order for "${serviceName}" at ${businessName} was sent successfully.\n\n${details}\n\nThe business will follow up with you soon.`,
+    ctaLabel: "View business",
+    ctaUrl: `${getAppUrl()}${listingLink}`,
+    footerNote: "You're receiving this because you placed an order on BizList.",
+  }),
 };

@@ -663,13 +663,14 @@ export async function getFollowedBusinesses(userId: string): Promise<FollowedBus
       state: b.state,
       isHiring: b.isHiring,
       followedAt: b.createdAt,
+      mediaUrl: b.mediaUrls[0],
     }));
   }
 
   const { data: rows } = await supabase
     .from("business_follows")
     .select(
-      "created_at, businesses(id, name, category, subcategory, city, state, is_hiring)",
+      "created_at, businesses(id, name, category, subcategory, city, state, is_hiring, media_urls)",
     )
     .eq("follower_id", userId)
     .order("created_at", { ascending: false });
@@ -688,6 +689,7 @@ export async function getFollowedBusinesses(userId: string): Promise<FollowedBus
       state: meta.state,
       isHiring: meta.is_hiring ?? false,
       followedAt: row.created_at,
+      mediaUrl: meta.media_urls?.[0],
     });
   }
   return results;

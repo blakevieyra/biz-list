@@ -17,15 +17,11 @@ import { Card } from "@/components/ui";
 export function BusinessReviewsSection({
   businessId,
   reviews,
-  ratingAvg,
-  ratingCount,
   currentUserId,
   isOwner,
 }: {
   businessId: string;
   reviews: BusinessReview[];
-  ratingAvg: number;
-  ratingCount: number;
   currentUserId: string | null;
   isOwner?: boolean;
 }) {
@@ -55,15 +51,8 @@ export function BusinessReviewsSection({
   }
 
   return (
-    <Card id="reviews">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="font-semibold">Reviews & feedback</h2>
-        {ratingCount > 0 && (
-          <p className="text-sm text-muted">
-            {ratingAvg.toFixed(1)} ★ · {ratingCount} review{ratingCount === 1 ? "" : "s"}
-          </p>
-        )}
-      </div>
+    <Card id="reviews" className="scroll-mt-24">
+      <h2 className="font-semibold">Reviews</h2>
 
       {currentUserId && !isOwner && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-b border-border pb-4">
@@ -275,66 +264,34 @@ export function BusinessPhotosSection({
   );
 }
 
-export function BusinessGallerySection({
-  businessId,
-  mediaUrls,
-  owner,
-  contentLikes,
-}: {
-  businessId: string;
-  mediaUrls: string[];
-  owner: { id: string; displayName: string; bio?: string } | null;
-  contentLikes: ContentLikeState;
-}) {
+export function BusinessGallerySection({ mediaUrls }: { mediaUrls: string[] }) {
   const galleryUrls = mediaUrls.length > 1 ? mediaUrls.slice(1) : mediaUrls;
-  if (galleryUrls.length === 0 && !owner) return null;
-
-  const ownerInitials = owner?.displayName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
+  if (galleryUrls.length === 0) return null;
 
   return (
     <section className="border-b border-border bg-card">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-        <h2 className="text-sm font-semibold">Photos</h2>
-        <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
-          {galleryUrls.map((url, index) => {
-            const likeKey = contentLikeKey("photo", url);
-            return (
-              <div
-                key={`${url}-${index}`}
-                className="w-36 shrink-0 overflow-hidden rounded-xl border border-border"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="aspect-square w-full object-cover" />
-                <div className="border-t border-border p-1.5">
-                  <ContentLikeButton
-                    businessId={businessId}
-                    targetType="photo"
-                    targetId={url}
-                    initialCount={contentLikes.counts[likeKey] ?? 0}
-                    initialLiked={isContentLiked(contentLikes, "photo", url)}
-                    size="sm"
+        {galleryUrls.length > 0 && (
+          <>
+            <h2 className="text-sm font-semibold">Photos</h2>
+            <div className="mt-4 space-y-4">
+              {galleryUrls.map((url, index) => (
+                <div
+                  key={`${url}-${index}`}
+                  className="overflow-hidden rounded-2xl border border-border bg-slate-100"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt=""
+                    className="max-h-[32rem] w-full object-cover"
+                    loading={index === 0 ? "eager" : "lazy"}
                   />
                 </div>
-              </div>
-            );
-          })}
-          {owner && (
-            <div className="flex w-36 shrink-0 flex-col rounded-xl border border-border p-3 text-center">
-              <div className="mx-auto flex aspect-square w-full max-w-[7rem] items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-slate-100 text-lg font-bold text-accent">
-                {ownerInitials || "?"}
-              </div>
-              <p className="mt-2 text-xs font-medium leading-tight">{owner.displayName}</p>
-              <p className="mt-0.5 text-[11px] text-muted">Owner</p>
-              {owner.bio && (
-                <p className="mt-2 line-clamp-3 text-[11px] leading-snug text-muted">{owner.bio}</p>
-              )}
+              ))}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </section>
   );

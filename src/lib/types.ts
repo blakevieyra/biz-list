@@ -166,6 +166,7 @@ export interface FollowedBusiness {
   state: string;
   isHiring: boolean;
   followedAt: string;
+  mediaUrl?: string;
 }
 
 export interface ServiceOrder {

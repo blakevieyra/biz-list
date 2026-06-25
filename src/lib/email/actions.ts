@@ -112,3 +112,60 @@ export async function emailFollowDigest(
       : "No new posts from businesses you follow in this period. Browse Listings to discover more local businesses.";
   await sendTemplateEmail(to, emailTemplates.followDigest(name, frequency, summary));
 }
+
+export async function emailServiceOrderToBusiness(
+  to: string,
+  ownerName: string,
+  customerName: string,
+  businessName: string,
+  serviceName: string,
+  message: string,
+  quantity: string,
+) {
+  const details = [
+    quantity ? `Quantity / size: ${quantity}` : null,
+    `Notes: ${message}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await sendTemplateEmail(
+    to,
+    emailTemplates.serviceOrderToBusiness(
+      ownerName,
+      customerName,
+      businessName,
+      serviceName,
+      details,
+      "/dashboard/orders",
+    ),
+  );
+}
+
+export async function emailServiceOrderConfirmation(
+  to: string,
+  customerName: string,
+  businessName: string,
+  serviceName: string,
+  message: string,
+  quantity: string,
+  listingLink: string,
+) {
+  const details = [
+    quantity ? `Quantity / size: ${quantity}` : null,
+    `Your notes: ${message}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await sendTemplateEmail(
+    to,
+    emailTemplates.serviceOrderConfirmation(
+      customerName,
+      businessName,
+      serviceName,
+      details,
+      listingLink,
+    ),
+  );
+}

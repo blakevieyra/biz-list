@@ -22,6 +22,7 @@ import { ShopOfferingsSection } from "@/components/shop-offerings-section";
 
 import { SafeExternalLink } from "@/components/safe-external-link";
 
+import { ListingRatingHeader } from "@/components/listing-rating-header";
 import { Card, IntentBadge } from "@/components/ui";
 
 import {
@@ -93,19 +94,7 @@ export default async function BusinessDetailPage({
 
 
 
-  const likeTargets = [
-
-    ...posts.map((post) => ({ type: "post" as const, id: post.id })),
-
-    ...business.services
-
-      .filter((s) => s.name.trim())
-
-      .map((service) => ({ type: "service" as const, id: service.name })),
-
-    ...business.mediaUrls.map((url) => ({ type: "photo" as const, id: url })),
-
-  ];
+  const likeTargets = posts.map((post) => ({ type: "post" as const, id: post.id }));
 
   const contentLikes = await getBusinessContentLikeState(business.id, userId, likeTargets);
 
@@ -173,6 +162,16 @@ export default async function BusinessDetailPage({
 
               )}
 
+              <ListingRatingHeader
+
+                ratingAvg={business.ratingAvg}
+
+                ratingCount={business.ratingCount}
+
+                showLeaveReview={Boolean(userId && !isOwner)}
+
+              />
+
             </div>
 
             <BusinessActions
@@ -229,16 +228,6 @@ export default async function BusinessDetailPage({
 
             )}
 
-            {business.ratingCount > 0 && (
-
-              <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">
-
-                {business.ratingAvg.toFixed(1)} ★ ({business.ratingCount})
-
-              </span>
-
-            )}
-
           </div>
 
         </div>
@@ -247,17 +236,7 @@ export default async function BusinessDetailPage({
 
 
 
-      <BusinessGallerySection
-
-        businessId={business.id}
-
-        mediaUrls={business.mediaUrls}
-
-        owner={owner ? { id: owner.id, displayName: owner.displayName, bio: owner.bio } : null}
-
-        contentLikes={contentLikes}
-
-      />
+      <BusinessGallerySection mediaUrls={business.mediaUrls} />
 
 
 
@@ -289,15 +268,13 @@ export default async function BusinessDetailPage({
 
               businessId={business.id}
 
-              services={business.services}
+              businessName={business.name}
 
-              businessWebsite={business.website}
+              services={business.services}
 
               currentUserId={userId}
 
               isOwner={isOwner}
-
-              contentLikes={contentLikes}
 
             />
 
@@ -316,10 +293,6 @@ export default async function BusinessDetailPage({
                 businessId={business.id}
 
                 reviews={reviews}
-
-                ratingAvg={business.ratingAvg}
-
-                ratingCount={business.ratingCount}
 
                 currentUserId={userId}
 
@@ -476,6 +449,12 @@ export default async function BusinessDetailPage({
                     <dt className="text-muted">Profile owner</dt>
 
                     <dd className="font-medium">{owner.displayName}</dd>
+
+                    {owner.bio && (
+
+                      <dd className="mt-1 text-sm leading-relaxed text-muted">{owner.bio}</dd>
+
+                    )}
 
                   </div>
 

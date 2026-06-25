@@ -1,19 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EventCard } from "@/components/event-card";
+import { FavoriteBusinessCard } from "@/components/favorite-business-card";
 import { FeedPostCard } from "@/components/feed-post-card";
-import { FollowingList, MessagesHubSection } from "@/components/profile-hub-sections";
+import { HomeCardCarousel, HomeCarouselItem } from "@/components/home-card-carousel";
 import { CustomerProUpsell } from "@/components/customer-pro-upsell";
 import { PageHeader, Card } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
-import {
-  getCurrentProfile,
-  getFollowedBusinesses,
-  getNotifications,
-} from "@/lib/data";
+import { getCurrentProfile, getFollowedBusinesses } from "@/lib/data";
 import { getFeedBusinessPosts } from "@/lib/data/business";
 import { getBusinessEvents, getUserSavedEvents } from "@/lib/data/events";
-import { getConversations } from "@/lib/data/messages";
 import { canAccessCustomerFeature } from "@/lib/plans";
 
 export default async function HomeHubPage() {
@@ -36,21 +32,21 @@ export default async function HomeHubPage() {
   const isBusinessAccount = profile.role === "business" || profile.role === "organization";
   const isCustomerPro = canAccessCustomerFeature(profile.planTier, "jobAlerts");
 
-  const [feedPosts, following, nearbyEvents, savedEvents, conversations, notifications] =
-    await Promise.all([
-      getFeedBusinessPosts({ viewer, userId, limit: 4 }),
-      getFollowedBusinesses(userId),
-      getBusinessEvents({ viewer, userId, limit: 4 }),
-      getUserSavedEvents(userId, 4),
-      getConversations(userId),
-      getNotifications(userId),
-    ]);
+  const [feedPosts, following, savedEvents, nearbyEvents] = await Promise.all([
+    getFeedBusinessPosts({ viewer, userId, limit: 4 }),
+    getFollowedBusinesses(userId),
+    getUserSavedEvents(userId, 8),
+    getBusinessEvents({ viewer, userId, limit: 8 }),
+  ]);
+
+  const carouselEvents = savedEvents.length > 0 ? savedEvents : nearbyEvents;
+  const eventsHeading = savedEvents.length > 0 ? "Your saved events" : "Events near you";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title={`Welcome back, ${profile.displayName}`}
-        description="Recent updates, favorite businesses, events near you, and messages — all in one place."
+        description="Saved events, recent posts, and businesses you follow — all in one place."
         action={
           isBusinessAccount ? (
             <Link
@@ -79,6 +75,34 @@ export default async function HomeHubPage() {
       <div className="space-y-8">
         <section>
           <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">{eventsHeading}</h2>
+            <Link href="/events" className="text-sm text-accent hover:underline">
+              {savedEvents.length > 0 ? "Browse all events" : "Search events"}
+            </Link>
+          </div>
+          {carouselEvents.length === 0 ? (
+            <Card>
+              <p className="text-sm text-muted">
+                No upcoming events yet.{" "}
+                <Link href="/events" className="text-accent hover:underline">
+                  Find events near you
+                </Link>{" "}
+                and RSVP to save them here.
+              </p>
+            </Card>
+          ) : (
+            <HomeCardCarousel>
+              {carouselEvents.map((event) => (
+                <HomeCarouselItem key={event.id}>
+                  <EventCard event={event} />
+                </HomeCarouselItem>
+              ))}
+            </HomeCardCarousel>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Recent</h2>
             <Link href="/feed" className="text-sm text-accent hover:underline">
               All posts
@@ -101,66 +125,33 @@ export default async function HomeHubPage() {
               ))}
             </div>
           )}
-        </section>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <section>
+          <div className="mt-8">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Favorite businesses</h2>
+              <h3 className="text-lg font-semibold">Favorite businesses</h3>
               <Link href="/profile?tab=following" className="text-sm text-accent hover:underline">
                 View all
               </Link>
             </div>
-            <FollowingList businesses={following.slice(0, 4)} />
-          </section>
-
-          <section>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Events near you</h2>
-              <Link href="/events" className="text-sm text-accent hover:underline">
-                Search all events
-              </Link>
-            </div>
-            {savedEvents.length > 0 && (
-              <p className="mb-3 text-sm text-muted">
-                You&apos;re going to {savedEvents.length}{" "}
-                {savedEvents.length === 1 ? "event" : "events"}.{" "}
-                <Link href="/events" className="text-accent hover:underline">
-                  View saved
-                </Link>
-              </p>
-            )}
-            {nearbyEvents.length === 0 ? (
+            {following.length === 0 ? (
               <Card>
                 <p className="text-sm text-muted">
-                  No upcoming events nearby yet.{" "}
-                  <Link href="/events" className="text-accent hover:underline">
-                    Browse and search events
-                  </Link>{" "}
-                  hosted by local businesses.
+                  You&apos;re not following any businesses yet.{" "}
+                  <Link href="/listings" className="text-accent hover:underline">
+                    Browse listings
+                  </Link>
                 </p>
               </Card>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {nearbyEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
+              <HomeCardCarousel>
+                {following.slice(0, 8).map((business) => (
+                  <HomeCarouselItem key={business.id}>
+                    <FavoriteBusinessCard business={business} />
+                  </HomeCarouselItem>
                 ))}
-              </div>
+              </HomeCardCarousel>
             )}
-          </section>
-        </div>
-
-        <section>
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Messages</h2>
-            <Link href="/messages" className="text-sm text-accent hover:underline">
-              Open inbox
-            </Link>
           </div>
-          <MessagesHubSection
-            conversations={conversations.slice(0, 4)}
-            notifications={notifications.slice(0, 6)}
-          />
         </section>
       </div>
     </div>
