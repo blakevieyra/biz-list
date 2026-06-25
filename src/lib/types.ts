@@ -83,6 +83,7 @@ export interface UserProfile {
   /** @deprecated use discoveryRadius */
   feedScope: FeedScope;
   createdAt: string;
+  avatarUrl?: string;
 }
 
 export type JobApplicationQuestionKind = "short" | "legal" | "important";
@@ -186,9 +187,17 @@ export type FeedPostBadge = "following" | "trending" | "top-rated" | "popular";
 export interface BusinessPostComment {
   id: string;
   authorName: string;
+  authorId?: string;
+  authorAvatarUrl?: string | null;
+  memberSince?: string;
   body: string;
   createdAt: string;
   isOwnerReply?: boolean;
+  parentId?: string | null;
+  attachmentUrl?: string | null;
+  likeCount?: number;
+  likedByViewer?: boolean;
+  replies?: BusinessPostComment[];
 }
 
 export interface BusinessPost {
@@ -212,6 +221,7 @@ export interface BusinessPost {
   feedBadge?: FeedPostBadge;
   commentCount: number;
   likeCount: number;
+  likedByViewer?: boolean;
   recentComments?: BusinessPostComment[];
   createdAt: string;
 }

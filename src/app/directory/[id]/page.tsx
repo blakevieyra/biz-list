@@ -34,7 +34,7 @@ export default async function BusinessDetailPage({
   const [owner, connectionState, posts, reviews] = await Promise.all([
     getProfileById(business.ownerId),
     getBusinessConnectionState(business.id, userId),
-    getBusinessPosts(business.id),
+    getBusinessPosts(business.id, userId),
     getBusinessReviews(business.id),
   ]);
 

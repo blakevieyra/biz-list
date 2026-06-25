@@ -1,58 +1,96 @@
 import Link from "next/link";
 import { CollaborationProposalCard } from "@/components/collaboration-proposal-card";
+import { ForumDiscussionsSection } from "@/components/forum-discussions-section";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { Card, PageHeader } from "@/components/ui";
-import { getCollaborationComments, getCollaborations } from "@/lib/data";
-import type { CollaborationType } from "@/lib/types";
+import { getCollaborationCommentsByIds, getCollaborations } from "@/lib/data";
+import type { CollaborationComment, CollaborationType, ForumCategory } from "@/lib/types";
+import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
-const tabs: { id: CollaborationType; label: string }[] = [
+const collaborationTabs: { id: CollaborationType; label: string }[] = [
   { id: "proposal", label: "Proposals" },
   { id: "contract", label: "Contracts" },
   { id: "b2b_sale", label: "B2B sales" },
 ];
 
+const forumCategories = Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[];
+
+type CollaborateTab = CollaborationType | "forum";
+
+const allTabs: { id: CollaborateTab; label: string }[] = [
+  ...collaborationTabs,
+  { id: "forum", label: "Forum" },
+];
+
 export default async function CollaboratePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string; q?: string }>;
 }) {
   const params = await searchParams;
-  const tab: CollaborationType = tabs.some((t) => t.id === params.tab)
-    ? (params.tab as CollaborationType)
+  const tab: CollaborateTab = allTabs.some((t) => t.id === params.tab)
+    ? (params.tab as CollaborateTab)
     : "proposal";
+  const forumCategory = forumCategories.includes(params.category as ForumCategory)
+    ? (params.category as ForumCategory)
+    : undefined;
+  const forumQuery = params.q ?? "";
   const userId = await getAuthUserId();
 
-  const collaborations = await getCollaborations(tab);
-  const commentsById = new Map(
-    await Promise.all(
-      collaborations.map(async (idea) => [
-        idea.id,
-        await getCollaborationComments(idea.id),
-      ] as const),
-    ),
-  );
+  const collaborations =
+    tab === "forum" ? [] : await getCollaborations(tab as CollaborationType);
+  const commentsById: Map<string, CollaborationComment[]> =
+    tab === "forum"
+      ? new Map()
+      : await getCollaborationCommentsByIds(collaborations.map((idea) => idea.id));
 
-  function tabHref(next: CollaborationType) {
-    return next === "proposal" ? "/partnerships" : `/partnerships?tab=${next}`;
+  function tabHref(next: CollaborateTab) {
+    if (next === "proposal") return "/partnerships";
+    if (next === "forum") return "/partnerships?tab=forum";
+    return `/partnerships?tab=${next}`;
   }
+
+  const isForumTab = tab === "forum";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Collaborations"
-        description="Share proposals, contracts, and B2B sales opportunities with local businesses."
+        description={
+          isForumTab
+            ? "Community discussions about partnerships, local tips, hiring, and more."
+            : "Share proposals, contracts, and B2B sales opportunities with local businesses."
+        }
         action={
-          <Link
-            href={`/partnerships/new?type=${tab}`}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-          >
-            Create proposal
-          </Link>
+          isForumTab ? (
+            userId ? (
+              <Link
+                href="/forum/new"
+                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+              >
+                New discussion
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+              >
+                Sign in to post
+              </Link>
+            )
+          ) : (
+            <Link
+              href={`/partnerships/new?type=${tab}`}
+              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              Create proposal
+            </Link>
+          )
         }
       />
 
-      <div className="mb-8 flex flex-wrap gap-2">
-        {tabs.map(({ id, label }) => (
+      <div className="filter-scroll mb-8">
+        {allTabs.map(({ id, label }) => (
           <Link
             key={id}
             href={tabHref(id)}
@@ -67,10 +105,16 @@ export default async function CollaboratePage({
         ))}
       </div>
 
-      {collaborations.length === 0 ? (
+      {isForumTab ? (
+        <ForumDiscussionsSection
+          basePath="/partnerships?tab=forum"
+          category={forumCategory}
+          query={forumQuery}
+        />
+      ) : collaborations.length === 0 ? (
         <Card>
           <p className="text-sm text-muted">
-            No shared {tabs.find((t) => t.id === tab)?.label.toLowerCase()} yet.{" "}
+            No shared {collaborationTabs.find((t) => t.id === tab)?.label.toLowerCase()} yet.{" "}
             <Link href={`/partnerships/new?type=${tab}`} className="text-accent hover:underline">
               Create the first one
             </Link>

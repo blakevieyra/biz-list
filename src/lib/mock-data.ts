@@ -1,4 +1,5 @@
 import type {
+  BusinessEvent,
   BusinessPost,
   BusinessPostComment,
   BusinessProfile,
@@ -37,6 +38,7 @@ export const SEED_USERS: UserProfile[] = [
     feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-01-10T10:00:00Z",
+    avatarUrl: DEMO_IMAGES.avatarMaria,
   },
   {
     id: "user-2",
@@ -115,6 +117,7 @@ export const SEED_USERS: UserProfile[] = [
     feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-03-15T11:00:00Z",
+    avatarUrl: DEMO_IMAGES.avatarAlex,
   },
   {
     id: "user-5",
@@ -245,6 +248,33 @@ export const SEED_USERS: UserProfile[] = [
     feedScope: "city" as const,
     discoveryRadius: "city" as const,
     createdAt: "2026-03-01T11:00:00Z",
+  },
+  {
+    id: "user-blake",
+    displayName: "Blake",
+    email: "blake.vieyra@gmail.com",
+    role: "customer",
+    planTier: "free",
+    bio: "Local community member exploring neighborhood businesses.",
+    city: "Austin",
+    state: "TX",
+    county: "",
+    zipCode: "78704",
+    interestTags: ["local", "food"],
+    industryInterests: ["Food & Beverage › Bakery"],
+    headline: "",
+    skills: [],
+    isSeekingWork: false,
+    experienceText: "",
+    resumeText: "",
+    targetJobTitles: [],
+    jobAlertOptIn: false,
+    followDigestFrequency: "weekly",
+    forumInterests: ["local"],
+    feedScope: "city" as const,
+    discoveryRadius: "city" as const,
+    createdAt: "2026-05-01T12:00:00Z",
+    avatarUrl: DEMO_IMAGES.avatarBlake,
   },
 ];
 
@@ -385,8 +415,8 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     isHiring: true,
     jobApplicationForm: { questions: [] },
     services: [
-      { name: "Pop-up retail", description: "Short-term shelf space for makers" },
-      { name: "Community events", description: "Markets and maker showcases" },
+      { name: "Pop-up retail", description: "Short-term shelf space for makers", imageUrl: DEMO_IMAGES.retail },
+      { name: "Community events", description: "Markets and maker showcases", imageUrl: DEMO_IMAGES.retail },
     ],
     mediaUrls: [DEMO_IMAGES.retail],
     likeCount: 5,
@@ -450,8 +480,8 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     isHiring: false,
     jobApplicationForm: { questions: [] },
     services: [
-      { name: "Menu & signage printing", description: "Restaurant and retail signage", price: "From $89" },
-      { name: "Event banners", description: "Vinyl banners for markets and pop-ups", price: "From $120" },
+      { name: "Menu & signage printing", description: "Restaurant and retail signage", price: "From $89", imageUrl: DEMO_IMAGES.print },
+      { name: "Event banners", description: "Vinyl banners for markets and pop-ups", price: "From $120", imageUrl: DEMO_IMAGES.coffee },
       { name: "Brand merch", description: "T-shirts, tote bags, and stickers", price: "Custom quote" },
     ],
     mediaUrls: [DEMO_IMAGES.print, DEMO_IMAGES.coffee],
@@ -515,6 +545,77 @@ export const SEED_POSTS: ForumPost[] = [
     body: "Building my portfolio of Central Texas storefronts. Offering a free 1-hour product shoot to three bakeries or cafés in exchange for a testimonial.",
     commentIds: [],
     createdAt: "2026-05-08T12:00:00Z",
+  },
+];
+
+export const SEED_BUSINESS_EVENTS: BusinessEvent[] = [
+  {
+    id: "event-1",
+    businessId: "biz-1",
+    businessName: "Riverbend Bakery",
+    businessMediaUrl: DEMO_IMAGES.bakery,
+    authorId: "user-1",
+    title: "Weekend sourdough drop",
+    description:
+      "Limited sourdough loaves every Saturday at 8am. Flavors posted on our listing each Thursday.",
+    location: "Riverbend Bakery",
+    address: "1200 South Lamar Blvd",
+    city: "Austin",
+    state: "TX",
+    county: "Travis",
+    zipCode: "78704",
+    category: "Food & Beverage",
+    imageUrl: DEMO_IMAGES.bakery2,
+    startsAt: "2026-06-28T13:00:00Z",
+    endsAt: "2026-06-28T16:00:00Z",
+    capacity: 40,
+    status: "published",
+    goingCount: 24,
+    createdAt: "2026-06-01T10:00:00Z",
+  },
+  {
+    id: "event-2",
+    businessId: "biz-3",
+    businessName: "Local Makers Co-op",
+    businessMediaUrl: DEMO_IMAGES.retail,
+    authorId: "user-3",
+    title: "Summer maker meetup",
+    description: "Meet local vendors, swap display tips, and preview new summer inventory.",
+    location: "Local Makers Co-op",
+    address: "200 Main St",
+    city: "Round Rock",
+    state: "TX",
+    county: "Williamson",
+    zipCode: "78664",
+    category: "Retail & Community",
+    imageUrl: DEMO_IMAGES.retail,
+    startsAt: "2026-07-05T18:00:00Z",
+    capacity: 50,
+    status: "published",
+    goingCount: 12,
+    createdAt: "2026-06-10T14:00:00Z",
+  },
+  {
+    id: "event-3",
+    businessId: "biz-4",
+    businessName: "Hill Country Fitness",
+    businessMediaUrl: DEMO_IMAGES.fitness,
+    authorId: "user-8",
+    title: "Sunrise park bootcamp",
+    description: "Free community workout at Elizabeth Milburn Park. Bring water and a mat.",
+    location: "Elizabeth Milburn Park",
+    address: "1901 Sun Chase Blvd",
+    city: "Cedar Park",
+    state: "TX",
+    county: "Williamson",
+    zipCode: "78613",
+    category: "Health & Wellness",
+    imageUrl: DEMO_IMAGES.fitness,
+    startsAt: "2026-07-12T12:00:00Z",
+    capacity: 40,
+    status: "published",
+    goingCount: 18,
+    createdAt: "2026-06-15T09:00:00Z",
   },
 ];
 
@@ -634,6 +735,16 @@ export const SEED_BUSINESS_POST_COMMENTS: Array<
     authorName: "Maria Chen",
     body: "Yes! We post the lineup every Thursday here and on our listing.",
     createdAt: "2026-06-20T10:15:00Z",
+    parentId: "bpc-1",
+  },
+  {
+    id: "bpc-7",
+    postId: "bpost-1",
+    authorId: "user-blake",
+    authorName: "Blake",
+    body: "i dont liek this business",
+    createdAt: "2026-06-22T18:30:00Z",
+    parentId: "bpc-1",
   },
   {
     id: "bpc-3",
@@ -650,6 +761,7 @@ export const SEED_BUSINESS_POST_COMMENTS: Array<
     authorName: "Elena Vasquez",
     body: "Sam — message us your dimensions and we'll get you a quote today.",
     createdAt: "2026-06-21T11:45:00Z",
+    parentId: "bpc-3",
   },
   {
     id: "bpc-5",
@@ -666,8 +778,14 @@ export const SEED_BUSINESS_POST_COMMENTS: Array<
     authorName: "Maria Chen",
     body: "Absolutely — message us through the listing and we'll save a box for you.",
     createdAt: "2026-06-21T15:30:00Z",
+    parentId: "bpc-5",
   },
 ];
+
+const SEED_COMMENT_LIKE_COUNTS: Record<string, number> = {
+  "bpc-1": 2,
+  "bpc-2": 1,
+};
 
 export const SEED_BUSINESS_POSTS: BusinessPost[] = [
   {
@@ -683,7 +801,7 @@ export const SEED_BUSINESS_POSTS: BusinessPost[] = [
     mediaUrls: [DEMO_IMAGES.bakery],
     engagementScore: 42,
     isTrending: true,
-    commentCount: 2,
+    commentCount: 3,
     likeCount: 5,
     createdAt: "2026-05-10T08:00:00Z",
   },
@@ -877,10 +995,20 @@ export function getBusinessPostCommentsForPost(
   ownerId: string,
 ): BusinessPostComment[] {
   return SEED_BUSINESS_POST_COMMENTS.filter((c) => c.postId === postId)
-    .map(({ postId: _postId, authorId, ...comment }) => ({
-      ...comment,
-      isOwnerReply: authorId === ownerId,
-    }))
+    .map(({ postId: _postId, authorId, parentId, attachmentUrl, ...comment }) => {
+      const user = getUserById(authorId);
+      return {
+        ...comment,
+        authorId,
+        parentId: parentId ?? null,
+        attachmentUrl: attachmentUrl ?? null,
+        isOwnerReply: authorId === ownerId,
+        authorAvatarUrl: user?.avatarUrl ?? null,
+        memberSince: user?.createdAt,
+        likeCount: SEED_COMMENT_LIKE_COUNTS[comment.id] ?? 0,
+        likedByViewer: false,
+      };
+    })
     .sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );

@@ -100,7 +100,7 @@ export default async function EventsPage({
 
       <section className="mb-4">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Distance</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="filter-scroll">
           {MILE_RADIUS_OPTIONS.map((m) => (
             <Link
               key={m}
@@ -119,7 +119,7 @@ export default async function EventsPage({
 
       <section className="mb-4">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Area</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="filter-scroll">
           {AREA_SCOPE_OPTIONS.map((s) => (
             <Link
               key={s}
@@ -138,7 +138,7 @@ export default async function EventsPage({
 
       <section className="mb-6">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Industry</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="filter-scroll">
           <Link
             href={buildHref({ category: undefined })}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${
@@ -165,19 +165,50 @@ export default async function EventsPage({
         </div>
       </section>
 
-      <form className="mb-6">
+      <form action="/events" method="get" className="mb-6 flex flex-col gap-3 sm:flex-row">
+        {areaScope !== DEFAULT_DISCOVERY_RADIUS && (
+          <input type="hidden" name="scope" value={areaScope} />
+        )}
+        {mileRadius !== DEFAULT_MILE_RADIUS && (
+          <input type="hidden" name="miles" value={mileRadius} />
+        )}
+        {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
         <input
           type="search"
           name="q"
           defaultValue={query}
-          placeholder="Search events..."
-          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm"
+          placeholder="Search events by name, business, or location..."
+          className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
         />
+        <button
+          type="submit"
+          className="rounded-xl bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-hover"
+        >
+          Search
+        </button>
       </form>
 
       {events.length === 0 ? (
         <Card>
-          <p className="text-sm text-muted">No upcoming events match your filters.</p>
+          <p className="text-sm text-muted">
+            No upcoming events match your filters.{" "}
+            {isBusinessAccount ? (
+              <>
+                <Link href="/dashboard/events" className="text-accent hover:underline">
+                  Publish an event
+                </Link>{" "}
+                from your dashboard.
+              </>
+            ) : (
+              <>
+                Try widening your distance or{" "}
+                <Link href="/listings" className="text-accent hover:underline">
+                  follow businesses
+                </Link>{" "}
+                to hear about new events.
+              </>
+            )}
+          </p>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

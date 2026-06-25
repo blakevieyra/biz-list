@@ -64,10 +64,13 @@ export async function SiteHeader() {
 
               <Link
                 href="/notifications"
-                className="relative inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-border px-3 text-sm hover:border-accent/40"
+                className="relative inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-border px-2.5 text-sm hover:border-accent/40 sm:px-3"
                 aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ""}`}
               >
-                Alerts
+                <span className="hidden sm:inline">Alerts</span>
+                <span className="sm:hidden" aria-hidden>
+                  A
+                </span>
                 {notificationCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
                     {notificationCount}
@@ -77,9 +80,13 @@ export async function SiteHeader() {
 
               <Link
                 href="/messages"
-                className="relative inline-flex min-h-10 items-center rounded-full border border-border px-3 py-2 text-sm hover:border-accent/40"
+                className="relative inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-border px-2.5 text-sm hover:border-accent/40 sm:px-3"
+                aria-label={`Messages${messageCount > 0 ? `, ${messageCount} unread` : ""}`}
               >
-                Messages
+                <span className="hidden sm:inline">Messages</span>
+                <span className="sm:hidden" aria-hidden>
+                  M
+                </span>
                 {messageCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
                     {messageCount}

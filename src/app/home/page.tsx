@@ -2,11 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EventCard } from "@/components/event-card";
 import { FeedPostCard } from "@/components/feed-post-card";
-import {
-  AlertsPreview,
-  FollowingList,
-  MessagesPreview,
-} from "@/components/profile-hub-sections";
+import { FollowingList, MessagesHubSection } from "@/components/profile-hub-sections";
 import { CustomerProUpsell } from "@/components/customer-pro-upsell";
 import { PageHeader, Card } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
@@ -16,7 +12,7 @@ import {
   getNotifications,
 } from "@/lib/data";
 import { getFeedBusinessPosts } from "@/lib/data/business";
-import { getUserSavedEvents } from "@/lib/data/events";
+import { getBusinessEvents, getUserSavedEvents } from "@/lib/data/events";
 import { getConversations } from "@/lib/data/messages";
 import { canAccessCustomerFeature } from "@/lib/plans";
 
@@ -40,19 +36,21 @@ export default async function HomeHubPage() {
   const isBusinessAccount = profile.role === "business" || profile.role === "organization";
   const isCustomerPro = canAccessCustomerFeature(profile.planTier, "jobAlerts");
 
-  const [feedPosts, following, savedEvents, conversations, notifications] = await Promise.all([
-    getFeedBusinessPosts({ viewer, userId, limit: 6 }),
-    getFollowedBusinesses(userId),
-    getUserSavedEvents(userId, 4),
-    getConversations(userId),
-    getNotifications(userId),
-  ]);
+  const [feedPosts, following, nearbyEvents, savedEvents, conversations, notifications] =
+    await Promise.all([
+      getFeedBusinessPosts({ viewer, userId, limit: 4 }),
+      getFollowedBusinesses(userId),
+      getBusinessEvents({ viewer, userId, limit: 4 }),
+      getUserSavedEvents(userId, 4),
+      getConversations(userId),
+      getNotifications(userId),
+    ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title={`Welcome back, ${profile.displayName}`}
-        description="Recent updates, favorite businesses, saved events, messages, and inbox — all in one place."
+        description="Recent updates, favorite businesses, events near you, and messages — all in one place."
         action={
           isBusinessAccount ? (
             <Link
@@ -118,23 +116,33 @@ export default async function HomeHubPage() {
 
           <section>
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Saved events</h2>
+              <h2 className="text-lg font-semibold">Events near you</h2>
               <Link href="/events" className="text-sm text-accent hover:underline">
-                Browse events
+                Search all events
               </Link>
             </div>
-            {savedEvents.length === 0 ? (
+            {savedEvents.length > 0 && (
+              <p className="mb-3 text-sm text-muted">
+                You&apos;re going to {savedEvents.length}{" "}
+                {savedEvents.length === 1 ? "event" : "events"}.{" "}
+                <Link href="/events" className="text-accent hover:underline">
+                  View saved
+                </Link>
+              </p>
+            )}
+            {nearbyEvents.length === 0 ? (
               <Card>
                 <p className="text-sm text-muted">
-                  RSVP to events to save them here.{" "}
+                  No upcoming events nearby yet.{" "}
                   <Link href="/events" className="text-accent hover:underline">
-                    Find events
-                  </Link>
+                    Browse and search events
+                  </Link>{" "}
+                  hosted by local businesses.
                 </p>
               </Card>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {savedEvents.map((event) => (
+                {nearbyEvents.map((event) => (
                   <EventCard key={event.id} event={event} />
                 ))}
               </div>
@@ -142,27 +150,18 @@ export default async function HomeHubPage() {
           </section>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <section>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Messages</h2>
-              <Link href="/messages" className="text-sm text-accent hover:underline">
-                Open inbox
-              </Link>
-            </div>
-            <MessagesPreview conversations={conversations.slice(0, 4)} />
-          </section>
-
-          <section>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Inbox</h2>
-              <Link href="/notifications" className="text-sm text-accent hover:underline">
-                All alerts
-              </Link>
-            </div>
-            <AlertsPreview notifications={notifications.slice(0, 6)} />
-          </section>
-        </div>
+        <section>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Messages</h2>
+            <Link href="/messages" className="text-sm text-accent hover:underline">
+              Open inbox
+            </Link>
+          </div>
+          <MessagesHubSection
+            conversations={conversations.slice(0, 4)}
+            notifications={notifications.slice(0, 6)}
+          />
+        </section>
       </div>
     </div>
   );

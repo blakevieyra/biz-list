@@ -1,4 +1,4 @@
-export type ContentLikeTarget = "post" | "service" | "photo";
+export type ContentLikeTarget = "post" | "service" | "photo" | "comment";
 
 export type ContentLikeState = {
   counts: Record<string, number>;

@@ -21,7 +21,7 @@ import type {
   WorkGroup,
 } from "@/lib/types";
 import { parsePostType } from "@/lib/media/post-media";
-import { getPostLikeCounts } from "@/lib/data/content-likes";
+import { getCommentLikeCounts, getPostLikeCounts, getPostLikedByViewer } from "@/lib/data/content-likes";
 import { parseFormAnswers } from "@/lib/job-application-form";
 import {
   matchesDiscoveryRadius,
@@ -69,6 +69,7 @@ function mapPostRow(
     businessLikeCount: extras.businessLikeCount,
     isFollowed: extras.isFollowed,
     feedBadge: extras.feedBadge,
+    likedByViewer: extras.likedByViewer,
     recentComments: extras.recentComments,
   };
 }
@@ -110,13 +111,49 @@ type CommentRow = {
   author_id: string;
   body: string;
   created_at: string;
-  profiles?: { display_name: string } | { display_name: string }[] | null;
+  parent_id?: string | null;
+  attachment_url?: string | null;
+  profiles?: CommentProfileRow | CommentProfileRow[] | null;
 };
+
+type CommentProfileRow = {
+  display_name: string;
+  avatar_url?: string | null;
+  created_at?: string;
+};
+
+const COMMENT_SELECT =
+  "id, post_id, author_id, body, created_at, parent_id, attachment_url, profiles(display_name, avatar_url, created_at)";
+
+/** Max comments loaded per post in feed/listing views (counts stay accurate). */
+const MAX_COMMENTS_PER_POST = 40;
+
+function commentProfileFromJoin(
+  profiles: CommentProfileRow | CommentProfileRow[] | null | undefined,
+): CommentProfileRow | null {
+  if (!profiles) return null;
+  return Array.isArray(profiles) ? profiles[0] ?? null : profiles;
+}
+
+function mapCommentRow(c: CommentRow, ownerId: string): BusinessPostComment {
+  const profile = commentProfileFromJoin(c.profiles);
+  return {
+    id: c.id,
+    authorId: c.author_id,
+    authorName: profile?.display_name ?? authorName(c.profiles),
+    authorAvatarUrl: profile?.avatar_url ?? null,
+    memberSince: profile?.created_at,
+    body: c.body,
+    createdAt: c.created_at,
+    isOwnerReply: c.author_id === ownerId,
+    parentId: c.parent_id ?? null,
+    attachmentUrl: c.attachment_url ?? null,
+  };
+}
 
 function buildRecentCommentsMap(
   comments: CommentRow[] | null | undefined,
   ownerByPostId: Map<string, string>,
-  maxPerPost = 4,
 ): { countMap: Map<string, number>; recentMap: Map<string, BusinessPostComment[]> } {
   const countMap = new Map<string, number>();
   const grouped = new Map<string, BusinessPostComment[]>();
@@ -125,13 +162,7 @@ function buildRecentCommentsMap(
     countMap.set(c.post_id, (countMap.get(c.post_id) ?? 0) + 1);
     const ownerId = ownerByPostId.get(c.post_id) ?? "";
     const list = grouped.get(c.post_id) ?? [];
-    list.push({
-      id: c.id,
-      authorName: authorName(c.profiles),
-      body: c.body,
-      createdAt: c.created_at,
-      isOwnerReply: c.author_id === ownerId,
-    });
+    list.push(mapCommentRow(c, ownerId));
     grouped.set(c.post_id, list);
   }
 
@@ -140,13 +171,43 @@ function buildRecentCommentsMap(
     list.sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
-    recentMap.set(postId, list.slice(-maxPerPost));
+    recentMap.set(
+      postId,
+      list.length > MAX_COMMENTS_PER_POST ? list.slice(-MAX_COMMENTS_PER_POST) : list,
+    );
   }
 
   return { countMap, recentMap };
 }
 
-export async function getBusinessPosts(businessId: string): Promise<BusinessPost[]> {
+async function enrichCommentsWithLikes(
+  recentMap: Map<string, BusinessPostComment[]>,
+  userId: string | null,
+): Promise<Map<string, BusinessPostComment[]>> {
+  const allComments = [...recentMap.values()].flat();
+  const { counts, likedByViewer } = await getCommentLikeCounts(
+    allComments.map((c) => c.id),
+    userId,
+  );
+
+  const enriched = new Map<string, BusinessPostComment[]>();
+  for (const [postId, list] of recentMap) {
+    enriched.set(
+      postId,
+      list.map((c) => ({
+        ...c,
+        likeCount: counts.get(c.id) ?? 0,
+        likedByViewer: likedByViewer.has(c.id),
+      })),
+    );
+  }
+  return enriched;
+}
+
+export async function getBusinessPosts(
+  businessId: string,
+  userId: string | null = null,
+): Promise<BusinessPost[]> {
   const supabase = await createClient();
   if (!supabase) return getBusinessPostsForBusiness(businessId);
 
@@ -169,7 +230,7 @@ export async function getBusinessPosts(businessId: string): Promise<BusinessPost
   const postIds = rows.map((r) => r.id);
   const { data: comments } = await supabase
     .from("business_post_comments")
-    .select("id, post_id, author_id, body, created_at, profiles(display_name)")
+    .select(COMMENT_SELECT)
     .in("post_id", postIds)
     .order("created_at", { ascending: true });
 
@@ -177,6 +238,7 @@ export async function getBusinessPosts(businessId: string): Promise<BusinessPost
     comments as CommentRow[] | null,
     new Map(postIds.map((id) => [id, ownerId])),
   );
+  const enrichedComments = await enrichCommentsWithLikes(recentMap, userId);
 
   const likeCounts = await getPostLikeCounts(postIds);
 
@@ -184,7 +246,7 @@ export async function getBusinessPosts(businessId: string): Promise<BusinessPost
     mapPostRow(row, {
       commentCount: countMap.get(row.id) ?? 0,
       likeCount: likeCounts.get(row.id) ?? 0,
-      recentComments: recentMap.get(row.id) ?? [],
+      recentComments: enrichedComments.get(row.id) ?? [],
     }),
   );
 }
@@ -415,7 +477,7 @@ export async function getFeedBusinessPosts(options: {
 
   const { data: comments } = await supabase
     .from("business_post_comments")
-    .select("id, post_id, author_id, body, created_at, profiles(display_name)")
+    .select(COMMENT_SELECT)
     .in("post_id", postIds)
     .order("created_at", { ascending: true });
 
@@ -423,8 +485,10 @@ export async function getFeedBusinessPosts(options: {
     comments as CommentRow[] | null,
     ownerByPostId,
   );
+  const enrichedComments = await enrichCommentsWithLikes(recentMap, options.userId ?? null);
 
   const likeCounts = await getPostLikeCounts(postIds);
+  const likedPosts = await getPostLikedByViewer(postIds, options.userId ?? null);
 
   const posts = filteredRows.slice(0, limit).map((row) => {
     const meta = businessMetaFromRow(row.businesses);
@@ -441,7 +505,8 @@ export async function getFeedBusinessPosts(options: {
       businessLikeCount,
       commentCount: countMap.get(row.id) ?? 0,
       likeCount: likeCounts.get(row.id) ?? 0,
-      recentComments: recentMap.get(row.id) ?? [],
+      likedByViewer: likedPosts.has(row.id),
+      recentComments: enrichedComments.get(row.id) ?? [],
       isFollowed,
     });
     return {

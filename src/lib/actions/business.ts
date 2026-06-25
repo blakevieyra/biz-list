@@ -20,6 +20,7 @@ import {
 } from "@/lib/validation/profile-fields";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { BusinessIntent, BusinessService, BusinessSocialLinks, PlanTier, BusinessPostType } from "@/lib/types";
+import type { ContentLikeTarget } from "@/lib/content-likes-types";
 import { mapProfile } from "@/lib/data/mappers";
 import { buildResumeSnapshot } from "@/lib/resume";
 
@@ -87,7 +88,7 @@ export async function toggleLikeBusiness(businessId: string) {
 
 export async function toggleContentLike(input: {
   businessId: string;
-  targetType: "post" | "service" | "photo";
+  targetType: ContentLikeTarget;
   targetId: string;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to like content." };
@@ -120,6 +121,7 @@ export async function toggleContentLike(input: {
     revalidatePath(`/listings/${input.businessId}`);
     revalidatePath("/listings");
     revalidatePath("/feed");
+    revalidatePath("/home");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update like." };
@@ -407,7 +409,11 @@ export async function createBusinessPost(input: {
   }
 }
 
-export async function commentOnBusinessPost(postId: string, body: string) {
+export async function commentOnBusinessPost(
+  postId: string,
+  body: string,
+  options?: { parentCommentId?: string; attachmentUrl?: string },
+) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to comment." };
 
   try {
@@ -425,16 +431,41 @@ export async function commentOnBusinessPost(postId: string, body: string) {
     const moderation = moderateUserContent(trimmed, "Comment");
     if (!moderation.ok) return { error: moderation.reason };
 
+    let parentId: string | null = options?.parentCommentId?.trim() || null;
+    if (parentId) {
+      const { data: parent } = await supabase
+        .from("business_post_comments")
+        .select("id, post_id")
+        .eq("id", parentId)
+        .maybeSingle();
+      if (!parent || parent.post_id !== postId) {
+        return { error: "Reply target not found." };
+      }
+    }
+
+    const rawAttachment = options?.attachmentUrl?.trim() || null;
+    let attachmentUrl: string | null = null;
+    if (rawAttachment) {
+      const { isAllowedCommentAttachmentUrl } = await import("@/lib/media/storage-url");
+      if (!isAllowedCommentAttachmentUrl(rawAttachment, user.id)) {
+        return { error: "Invalid attachment URL." };
+      }
+      attachmentUrl = rawAttachment;
+    }
+
     const { error } = await supabase.from("business_post_comments").insert({
       post_id: postId,
       author_id: user.id,
       body: trimmed,
+      parent_id: parentId,
+      attachment_url: attachmentUrl,
     });
 
     if (error) return { error: error.message };
 
     revalidatePath(`/listings/${post.business_id}`);
     revalidatePath("/feed");
+    revalidatePath("/home");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to comment." };

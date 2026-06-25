@@ -544,27 +544,53 @@ type CollaborationCommentRow = {
 export async function getCollaborationComments(
   collaborationId: string,
 ): Promise<CollaborationComment[]> {
+  const map = await getCollaborationCommentsByIds([collaborationId]);
+  return map.get(collaborationId) ?? [];
+}
+
+export async function getCollaborationCommentsByIds(
+  collaborationIds: string[],
+): Promise<Map<string, CollaborationComment[]>> {
+  const result = new Map<string, CollaborationComment[]>();
+  if (!collaborationIds.length) return result;
+
   const supabase = await getSupabase();
   if (!supabase) {
-    return SEED_COLLABORATION_COMMENTS.filter((c) => c.collaborationId === collaborationId);
+    for (const id of collaborationIds) {
+      result.set(
+        id,
+        SEED_COLLABORATION_COMMENTS.filter((c) => c.collaborationId === id),
+      );
+    }
+    return result;
   }
 
   const { data: rows } = await supabase
     .from("collaboration_comments")
     .select("*, profiles(display_name)")
-    .eq("collaboration_id", collaborationId)
+    .in("collaboration_id", collaborationIds)
     .order("created_at", { ascending: true });
 
-  return ((rows as CollaborationCommentRow[] | null) ?? []).map((row) => ({
-    id: row.id,
-    collaborationId: row.collaboration_id,
-    authorId: row.author_id,
-    authorName: Array.isArray(row.profiles)
-      ? row.profiles[0]?.display_name ?? "Unknown"
-      : row.profiles?.display_name ?? "Unknown",
-    body: row.body,
-    createdAt: row.created_at,
-  }));
+  for (const id of collaborationIds) {
+    result.set(id, []);
+  }
+
+  for (const row of (rows as CollaborationCommentRow[] | null) ?? []) {
+    const list = result.get(row.collaboration_id) ?? [];
+    list.push({
+      id: row.id,
+      collaborationId: row.collaboration_id,
+      authorId: row.author_id,
+      authorName: Array.isArray(row.profiles)
+        ? row.profiles[0]?.display_name ?? "Unknown"
+        : row.profiles?.display_name ?? "Unknown",
+      body: row.body,
+      createdAt: row.created_at,
+    });
+    result.set(row.collaboration_id, list);
+  }
+
+  return result;
 }
 
 export async function getNotifications(userId: string): Promise<Notification[]> {

@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { commentOnBusinessPost } from "@/lib/actions/business";
-import { BusinessPostComments } from "@/components/business-post-comments";
+import { useEffect, useRef, useState } from "react";
+import { BusinessPostCommentThread } from "@/components/business-post-comment-thread";
 import { ContentLikeButton } from "@/components/content-like-button";
 import { PostTypeBadge } from "@/components/post-media";
 import { isImageUrl } from "@/lib/media/post-media";
@@ -85,31 +83,8 @@ export function FeedPostCard({
   post: BusinessPost;
   currentUserId: string | null;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [comment, setComment] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const avatarSrc = post.businessMediaUrl;
   const postMediaSrc = post.mediaUrls.find(isImageUrl);
-
-  function handleComment(e: React.FormEvent) {
-    e.preventDefault();
-    if (!comment.trim()) return;
-    if (!currentUserId) {
-      router.push("/auth/login");
-      return;
-    }
-    startTransition(async () => {
-      setError(null);
-      const result = await commentOnBusinessPost(post.id, comment.trim());
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-      setComment("");
-      router.refresh();
-    });
-  }
 
   return (
     <Card className="overflow-hidden p-0">
@@ -179,7 +154,7 @@ export function FeedPostCard({
                   targetType="post"
                   targetId={post.id}
                   initialCount={post.likeCount}
-                  initialLiked={false}
+                  initialLiked={post.likedByViewer ?? false}
                   size="sm"
                 />
                 <span className="text-xs text-muted">
@@ -193,34 +168,16 @@ export function FeedPostCard({
           </div>
         </div>
 
-        <div className="flex min-h-[12rem] flex-col border-t border-border bg-slate-50/60 md:border-l md:border-t-0">
-          <div className="flex-1 overflow-y-auto px-3 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Comments</p>
-            {(post.recentComments?.length ?? 0) > 0 ? (
-              <div className="mt-2">
-                <BusinessPostComments comments={post.recentComments!} />
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-muted">No comments yet.</p>
-            )}
-          </div>
-
-          <form onSubmit={handleComment} className="flex gap-2 border-t border-border px-3 py-3">
-            <input
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment..."
-              className="min-w-0 flex-1 rounded-lg border border-border bg-white px-2.5 py-1.5 text-sm"
+        <div className="flex max-h-80 flex-col border-t border-border bg-slate-50/60 px-3 py-3 md:max-h-none md:border-l md:border-t-0">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Comments</p>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+            <BusinessPostCommentThread
+              postId={post.id}
+              businessId={post.businessId}
+              comments={post.recentComments ?? []}
+              currentUserId={currentUserId}
             />
-            <button
-              type="submit"
-              disabled={pending || !comment.trim()}
-              className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-            >
-              Reply
-            </button>
-          </form>
-          {error && <p className="px-3 pb-2 text-xs text-red-600">{error}</p>}
+          </div>
         </div>
       </div>
     </Card>

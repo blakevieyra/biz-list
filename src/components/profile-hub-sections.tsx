@@ -228,3 +228,39 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
     </div>
   );
 }
+
+/** Messages + alerts in one hub section (home dashboard). */
+export function MessagesHubSection({
+  conversations,
+  notifications,
+}: {
+  conversations: ConversationPreview[];
+  notifications: Notification[];
+}) {
+  const unreadMessages = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+  const unreadAlerts = notifications.filter((n) => !n.read).length;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold">Conversations</h3>
+          <Link href="/messages" className="text-xs text-accent hover:underline">
+            Open inbox{unreadMessages > 0 ? ` (${unreadMessages})` : ""}
+          </Link>
+        </div>
+        <MessagesPreview conversations={conversations} />
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold">Alerts</h3>
+          <Link href="/notifications" className="text-xs text-accent hover:underline">
+            All alerts{unreadAlerts > 0 ? ` (${unreadAlerts})` : ""}
+          </Link>
+        </div>
+        <AlertsPreview notifications={notifications} />
+      </div>
+    </div>
+  );
+}

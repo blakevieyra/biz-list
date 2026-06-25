@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateUserProfile } from "@/lib/actions/social";
 import { IndustryPicker } from "@/components/industry-picker";
+import { ImageUpload } from "@/components/image-upload";
 import { Card } from "@/components/ui";
 import type { FeedScope, ForumCategory, UserProfile } from "@/lib/types";
 import { FEED_SCOPE_LABELS } from "@/lib/feed/location-scope";
@@ -36,6 +37,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
     industryInterests: profile.industryInterests,
     forumInterests: profile.forumInterests,
     feedScope: profile.discoveryRadius ?? profile.feedScope,
+    avatarUrl: profile.avatarUrl ?? "",
   });
 
   function handleSave() {
@@ -63,6 +65,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
         forumInterests: form.forumInterests,
         discoveryRadius: form.feedScope,
         feedScope: form.feedScope,
+        avatarUrl: form.avatarUrl || null,
       });
 
       if (result.error) {
@@ -96,6 +99,12 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
             label="Display name"
             value={form.displayName}
             onChange={(v) => setForm({ ...form, displayName: v })}
+          />
+          <ImageUpload
+            label="Profile photo (optional)"
+            hint="Shown next to your name on comments and in the directory."
+            existingUrls={form.avatarUrl ? [form.avatarUrl] : []}
+            onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? "" })}
           />
           <label className="block text-sm">
             <span className="font-medium">Bio</span>

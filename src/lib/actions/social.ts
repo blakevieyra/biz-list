@@ -256,6 +256,7 @@ export async function updateUserProfile(input: {
   forumInterests?: ForumCategory[];
   feedScope?: FeedScope;
   discoveryRadius?: FeedScope;
+  avatarUrl?: string | null;
 }) {
   if (!isSupabaseConfigured()) {
     return { error: "Supabase is not configured." };
@@ -309,6 +310,7 @@ export async function updateUserProfile(input: {
             : discoveryRadius === "nation"
               ? "nationwide"
               : "local",
+        ...(input.avatarUrl !== undefined ? { avatar_url: input.avatarUrl || null } : {}),
       })
       .eq("id", user.id);
 
@@ -558,6 +560,8 @@ export async function createForumPost(input: {
     }
 
     revalidatePath("/forum");
+    revalidatePath("/feed");
+    revalidatePath("/partnerships");
     return { success: true, id: data.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to create post." };

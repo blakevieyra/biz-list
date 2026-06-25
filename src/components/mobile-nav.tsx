@@ -9,6 +9,7 @@ const publicLinks = [
   { href: "/home", label: "Home", authOnly: true },
   { href: "/listings", label: "Listings" },
   { href: "/partnerships", label: "Collaborations" },
+  { href: "/partnerships?tab=forum", label: "Forum" },
   { href: "/events", label: "Events" },
 ];
 

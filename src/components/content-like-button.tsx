@@ -32,8 +32,10 @@ export function ContentLikeButton({
     startTransition(async () => {
       const result = await toggleContentLike({ businessId, targetType, targetId });
       if (result.error) return;
-      setLiked((v) => !v);
-      setCount((c) => (liked ? Math.max(0, c - 1) : c + 1));
+      setLiked((wasLiked) => {
+        setCount((c) => (wasLiked ? Math.max(0, c - 1) : c + 1));
+        return !wasLiked;
+      });
       router.refresh();
     });
   }

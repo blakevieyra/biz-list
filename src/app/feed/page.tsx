@@ -156,7 +156,7 @@ export default async function FeedPage({
         </p>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="filter-scroll mb-4">
         {tabs.map((t) => (
           <Link
             key={t.id}
@@ -172,8 +172,8 @@ export default async function FeedPage({
         ))}
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        <span className="w-full text-xs font-semibold uppercase tracking-wide text-muted sm:w-auto sm:leading-8">
+      <div className="filter-scroll mb-3">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted sm:leading-8">
           Distance
         </span>
         {MILE_RADIUS_OPTIONS.map((m) => (
@@ -191,8 +191,8 @@ export default async function FeedPage({
         ))}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <span className="w-full text-xs font-semibold uppercase tracking-wide text-muted sm:w-auto sm:leading-8">
+      <div className="filter-scroll mb-4">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted sm:leading-8">
           Area
         </span>
         {AREA_SCOPE_OPTIONS.map((s) => (

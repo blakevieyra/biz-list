@@ -85,7 +85,7 @@ export default async function BusinessDetailPage({
 
     getBusinessConnectionState(business.id, userId),
 
-    getBusinessPosts(business.id),
+    getBusinessPosts(business.id, userId),
 
     getBusinessReviews(business.id),
 

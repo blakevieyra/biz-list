@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { startMessageWithBusinessOwner, toggleFollowBusiness } from "@/lib/actions/social";
+import { ServiceListing } from "@/components/service-listing";
 import { displayCategoryLabel } from "@/lib/industries";
 import type { BusinessPost, BusinessProfile } from "@/lib/types";
 import { Card, formatPostDateTime, StarRating } from "@/components/ui";
@@ -29,7 +30,7 @@ export function BusinessListingCard({
   const cover = business.mediaUrls[0];
   const topServices = business.services.filter((s) => s.name.trim()).slice(0, 2);
   const isOwner = currentUserId === business.ownerId;
-  const posts = latestPosts.slice(0, 3);
+  const latestPost = latestPosts[0];
 
   function handleFollow(e: React.MouseEvent) {
     e.preventDefault();
@@ -113,42 +114,53 @@ export function BusinessListingCard({
         {topServices.length > 0 && (
           <div className="mt-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Offerings</p>
-            <ul className="mt-1 space-y-0.5">
+            <ul className="mt-1 divide-y divide-border">
               {topServices.map((service) => (
-                <li key={service.name} className="text-xs leading-snug">
-                  {service.serviceType && (
-                    <span className="text-muted">{service.serviceType} · </span>
+                <li key={service.name} className="flex items-center gap-2 py-1.5 first:pt-0 last:pb-0">
+                  {service.imageUrl ? (
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-slate-50 text-xs font-bold text-accent/40">
+                      {service.name.charAt(0)}
+                    </div>
                   )}
-                  <span className="font-medium">{service.name}</span>
-                  {service.price ? <span className="text-muted"> · {service.price}</span> : null}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
+                    {service.price && (
+                      <p className="text-[11px] font-medium text-accent">{service.price}</p>
+                    )}
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ServiceListing
+                      service={service}
+                      businessId={business.id}
+                      businessWebsite={business.website}
+                      currentUserId={currentUserId}
+                      isOwner={isOwner}
+                      compact
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        <div className="mt-2 flex min-h-[132px] flex-1 flex-col">
+        <div className="mt-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest</p>
-          {posts.length > 0 ? (
-            <ul className="mt-1 flex flex-1 flex-col gap-1.5">
-              {posts.map((post) => (
-                <li key={post.id} className="flex-1">
-                  <Link
-                    href={`/listings/${business.id}#post-${post.id}`}
-                    className="block h-full rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
-                  >
-                    <p className="line-clamp-1 text-xs font-medium leading-snug">{post.title}</p>
-                    <p className="mt-0.5 text-[11px] text-muted">
-                      {formatPostDateTime(post.createdAt)}
-                    </p>
-                    <p className="mt-0.5 text-[11px] font-medium text-muted">
-                      {post.likeCount} {post.likeCount === 1 ? "like" : "likes"} · {post.commentCount}{" "}
-                      {post.commentCount === 1 ? "comment" : "comments"}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          {latestPost ? (
+            <Link
+              href={`/listings/${business.id}#post-${latestPost.id}`}
+              className="mt-1 block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
+            >
+              <p className="line-clamp-2 text-xs font-medium leading-snug">{latestPost.title}</p>
+              <p className="mt-0.5 text-[11px] text-muted">
+                {formatPostDateTime(latestPost.createdAt)}
+              </p>
+            </Link>
           ) : (
             <p className="mt-1 text-xs text-muted">No posts yet.</p>
           )}

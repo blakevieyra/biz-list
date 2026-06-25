@@ -42,6 +42,7 @@ type ProfileRow = {
   job_alert_opt_in?: boolean;
   follow_digest_frequency?: "none" | "daily" | "weekly" | "monthly";
   feed_scope?: "local" | "state" | "nationwide";
+  avatar_url?: string | null;
   created_at: string;
 };
 
@@ -148,6 +149,7 @@ export function mapProfile(row: ProfileRow): UserProfile {
     discoveryRadius: mapDiscoveryRadius(row),
     feedScope: mapDiscoveryRadius(row),
     createdAt: row.created_at,
+    avatarUrl: row.avatar_url ?? undefined,
   };
 }
 

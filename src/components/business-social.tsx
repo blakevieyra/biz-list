@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { commentOnBusinessPost, submitBusinessReview } from "@/lib/actions/business";
+import { submitBusinessReview } from "@/lib/actions/business";
 import { ContentLikeButton } from "@/components/content-like-button";
-import { BusinessPostComments } from "@/components/business-post-comments";
+import { BusinessPostCommentThread } from "@/components/business-post-comment-thread";
 import { PostMediaGallery, PostTypeBadge } from "@/components/post-media";
 import {
   contentLikeKey,
@@ -135,28 +135,9 @@ export function BusinessActivitySection({
   contentLikes?: ContentLikeState;
   maxPosts?: number;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [commentBodies, setCommentBodies] = useState<Record<string, string>>({});
   const visiblePosts = maxPosts ? posts.slice(0, maxPosts) : posts;
   const hiddenCount = maxPosts ? Math.max(0, posts.length - maxPosts) : 0;
   const compact = maxPosts === 1;
-
-  function handleComment(postId: string) {
-    if (!currentUserId) {
-      router.push("/auth/login");
-      return;
-    }
-
-    const body = commentBodies[postId]?.trim();
-    if (!body) return;
-
-    startTransition(async () => {
-      await commentOnBusinessPost(postId, body);
-      setCommentBodies((prev) => ({ ...prev, [postId]: "" }));
-      router.refresh();
-    });
-  }
 
   return (
     <Card id="activity">
@@ -214,36 +195,21 @@ export function BusinessActivitySection({
                 </p>
               </div>
 
-              {!compact && (post.recentComments?.length ?? 0) > 0 && (
+              {!compact && (
                 <div className="mt-3 rounded-lg border border-border bg-slate-50/70 p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Comments
                   </p>
                   <div className="mt-2">
-                    <BusinessPostComments comments={post.recentComments!} />
+                    <BusinessPostCommentThread
+                      postId={post.id}
+                      businessId={businessId}
+                      comments={post.recentComments ?? []}
+                      currentUserId={currentUserId}
+                      placeholder="Join the thread..."
+                      submitLabel="Post"
+                    />
                   </div>
-                </div>
-              )}
-
-              {!compact && (
-                <div className="mt-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={commentBodies[post.id] ?? ""}
-                    onChange={(e) =>
-                      setCommentBodies((prev) => ({ ...prev, [post.id]: e.target.value }))
-                    }
-                    placeholder="Join the thread..."
-                    className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => handleComment(post.id)}
-                    className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-                  >
-                    Reply
-                  </button>
                 </div>
               )}
             </li>
