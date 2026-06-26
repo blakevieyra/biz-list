@@ -11,22 +11,15 @@ function displayIntents(business: BusinessProfile): BusinessIntent[] {
 }
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
-  if (count === 0) {
-    return <p className="text-xs text-muted">No reviews yet</p>;
-  }
+  if (count === 0) return null;
 
   const fullStars = Math.round(rating);
   const stars = "★".repeat(fullStars) + "☆".repeat(Math.max(0, 5 - fullStars));
 
   return (
-    <p className="text-sm">
-      <span className="font-semibold text-amber-700">{rating.toFixed(1)}</span>
-      <span className="ml-1 text-amber-500" aria-hidden="true">
-        {stars}
-      </span>
-      <span className="ml-1.5 text-xs text-muted">
-        ({count} review{count === 1 ? "" : "s"})
-      </span>
+    <p className="shrink-0 text-xs">
+      <span className="text-amber-500" aria-hidden="true">{stars}</span>
+      <span className="ml-1 text-muted">({count})</span>
     </p>
   );
 }
@@ -54,7 +47,10 @@ export function BusinessCard({ business }: { business: BusinessProfile }) {
             <p className="text-xs font-medium uppercase tracking-wide text-muted">
               {business.category}
             </p>
-            <h3 className="mt-1 text-lg font-semibold leading-snug">{business.name}</h3>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <h3 className="text-lg font-semibold leading-snug">{business.name}</h3>
+              <StarRating rating={business.ratingAvg} count={business.ratingCount} />
+            </div>
             {business.tagline && (
               <p className="mt-1 line-clamp-1 text-sm text-muted">{business.tagline}</p>
             )}
@@ -64,9 +60,7 @@ export function BusinessCard({ business }: { business: BusinessProfile }) {
             {business.description}
           </p>
 
-          <div className="mt-auto space-y-3 pt-4">
-            <StarRating rating={business.ratingAvg} count={business.ratingCount} />
-
+          <div className="mt-auto pt-4">
             {intents.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {intents.slice(0, 3).map((intent) => (
