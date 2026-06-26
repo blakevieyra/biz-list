@@ -8,19 +8,28 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+function resolveMetadataBase(): URL {
+  const raw = process.env.NEXT_PUBLIC_APP_URL ?? "https://bizlist.app";
+  try {
+    return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+  } catch {
+    return new URL("https://bizlist.app");
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://BizList.app"),
+  metadataBase: resolveMetadataBase(),
   title: "BizList — Local Listings, Feed & Partnerships",
   description:
     "Discover local businesses on BizList. Browse listings, follow the feed for jobs and deals, and create B2B partnerships.",
   icons: {
-    icon: "/BizList-logo.png",
-    apple: "/BizList-logo.png",
+    icon: "/bizlist-logo.png",
+    apple: "/bizlist-logo.png",
   },
   openGraph: {
     title: "BizList",
     description: "Listings. Feed. Partnerships.",
-    images: ["/BizList-logo.png"],
+    images: ["/bizlist-logo.png"],
   },
 };
 
