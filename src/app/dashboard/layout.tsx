@@ -8,8 +8,6 @@ import { canAccess, isBusinessPlan, PLAN_LABELS, type PlanFeature } from "@/lib/
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
-  { href: "/messages", label: "Messages" },
-  { href: "/dashboard/posts", label: "Posts & marketing" },
   { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/leads", label: "Leads", feature: "localLeads" as const },
