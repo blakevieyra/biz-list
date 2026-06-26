@@ -28,14 +28,23 @@ export async function sendAppEmail(input: SendEmailInput): Promise<void> {
 
   try {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+    console.info("[BizList email] sending to", input.to, "from", getEmailFrom(), "subject:", input.subject);
     await sgMail.send({
       from: getEmailFrom(),
       to: input.to,
       subject: input.subject,
       html,
     });
+    console.info("[BizList email] sent OK");
   } catch (err: unknown) {
-    console.error("[BizList email send error]", err instanceof Error ? err.message : err);
+    const sgErr = err as { message?: string; response?: { body?: unknown; status?: number } };
+    console.error("[BizList email send error]", {
+      message: sgErr?.message,
+      status: sgErr?.response?.status,
+      body: JSON.stringify(sgErr?.response?.body),
+      from: getEmailFrom(),
+      to: input.to,
+    });
   }
 }
 
