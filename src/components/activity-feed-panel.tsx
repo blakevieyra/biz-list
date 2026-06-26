@@ -125,7 +125,7 @@ export function ActivityFeedPanel({
         ))}
       </div>
 
-      <div className="filter-scroll mb-3">
+      <div className="filter-scroll mb-4">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted sm:leading-8">
           Distance
         </span>
@@ -142,12 +142,7 @@ export function ActivityFeedPanel({
             {MILE_RADIUS_LABELS[m]}
           </Link>
         ))}
-      </div>
-
-      <div className="filter-scroll mb-4">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted sm:leading-8">
-          Area
-        </span>
+        <span className="mx-1 text-border">|</span>
         {AREA_SCOPE_OPTIONS.map((s) => (
           <Link
             key={s}
