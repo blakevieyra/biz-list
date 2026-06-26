@@ -13,10 +13,14 @@ import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
 const forumCategories: ForumCategory[] = [
   "general",
-  "legal_lessons",
+  "lessons_learned",
   "local",
   "hiring",
   "partnerships",
+  "marketing",
+  "tech_tools",
+  "business_tips",
+  "events",
 ];
 
 export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {

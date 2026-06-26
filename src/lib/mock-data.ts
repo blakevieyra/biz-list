@@ -506,7 +506,7 @@ export const SEED_POSTS: ForumPost[] = [
     id: "post-1",
     authorId: "user-2",
     authorName: "James Okonkwo",
-    category: "legal_lessons",
+    category: "lessons_learned",
     title: "Lesson learned: always get vendor agreements in writing",
     body: "We helped a café owner recover deposits after a pop-up vendor dispute. Key takeaway: even informal partnerships need a one-page agreement covering dates, fees, and cancellation.",
     commentIds: ["comment-1", "comment-2"],

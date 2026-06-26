@@ -49,10 +49,14 @@ export type BusinessIntent =
 
 export type ForumCategory =
   | "general"
-  | "legal_lessons"
+  | "lessons_learned"
   | "local"
   | "hiring"
-  | "partnerships";
+  | "partnerships"
+  | "marketing"
+  | "tech_tools"
+  | "business_tips"
+  | "events";
 
 export type FollowDigestFrequency = "none" | "daily" | "weekly" | "monthly";
 
@@ -391,10 +395,14 @@ export interface LocalLead {
 
 export const FORUM_CATEGORY_LABELS: Record<ForumCategory, string> = {
   general: "General",
-  legal_lessons: "Legal Lessons Learned",
+  lessons_learned: "Lessons Learned",
   local: "Local Community",
   hiring: "Hiring & Talent",
   partnerships: "Partnerships & Joint Ventures",
+  marketing: "Marketing",
+  tech_tools: "Tech & Tools",
+  business_tips: "Business Tips",
+  events: "Events & Meetups",
 };
 
 export const INTENT_LABELS: Record<BusinessIntent, string> = {

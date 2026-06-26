@@ -11,10 +11,14 @@ const intentStyles: Record<BusinessIntent, string> = {
 
 const categoryStyles: Record<ForumCategory, string> = {
   general: "bg-slate-100 text-slate-700",
-  legal_lessons: "bg-rose-100 text-rose-800",
+  lessons_learned: "bg-rose-100 text-rose-800",
   local: "bg-teal-100 text-teal-800",
   hiring: "bg-violet-100 text-violet-800",
   partnerships: "bg-emerald-100 text-emerald-800",
+  marketing: "bg-orange-100 text-orange-800",
+  tech_tools: "bg-blue-100 text-blue-800",
+  business_tips: "bg-amber-100 text-amber-800",
+  events: "bg-purple-100 text-purple-800",
 };
 
 export function IntentBadge({ intent }: { intent: BusinessIntent }) {
