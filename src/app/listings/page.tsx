@@ -10,6 +10,7 @@ import {
   discoveryFilterHrefValue,
   resolveDiscoveryFilter,
 } from "@/lib/feed/location-scope";
+import { INDUSTRY_OPTIONS, isIndustryOption } from "@/lib/industries";
 
 export default async function ListingsPage({
   searchParams,
@@ -19,6 +20,7 @@ export default async function ListingsPage({
     near?: string;
     scope?: string;
     miles?: string;
+    category?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -29,6 +31,7 @@ export default async function ListingsPage({
     params.near ?? params.miles ?? params.scope,
     profile?.discoveryRadius,
   );
+  const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
 
   const viewer = profile
     ? {
@@ -45,6 +48,7 @@ export default async function ListingsPage({
 
   const businesses = await getBusinesses({
     query: query || undefined,
+    category: categoryFilter,
     discoveryRadius: discoveryFilter,
     viewer,
   });
@@ -55,6 +59,7 @@ export default async function ListingsPage({
     const merged = {
       q: query || undefined,
       near: discoveryFilterHrefValue(discoveryFilter),
+      category: categoryFilter,
       ...next,
     };
     const search = new URLSearchParams();
@@ -81,7 +86,8 @@ export default async function ListingsPage({
         </p>
       )}
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Near filter */}
+      <section className="mb-4">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
             Near
@@ -100,12 +106,45 @@ export default async function ListingsPage({
             </Link>
           ))}
         </div>
-      </div>
+      </section>
 
-      <form className="mb-8 flex flex-col gap-3 sm:flex-row">
+      {/* Industry filter */}
+      <section className="mb-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
+            Industry
+          </span>
+          <Link
+            href={buildHref({ category: undefined })}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
+              !categoryFilter
+                ? "bg-accent text-white"
+                : "border border-border bg-card text-muted hover:text-foreground"
+            }`}
+          >
+            All industries
+          </Link>
+          {INDUSTRY_OPTIONS.map((category) => (
+            <Link
+              key={category}
+              href={buildHref({ category })}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
+                categoryFilter === category
+                  ? "bg-accent text-white"
+                  : "border border-border bg-card text-muted hover:text-foreground"
+              }`}
+            >
+              {category}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <form action="/listings" method="get" className="mb-8 flex flex-col gap-3 sm:flex-row">
         {discoveryFilterHrefValue(discoveryFilter) && (
           <input type="hidden" name="near" value={discoveryFilterHrefValue(discoveryFilter)} />
         )}
+        {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
         <input
           name="q"
           defaultValue={params.q ?? ""}
