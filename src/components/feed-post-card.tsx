@@ -94,125 +94,116 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 md:h-56">
-        <div className="flex min-h-[10rem] min-w-0 flex-col border-b border-border md:h-full md:min-h-0 md:overflow-hidden md:border-b-0 md:border-r">
-          <div className="grid h-full min-h-0 flex-1 grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7.5rem_minmax(0,1fr)]">
-            <Link
-              href={`/listings/${post.businessId}`}
-              className="relative block h-full min-h-[10rem] overflow-hidden border-r border-border bg-slate-100 md:min-h-0"
-            >
-              <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
-            </Link>
+      {/*
+        2/3 business content · 1/3 comments side-by-side.
+        The left column drives card height — no constraints, grows with content.
+        The right column stretches via CSS grid align-stretch and scrolls internally.
+      */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]">
 
-            <div className="flex min-h-0 flex-1 flex-col p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <PostTypeBadge type={post.postType} />
-                    {post.feedBadge && (
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
-                        {badgeLabels[post.feedBadge]}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <Link
-                      href={`/listings/${post.businessId}`}
-                      className="truncate text-base font-bold text-accent hover:underline"
-                    >
-                      {post.businessName ?? "Local business"}
-                    </Link>
-                    {(post.businessRatingCount ?? 0) > 0 && (
-                      <StarRating
-                        rating={post.businessRatingAvg ?? 0}
-                        count={post.businessRatingCount}
-                      />
-                    )}
-                  </div>
-                  {post.businessCategory && (
-                    <p className="truncate text-sm font-medium text-muted">{post.businessCategory}</p>
+        {/* ── Left: business content (2/3) ── */}
+        <div className="flex min-w-0 border-b border-border lg:border-b-0 lg:border-r">
+          {/* Avatar strip — self-stretch fills whatever height the content grows to */}
+          <Link
+            href={`/listings/${post.businessId}`}
+            className="relative block w-24 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-32"
+          >
+            <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
+          </Link>
+
+          {/* Post content — no height cap, expands freely */}
+          <div className="flex min-w-0 flex-1 flex-col p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <PostTypeBadge type={post.postType} />
+                  {post.feedBadge && (
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
+                      {badgeLabels[post.feedBadge]}
+                    </span>
                   )}
                 </div>
-                <span className="shrink-0 text-right text-xs leading-snug text-muted">
-                  {formatPostDateTime(post.createdAt)}
-                </span>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <Link
+                    href={`/listings/${post.businessId}`}
+                    className="text-base font-bold text-accent hover:underline"
+                  >
+                    {post.businessName ?? "Local business"}
+                  </Link>
+                  {(post.businessRatingCount ?? 0) > 0 && (
+                    <StarRating
+                      rating={post.businessRatingAvg ?? 0}
+                      count={post.businessRatingCount}
+                    />
+                  )}
+                </div>
+                {post.businessCategory && (
+                  <p className="text-sm font-medium text-muted">{post.businessCategory}</p>
+                )}
               </div>
+              <span className="shrink-0 text-right text-xs leading-snug text-muted">
+                {formatPostDateTime(post.createdAt)}
+              </span>
+            </div>
 
-              <div className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
-                <p className="mt-1 line-clamp-4 text-sm leading-relaxed text-muted sm:line-clamp-5">
-                  {post.body}
-                </p>
+            <h3 className="mt-3 text-base font-semibold leading-snug">{post.title}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">{post.body}</p>
 
-                {postMediaSrc && postMediaSrc !== avatarSrc && (
-                  <div className="mt-3 overflow-hidden rounded-lg border border-border bg-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={postMediaSrc}
-                      alt=""
-                      loading="lazy"
-                      className="max-h-36 w-full object-cover"
+            {postMediaSrc && postMediaSrc !== avatarSrc && (
+              <div className="mt-3 overflow-hidden rounded-lg border border-border bg-slate-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={postMediaSrc} alt="" loading="lazy" className="w-full object-cover" />
+              </div>
+            )}
+
+            {!postMediaSrc && postVideoSrc && (
+              <div className="mt-3 overflow-hidden rounded-lg border border-border bg-black">
+                {youtubeId ? (
+                  <div className="aspect-video">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0`}
+                      title="Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full"
                     />
                   </div>
-                )}
-
-                {!postMediaSrc && postVideoSrc && (
-                  <div className="mt-3 overflow-hidden rounded-lg border border-border bg-black">
-                    {youtubeId ? (
-                      <div className="relative aspect-video">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60">
-                            <svg viewBox="0 0 24 24" fill="white" className="h-5 w-5 translate-x-0.5">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    ) : isDirectVideo && postVideoSrc ? (
-                      <video
-                        src={postVideoSrc}
-                        className="max-h-36 w-full object-cover"
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : null}
-                  </div>
-                )}
+                ) : isDirectVideo ? (
+                  <video
+                    src={postVideoSrc}
+                    controls
+                    className="w-full"
+                    preload="metadata"
+                  />
+                ) : null}
               </div>
+            )}
 
-              <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
-                <ContentLikeButton
-                  businessId={post.businessId}
-                  targetType="post"
-                  targetId={post.id}
-                  initialCount={post.likeCount}
-                  initialLiked={post.likedByViewer ?? false}
-                  size="sm"
-                />
-                <span className="text-xs text-muted">
-                  {post.commentCount} {post.commentCount === 1 ? "comment" : "comments"}
-                </span>
-                {(post.businessLikeCount ?? 0) > 0 && (
-                  <span className="text-xs text-muted">{post.businessLikeCount} business likes</span>
-                )}
-              </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
+              <ContentLikeButton
+                businessId={post.businessId}
+                targetType="post"
+                targetId={post.id}
+                initialCount={post.likeCount}
+                initialLiked={post.likedByViewer ?? false}
+                size="sm"
+              />
+              <span className="text-xs text-muted">
+                {post.commentCount} {post.commentCount === 1 ? "comment" : "comments"}
+              </span>
+              {(post.businessLikeCount ?? 0) > 0 && (
+                <span className="text-xs text-muted">{post.businessLikeCount} business likes</span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex h-44 max-h-44 flex-col overflow-hidden bg-slate-50/60 md:h-full md:max-h-none">
+        {/* ── Right: comments (1/3) — height set by grid row, scrolls internally ── */}
+        <div className="flex flex-col bg-slate-50/60">
           <p className="shrink-0 border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
             Comments
           </p>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-3">
+          <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
             <BusinessPostCommentThread
               postId={post.id}
               businessId={post.businessId}
@@ -221,6 +212,7 @@ export function FeedPostCard({
             />
           </div>
         </div>
+
       </div>
     </Card>
   );

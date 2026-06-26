@@ -46,8 +46,8 @@ const DEMO_IMAGES = {
   flyerFitness: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
   flyerPrint: "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?w=800&q=80",
   flyerMarket: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
-  ytBakeryTour: "https://www.youtube.com/watch?v=nwXBh8XNZGU",
-  ytPrintProcess: "https://www.youtube.com/watch?v=DU7HOrAKhhA",
+  ytBakeryTour: "https://www.youtube.com/watch?v=YE7VzlLtp-4",
+  ytPrintProcess: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
 };
 
 loadEnvFile(path.join(root, ".env.local"));

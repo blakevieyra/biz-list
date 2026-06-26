@@ -57,7 +57,10 @@ export function isVideoUrl(url: string): boolean {
 }
 
 export function isImageUrl(url: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/i.test(url) || url.includes("supabase.co/storage");
+  if (/\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/i.test(url)) return true;
+  if (url.includes("supabase.co/storage")) return true;
+  if (url.includes("images.unsplash.com")) return true;
+  return false;
 }
 
 export function parsePostType(value: string | undefined): BusinessPostType {

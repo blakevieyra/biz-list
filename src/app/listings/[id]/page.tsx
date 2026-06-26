@@ -349,30 +349,6 @@ export default async function BusinessDetailPage({
 
             )}
 
-            {business.isHiring && !isOwner && (
-
-              <JobApplySection
-
-                businessId={business.id}
-
-                businessName={business.name}
-
-                business={business}
-
-                isHiring={business.isHiring}
-
-                currentUserId={userId}
-
-                isOwner={isOwner}
-
-                resumePreview={resumePreview}
-
-                existingApplication={existingApplication}
-
-              />
-
-            )}
-
           </div>
 
 
@@ -576,6 +552,30 @@ export default async function BusinessDetailPage({
               </div>
 
             </Card>
+
+            {business.isHiring && !isOwner && (
+
+              <JobApplySection
+
+                businessId={business.id}
+
+                businessName={business.name}
+
+                business={business}
+
+                isHiring={business.isHiring}
+
+                currentUserId={userId}
+
+                isOwner={isOwner}
+
+                resumePreview={resumePreview}
+
+                existingApplication={existingApplication}
+
+              />
+
+            )}
 
           </div>
 

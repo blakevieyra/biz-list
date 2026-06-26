@@ -85,6 +85,7 @@ export async function saveProfile(input: {
   skills?: string[];
   isSeekingWork?: boolean;
   discoveryRadius?: DiscoveryRadius;
+  avatarUrl?: string;
   businessName?: string;
   tagline?: string;
   description?: string;
@@ -168,6 +169,7 @@ export async function saveProfile(input: {
             : discoveryRadius === "nation"
               ? "nationwide"
               : "local",
+        ...(input.avatarUrl ? { avatar_url: input.avatarUrl } : {}),
       })
       .eq("id", user.id);
 

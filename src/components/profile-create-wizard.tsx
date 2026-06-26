@@ -38,6 +38,7 @@ const CUSTOMER_STEPS: { id: StepId; label: string }[] = [
 
 type FormState = {
   displayName: string;
+  avatarUrl: string;
   role: UserRole;
   bio: string;
   city: string;
@@ -83,6 +84,7 @@ export function ProfileCreateWizard({
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState>({
     displayName: initialDisplayName,
+    avatarUrl: "",
     role: "business",
     bio: "",
     city: "",
@@ -207,6 +209,7 @@ export function ProfileCreateWizard({
       const services = form.services.filter((s) => s.name.trim());
       const result = await saveProfile({
         displayName: form.displayName.trim(),
+        avatarUrl: form.avatarUrl || undefined,
         role: form.role,
         bio: form.bio.trim(),
         city: form.city.trim(),
@@ -347,6 +350,12 @@ export function ProfileCreateWizard({
         {step === "about" && (
           <StepBlock title="About you">
             <Field label="Display name" value={form.displayName} onChange={(v) => setForm({ ...form, displayName: v })} />
+            <ImageUpload
+              label="Profile photo (optional)"
+              hint="Shown next to your name in comments, the directory, and on your profile."
+              existingUrls={form.avatarUrl ? [form.avatarUrl] : []}
+              onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? "" })}
+            />
             <TextArea label="Bio" value={form.bio} onChange={(v) => setForm({ ...form, bio: v })} placeholder="What should locals know about you?" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />

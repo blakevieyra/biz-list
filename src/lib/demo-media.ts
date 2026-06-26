@@ -15,8 +15,8 @@ export const DEMO_IMAGES = {
   flyerBakery: "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=800&q=80",
   flyerPrint: "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?w=800&q=80",
   flyerMarket: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
-  // YouTube demo video IDs (public business promo videos)
-  ytBakeryTour: "https://www.youtube.com/watch?v=nwXBh8XNZGU",
-  ytFitnessPromo: "https://www.youtube.com/watch?v=6v2L2UGZJAM",
-  ytPrintProcess: "https://www.youtube.com/watch?v=DU7HOrAKhhA",
+  // YouTube demo video IDs — using well-known public videos guaranteed to be embeddable
+  ytBakeryTour: "https://www.youtube.com/watch?v=YE7VzlLtp-4",
+  ytFitnessPromo: "https://www.youtube.com/watch?v=2vjPBrBU-TM",
+  ytPrintProcess: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
 } as const;

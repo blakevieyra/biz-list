@@ -59,15 +59,20 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b border-border bg-gradient-to-b from-blue-50 to-background lg:grid lg:grid-cols-2">
-        <div className="flex items-center px-4 py-12 sm:px-6 sm:py-20 lg:justify-end lg:pr-12 xl:pr-16">
-          <div className="w-full max-w-xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Your Business. The latest. Listings. Collaboration.
+      <section className="border-b border-border lg:grid lg:grid-cols-2">
+        <div className="flex items-center bg-gradient-to-br from-blue-50 via-background to-background px-4 py-14 sm:px-6 sm:py-24 lg:justify-end lg:pr-12 xl:pr-20">
+          <div className="w-full max-w-lg">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">
+              BizList
+            </p>
+            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              Your Business.<br />The Customer.
             </h1>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
-              BizList helps local businesses get discovered, share updates and deals, hire talent,
-              and build B2B partnerships — all from your business location outward.
+            <p className="mt-4 text-xl font-medium text-muted sm:text-2xl">
+              Space for Listings and Collaboration.
+            </p>
+            <p className="mt-4 text-base leading-relaxed text-muted sm:text-lg">
+              Get discovered, share updates and deals, hire talent, and build B2B partnerships — all from your business location outward.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
@@ -85,15 +90,16 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-        <div className="relative min-h-[280px] w-full sm:min-h-[360px] lg:min-h-[520px]">
+        <div className="relative min-h-[320px] w-full sm:min-h-[420px] lg:min-h-0 lg:self-stretch">
           <Image
             src="/hero-BizList.jpg"
-            alt="Local restaurant interior"
+            alt="Local business interior"
             fill
             priority
             className="object-cover"
             sizes="(max-width: 1024px) 100vw, 50vw"
           />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/20 to-transparent lg:from-transparent" />
           <p className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1 text-xs text-white">
             Photo: Unsplash
           </p>
@@ -164,12 +170,12 @@ export default async function HomePage() {
 
           <div>
             <div className="flex items-end justify-between gap-4">
-              <h2 className="text-xl font-bold sm:text-2xl">Latest from the feed</h2>
+              <h2 className="text-xl font-bold sm:text-2xl">Community discussions</h2>
               <Link
-                href="/feed?tab=discussions"
+                href="/forum"
                 className="shrink-0 text-sm font-medium text-accent hover:underline"
               >
-                View feed
+                View forum
               </Link>
             </div>
             <div className="mt-6 space-y-4">

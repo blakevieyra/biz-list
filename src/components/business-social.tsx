@@ -51,9 +51,33 @@ export function BusinessReviewsSection({
     });
   }
 
+  const totalReviews = reviews.length;
+  const avgRating =
+    totalReviews > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+      : null;
+  const roundedAvg = avgRating !== null ? Math.round(avgRating * 10) / 10 : null;
+
   return (
     <Card id="reviews" className="scroll-mt-24">
-      <h2 className="font-semibold">Reviews</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="font-semibold">Reviews</h2>
+        {roundedAvg !== null && (
+          <div className="flex items-center gap-2">
+            <span className="text-amber-500 text-base leading-none" aria-hidden>
+              {"★".repeat(Math.round(roundedAvg))}{"☆".repeat(Math.max(0, 5 - Math.round(roundedAvg)))}
+            </span>
+            <span className="text-sm font-bold">{roundedAvg}</span>
+            <span className="text-sm text-muted">/ 5</span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-muted">
+              {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
+            </span>
+          </div>
+        )}
+        {totalReviews === 0 && (
+          <span className="text-sm text-muted">No reviews yet</span>
+        )}
+      </div>
 
       <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:items-start">
         <div className="min-w-0">

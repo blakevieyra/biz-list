@@ -48,13 +48,15 @@ export function PostMediaGallery({ urls }: { urls: string[] }) {
       {videos.map((url) => {
         const embed = youtubeEmbedUrl(url);
         if (embed) {
+          const autoEmbed = embed.includes("?")
+            ? `${embed}&autoplay=1&mute=1`
+            : `${embed}?autoplay=1&mute=1`;
           return (
             <div key={url} className="overflow-hidden rounded-xl border border-border">
               <iframe
                 title="Business video"
-                src={embed}
+                src={autoEmbed}
                 className="aspect-video w-full border-0"
-                loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -65,7 +67,7 @@ export function PostMediaGallery({ urls }: { urls: string[] }) {
         if (isDirectVideoUrl(url)) {
           return (
             <div key={url} className="overflow-hidden rounded-xl border border-border bg-black">
-              <video src={url} controls className="aspect-video w-full" playsInline preload="metadata" />
+              <video src={url} controls autoPlay muted playsInline className="aspect-video w-full" preload="auto" />
             </div>
           );
         }

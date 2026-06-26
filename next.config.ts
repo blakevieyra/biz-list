@@ -30,7 +30,6 @@ const nextConfig: NextConfig = {
       { source: "/directory", destination: "/listings", permanent: true },
       { source: "/directory/:path*", destination: "/listings/:path*", permanent: true },
       { source: "/community", destination: "/feed", permanent: true },
-      { source: "/forum", destination: "/feed?tab=discussions", permanent: true },
       { source: "/collaborate", destination: "/partnerships", permanent: true },
       { source: "/collaborate/:path*", destination: "/partnerships/:path*", permanent: true },
       { source: "/groups", destination: "/partnerships?tab=groups", permanent: true },

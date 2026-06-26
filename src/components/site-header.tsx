@@ -41,6 +41,7 @@ export async function SiteHeader() {
               <span>Feed</span>
               <span>Collaborations</span>
               <span>Events</span>
+              <span>Forum</span>
             </nav>
           }
         >
