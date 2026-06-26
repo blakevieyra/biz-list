@@ -98,7 +98,7 @@ export default async function CollaboratePage({
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((idea) => (
-            <CollaborationGridCard key={idea.id} idea={idea} />
+            <CollaborationGridCard key={idea.id} idea={idea} currentUserId={userId} />
           ))}
         </div>
       )}

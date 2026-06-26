@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
 import type { CollaborationIdea } from "@/lib/types";
 import { formatPostDateTime } from "@/components/ui";
 
@@ -20,14 +23,18 @@ const viewLabel: Record<string, string> = {
   b2b_sale: "View sale →",
 };
 
-export function CollaborationGridCard({ idea }: { idea: CollaborationIdea }) {
+export function CollaborationGridCard({
+  idea,
+  currentUserId,
+}: {
+  idea: CollaborationIdea;
+  currentUserId?: string | null;
+}) {
   const interestCount = idea.interestedCount ?? 0;
+  const isAuthor = currentUserId != null && currentUserId === idea.authorId;
 
   return (
-    <Link
-      href={`/partnerships/${idea.id}`}
-      className="group flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-accent/40 hover:shadow-md"
-    >
+    <div className="group flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-accent/40 hover:shadow-md">
       {/* Author row */}
       <div className="flex items-center gap-2.5">
         {idea.authorAvatarUrl ? (
@@ -56,9 +63,11 @@ export function CollaborationGridCard({ idea }: { idea: CollaborationIdea }) {
       </div>
 
       {/* Title */}
-      <h3 className="mt-3 text-base font-semibold leading-snug group-hover:text-accent">
-        {idea.title}
-      </h3>
+      <Link href={`/partnerships/${idea.id}`} className="mt-3 block">
+        <h3 className="text-base font-semibold leading-snug hover:text-accent">
+          {idea.title}
+        </h3>
+      </Link>
 
       {/* Summary */}
       <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted">{idea.summary}</p>
@@ -70,10 +79,28 @@ export function CollaborationGridCard({ idea }: { idea: CollaborationIdea }) {
       </div>
 
       {/* Footer */}
-      <div className="mt-4 flex items-center justify-between text-xs text-muted">
-        <span>{interestCount} interested · {formatPostDateTime(idea.createdAt)}</span>
-        <span className="font-medium text-accent">{viewLabel[idea.collaborationType] ?? "View →"}</span>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        {!isAuthor ? (
+          <div onClick={(e) => e.stopPropagation()}>
+            <CollaborationInterestedButton
+              collaborationId={idea.id}
+              initialInterested={Boolean(idea.userInterested)}
+              requiresAuth={!currentUserId}
+              compact
+            />
+          </div>
+        ) : (
+          <span className="text-xs text-muted">Your post</span>
+        )}
+        <Link
+          href={`/partnerships/${idea.id}`}
+          className="shrink-0 text-xs font-medium text-accent hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {viewLabel[idea.collaborationType] ?? "View →"}
+        </Link>
       </div>
-    </Link>
+      <p className="mt-2 text-xs text-muted">{interestCount} interested · {formatPostDateTime(idea.createdAt)}</p>
+    </div>
   );
 }

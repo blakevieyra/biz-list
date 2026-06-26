@@ -8,23 +8,29 @@ export function CollaborationInterestedButton({
   collaborationId,
   initialInterested,
   requiresAuth,
+  compact,
 }: {
   collaborationId: string;
   initialInterested: boolean;
   requiresAuth?: boolean;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [interested, setInterested] = useState(initialInterested);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const sizeClass = compact
+    ? "px-3 py-1.5 text-xs min-h-8"
+    : "px-4 py-2 text-sm min-h-10";
+
   if (requiresAuth) {
     return (
       <a
         href={`/auth/login?next=${encodeURIComponent(`/partnerships/${collaborationId}`)}`}
-        className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+        className={`inline-flex items-center rounded-full bg-accent font-medium text-white hover:bg-accent-hover ${sizeClass}`}
       >
-        Sign in to show interest
+        Interested
       </a>
     );
   }
@@ -46,13 +52,13 @@ export function CollaborationInterestedButton({
           }
           setPending(false);
         }}
-        className={`inline-flex min-h-10 items-center rounded-full px-4 py-2 text-sm font-medium transition ${
+        className={`inline-flex items-center rounded-full font-medium transition ${sizeClass} ${
           interested
             ? "border border-accent bg-blue-50 text-accent"
             : "bg-accent text-white hover:bg-accent-hover"
         }`}
       >
-        {pending ? "Updating..." : interested ? "Interested ✓" : "Interested"}
+        {pending ? "…" : interested ? "Interested ✓" : "Interested"}
       </button>
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
     </div>
