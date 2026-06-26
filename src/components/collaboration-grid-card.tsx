@@ -112,33 +112,34 @@ export function CollaborationGridCard({
               <span className="font-medium text-foreground/80">Location:</span> {idea.location}
             </p>
           </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            {!isAuthor ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <CollaborationInterestedButton
+                  collaborationId={idea.id}
+                  initialInterested={Boolean(idea.userInterested)}
+                  requiresAuth={!currentUserId}
+                  compact
+                />
+              </div>
+            ) : (
+              <span className="text-xs text-muted">Your post</span>
+            )}
+            <Link
+              href={`/partnerships/${idea.id}`}
+              className="shrink-0 text-xs font-medium text-accent hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {viewLabel[idea.collaborationType] ?? "View →"}
+            </Link>
+          </div>
+
+          <p className="mt-2 text-xs text-muted">
+            {interestCount} interested · {formatPostDateTime(idea.createdAt)}
+          </p>
         </div>
       </div>
-
-      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
-        {!isAuthor ? (
-          <div onClick={(e) => e.stopPropagation()}>
-            <CollaborationInterestedButton
-              collaborationId={idea.id}
-              initialInterested={Boolean(idea.userInterested)}
-              requiresAuth={!currentUserId}
-              compact
-            />
-          </div>
-        ) : (
-          <span className="text-xs text-muted">Your post</span>
-        )}
-        <Link
-          href={`/partnerships/${idea.id}`}
-          className="shrink-0 text-xs font-medium text-accent hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {viewLabel[idea.collaborationType] ?? "View →"}
-        </Link>
-      </div>
-      <p className="border-t border-border px-4 py-2 text-xs text-muted">
-        {interestCount} interested · {formatPostDateTime(idea.createdAt)}
-      </p>
     </div>
   );
 }

@@ -68,13 +68,12 @@ export function ImageUpload({
           {urls.map((url) => (
             <div key={url} className="relative overflow-hidden rounded-xl border border-border bg-slate-100">
               {isDirectVideoUrl(url) ? (
-                <video
-                  src={url}
-                  className="aspect-square w-full object-cover"
-                  muted
-                  playsInline
-                  preload="metadata"
-                />
+                <div className="flex aspect-square w-full flex-col items-center justify-center gap-1 bg-slate-800 text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 opacity-80" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  <span className="px-2 text-center text-xs opacity-70">Video uploaded</span>
+                </div>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={url} alt="" className="aspect-square w-full object-cover" />
