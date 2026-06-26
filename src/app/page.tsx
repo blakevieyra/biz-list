@@ -66,10 +66,10 @@ export default async function HomePage() {
               BizList
             </p>
             <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-              Your Business.<br />The Customer.
+              Your Business.<br />More Customers.
             </h1>
             <p className="mt-4 text-xl font-medium text-muted sm:text-2xl">
-              Space for Listings and Collaboration.
+              Space for Listings, Events and B2B Collaboration.
             </p>
             <p className="mt-4 text-base leading-relaxed text-muted sm:text-lg">
               Get discovered, share updates and deals, hire talent, and build B2B partnerships — all from your business location outward.
