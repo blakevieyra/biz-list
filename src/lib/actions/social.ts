@@ -963,6 +963,89 @@ export async function sendMessage(conversationId: string, body: string) {
   }
 }
 
+export async function deleteBusinessPost(postId: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase." };
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: post } = await supabase
+      .from("business_posts")
+      .select("author_id, business_id")
+      .eq("id", postId)
+      .single();
+
+    if (!post) return { error: "Post not found." };
+
+    const isAuthor = post.author_id === user.id;
+    if (!isAuthor) {
+      const { data: biz } = await supabase
+        .from("businesses")
+        .select("owner_id")
+        .eq("id", post.business_id)
+        .single();
+      if (biz?.owner_id !== user.id) return { error: "Not authorized." };
+    }
+
+    const { error } = await supabase.from("business_posts").delete().eq("id", postId);
+    if (error) return { error: error.message };
+
+    revalidatePath("/feed");
+    revalidatePath(`/listings/${post.business_id}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete post." };
+  }
+}
+
+export async function deleteForumPost(postId: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase." };
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: post } = await supabase
+      .from("forum_posts")
+      .select("author_id")
+      .eq("id", postId)
+      .single();
+
+    if (!post) return { error: "Post not found." };
+    if (post.author_id !== user.id) return { error: "Not authorized." };
+
+    const { error } = await supabase.from("forum_posts").delete().eq("id", postId);
+    if (error) return { error: error.message };
+
+    revalidatePath("/forum");
+    revalidatePath("/feed");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete post." };
+  }
+}
+
+export async function deleteCollaboration(collaborationId: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase." };
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: collab } = await supabase
+      .from("collaborations")
+      .select("author_id")
+      .eq("id", collaborationId)
+      .single();
+
+    if (!collab) return { error: "Collaboration not found." };
+    if (collab.author_id !== user.id) return { error: "Not authorized." };
+
+    const { error } = await supabase.from("collaborations").delete().eq("id", collaborationId);
+    if (error) return { error: error.message };
+
+    revalidatePath("/partnerships");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete." };
+  }
+}
+
 export async function startMessageWithBusinessOwner(businessId: string) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to send messages." };

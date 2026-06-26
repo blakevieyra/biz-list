@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
-import { commentOnCollaboration } from "@/lib/actions/social";
+import { commentOnCollaboration, deleteCollaboration } from "@/lib/actions/social";
+import { ReportButton } from "@/components/report-button";
 import type { CollaborationComment, CollaborationIdea } from "@/lib/types";
 import { Card, formatPostDateTime } from "@/components/ui";
 
@@ -31,10 +32,19 @@ export function CollaborationProposalCard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [deletePending, startDeleteTransition] = useTransition();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const isAuthor = currentUserId === idea.authorId;
   const interestCount = idea.interestedCount ?? 0;
+
+  function handleDelete() {
+    if (!confirm("Delete this collaboration? This cannot be undone.")) return;
+    startDeleteTransition(async () => {
+      await deleteCollaboration(idea.id);
+      router.refresh();
+    });
+  }
 
   function handleComment(e: React.FormEvent) {
     e.preventDefault();
@@ -126,6 +136,21 @@ export function CollaborationProposalCard({
             <p className="text-sm text-muted">
               {interestCount} {interestCount === 1 ? "person" : "people"} interested
             </p>
+            {isAuthor && (
+              <button
+                type="button"
+                disabled={deletePending}
+                onClick={handleDelete}
+                className="ml-auto text-xs text-muted hover:text-red-600 transition-colors disabled:opacity-50"
+              >
+                {deletePending ? "Deleting…" : "Delete"}
+              </button>
+            )}
+            {!isAuthor && currentUserId && (
+              <span className="ml-auto">
+                <ReportButton target={{ type: "collaboration", id: idea.id, title: idea.title }} />
+              </span>
+            )}
           </div>
         </div>
 

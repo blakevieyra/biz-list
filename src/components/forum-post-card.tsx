@@ -1,5 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { ForumPostLikeButton } from "@/components/forum-post-like-button";
+import { deleteForumPost } from "@/lib/actions/social";
+import { ReportButton } from "@/components/report-button";
 import type { ForumPost } from "@/lib/types";
 import { CategoryBadge, formatPostDateTime } from "./ui";
 
@@ -12,9 +18,20 @@ export function ForumPostCard({
   href?: string;
   currentUserId?: string | null;
 }) {
+  const router = useRouter();
+  const [deletePending, startDeleteTransition] = useTransition();
   const link = href ?? `/forum?post=${post.id}`;
   const replyCount = post.commentIds.length;
   const likeCount = post.likeCount ?? 0;
+  const isAuthor = currentUserId != null && post.authorId === currentUserId;
+
+  function handleDelete() {
+    if (!confirm("Delete this post? This cannot be undone.")) return;
+    startDeleteTransition(async () => {
+      await deleteForumPost(post.id);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition hover:border-accent/40 hover:shadow-sm">
@@ -71,6 +88,21 @@ export function ForumPostCard({
               <span>·</span>
               <span>{likeCount} interested</span>
             </>
+          )}
+          {isAuthor && (
+            <button
+              type="button"
+              disabled={deletePending}
+              onClick={handleDelete}
+              className="ml-auto text-xs text-muted hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              {deletePending ? "Deleting…" : "Delete"}
+            </button>
+          )}
+          {!isAuthor && currentUserId && (
+            <span className="ml-auto">
+              <ReportButton target={{ type: "forum_post", id: post.id, title: post.title }} />
+            </span>
           )}
         </div>
       </div>

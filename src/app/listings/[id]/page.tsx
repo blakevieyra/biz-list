@@ -8,11 +8,11 @@ import {
 
   BusinessActivitySection,
 
-  BusinessGallerySection,
-
   BusinessReviewsSection,
 
 } from "@/components/business-social";
+
+import { ReportButton } from "@/components/report-button";
 
 import { GoogleMapEmbed } from "@/components/google-map-embed";
 
@@ -273,10 +273,6 @@ export default async function BusinessDetailPage({
 
 
 
-      <BusinessGallerySection mediaUrls={business.mediaUrls} />
-
-
-
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -354,6 +350,46 @@ export default async function BusinessDetailPage({
 
 
           <div className="space-y-6 lg:col-start-3 lg:row-start-1">
+
+            {business.mediaUrls.length > 1 && (
+
+              <Card>
+
+                <h2 className="font-semibold">Photos</h2>
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+
+                  {business.mediaUrls.slice(1, 5).map((url, i) => (
+
+                    // eslint-disable-next-line @next/next/no-img-element
+
+                    <img
+
+                      key={`${url}-${i}`}
+
+                      src={url}
+
+                      alt=""
+
+                      loading="lazy"
+
+                      className="aspect-square w-full rounded-xl object-cover"
+
+                    />
+
+                  ))}
+
+                </div>
+
+                {business.mediaUrls.length > 5 && (
+
+                  <p className="mt-2 text-xs text-muted">+{business.mediaUrls.length - 5} more photos</p>
+
+                )}
+
+              </Card>
+
+            )}
 
             <Card id="about">
 
@@ -552,6 +588,22 @@ export default async function BusinessDetailPage({
               </div>
 
             </Card>
+
+            {!isOwner && (
+
+              <div className="flex justify-end">
+
+                <ReportButton
+
+                  target={{ type: "listing", id: business.id, name: business.name }}
+
+                  className="text-xs text-muted hover:text-red-600 transition-colors"
+
+                />
+
+              </div>
+
+            )}
 
             {business.isHiring && !isOwner && (
 

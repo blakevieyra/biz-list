@@ -14,6 +14,32 @@ import {
 import type { BusinessPost, BusinessReview } from "@/lib/types";
 import { Card, formatPostDateTime } from "@/components/ui";
 import { BusinessPhotoCarousel } from "@/components/business-photo-carousel";
+import { deleteBusinessPost } from "@/lib/actions/social";
+import { ReportButton } from "@/components/report-button";
+
+function DeletePostButton({ postId }: { postId: string }) {
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function handleDelete() {
+    if (!confirm("Delete this post? This cannot be undone.")) return;
+    startTransition(async () => {
+      await deleteBusinessPost(postId);
+      router.refresh();
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={handleDelete}
+      className="text-xs text-muted hover:text-red-600 transition-colors disabled:opacity-50"
+    >
+      {pending ? "Deleting…" : "Delete"}
+    </button>
+  );
+}
 
 export function BusinessReviewsSection({
   businessId,
@@ -226,6 +252,12 @@ export function BusinessActivitySection({
                     {post.commentCount} comment{post.commentCount === 1 ? "" : "s"}
                   </p>
                   <p className="ml-auto text-xs text-muted">{formatPostDateTime(post.createdAt)}</p>
+                  {(isOwner || post.authorId === currentUserId) && (
+                    <DeletePostButton postId={post.id} />
+                  )}
+                  {!isOwner && (
+                    <ReportButton target={{ type: "post", id: post.id, title: post.title }} />
+                  )}
                 </div>
 
                 <div className="mt-3 rounded-lg border border-border bg-slate-50/70 p-3">
