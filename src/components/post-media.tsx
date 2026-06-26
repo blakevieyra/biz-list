@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { SafeExternalLink } from "@/components/safe-external-link";
 import {
   BUSINESS_POST_TYPE_LABELS,
@@ -22,6 +25,39 @@ export function PostTypeBadge({ type }: { type: BusinessPostType }) {
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[type]}`}>
       {BUSINESS_POST_TYPE_LABELS[type]}
     </span>
+  );
+}
+
+function DirectVideo({ url }: { url: string }) {
+  const [errored, setErrored] = useState(false);
+  const filename = url.split("/").pop() ?? "video";
+
+  if (errored) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-border bg-slate-50 p-4 text-sm text-muted">
+        <p className="font-medium text-foreground/80">Video can&apos;t play in this browser</p>
+        <p className="mt-1 text-xs">
+          This video may use H.265/HEVC encoding. Try opening it in Safari, or{" "}
+          <a href={url} download={filename} className="text-accent hover:underline">
+            download it
+          </a>{" "}
+          to watch locally.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-black">
+      <video
+        src={url}
+        controls
+        playsInline
+        preload="metadata"
+        className="aspect-video w-full"
+        onError={() => setErrored(true)}
+      />
+    </div>
   );
 }
 
@@ -65,11 +101,7 @@ export function PostMediaGallery({ urls }: { urls: string[] }) {
         }
 
         if (isDirectVideoUrl(url)) {
-          return (
-            <div key={url} className="overflow-hidden rounded-xl border border-border bg-black">
-              <video src={url} controls autoPlay muted playsInline className="aspect-video w-full" preload="auto" />
-            </div>
-          );
+          return <DirectVideo key={url} url={url} />;
         }
 
         return null;
