@@ -34,10 +34,10 @@ const features = [
     href: "/partnerships",
   },
   {
-    title: "Management",
+    title: "Events",
     description:
-      "Manage your profile, following, alerts, messages, and applications — business or personal — in one hub.",
-    href: "/auth/signup",
+      "Discover and RSVP to local business events — grand openings, pop-ups, workshops, and community gatherings.",
+    href: "/events",
   },
 ];
 
@@ -92,7 +92,7 @@ export default async function HomePage() {
         </div>
         <div className="relative min-h-[320px] w-full sm:min-h-[420px] lg:min-h-0 lg:self-stretch">
           <Image
-            src="/hero-BizList.jpg"
+            src="/hero-bizlist.jpg"
             alt="Local business interior"
             fill
             priority
