@@ -14,6 +14,8 @@ import {
 
 import { ReportButton } from "@/components/report-button";
 
+import { ListingPhotosCard } from "@/components/listing-photos-card";
+
 import { GoogleMapEmbed } from "@/components/google-map-embed";
 
 import { JobApplySection } from "@/components/job-apply-section";
@@ -351,45 +353,7 @@ export default async function BusinessDetailPage({
 
           <div className="space-y-6 lg:col-start-3 lg:row-start-1">
 
-            {business.mediaUrls.length > 1 && (
-
-              <Card>
-
-                <h2 className="font-semibold">Photos</h2>
-
-                <div className="mt-3 grid grid-cols-2 gap-2">
-
-                  {business.mediaUrls.slice(1, 5).map((url, i) => (
-
-                    // eslint-disable-next-line @next/next/no-img-element
-
-                    <img
-
-                      key={`${url}-${i}`}
-
-                      src={url}
-
-                      alt=""
-
-                      loading="lazy"
-
-                      className="aspect-square w-full rounded-xl object-cover"
-
-                    />
-
-                  ))}
-
-                </div>
-
-                {business.mediaUrls.length > 5 && (
-
-                  <p className="mt-2 text-xs text-muted">+{business.mediaUrls.length - 5} more photos</p>
-
-                )}
-
-              </Card>
-
-            )}
+            <ListingPhotosCard urls={business.mediaUrls} />
 
             <Card id="about">
 
@@ -397,15 +361,7 @@ export default async function BusinessDetailPage({
 
               <p className="mt-3 text-sm leading-relaxed">{business.description}</p>
 
-            </Card>
-
-
-
-            <Card>
-
-              <h2 className="font-semibold">Details</h2>
-
-              <dl className="mt-3 space-y-2 text-sm">
+              <dl className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
 
                 <div>
 

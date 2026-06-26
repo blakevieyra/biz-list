@@ -25,6 +25,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "52mb",
+    },
+  },
   async redirects() {
     return [
       { source: "/directory", destination: "/listings", permanent: true },
