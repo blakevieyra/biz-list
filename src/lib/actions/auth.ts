@@ -9,7 +9,7 @@ import {
   hashVerificationToken,
 } from "@/lib/auth/signup-crypto";
 import { emailSignupVerification, emailWelcome } from "@/lib/email/actions";
-import { getAppUrl } from "@/lib/email/config";
+import { getAppUrl, isEmailConfigured } from "@/lib/email/config";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -88,8 +88,8 @@ export async function signUp(formData: FormData) {
 
   await emailSignupVerification(email, displayName, verifyUrl);
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[BizList signup verify link]", verifyUrl);
+  if (!isEmailConfigured()) {
+    console.info("[BizList] EMAIL NOT CONFIGURED — signup verify URL:", verifyUrl);
   }
 
   redirect(`/auth/check-email?email=${encodeURIComponent(email)}`);
@@ -139,8 +139,8 @@ export async function resendSignupVerification(emailInput: string) {
   const verifyUrl = `${getAppUrl()}/auth/verify-email?token=${encodeURIComponent(token)}`;
   await emailSignupVerification(email, pending.display_name, verifyUrl);
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[BizList signup verify link]", verifyUrl);
+  if (!isEmailConfigured()) {
+    console.info("[BizList] EMAIL NOT CONFIGURED — resend verify URL:", verifyUrl);
   }
 
   return { success: true };

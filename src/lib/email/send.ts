@@ -1,4 +1,4 @@
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import { getEmailFrom, isEmailConfigured } from "./config";
 import { buildBrandedEmailHtml } from "./templates";
 
@@ -19,21 +19,26 @@ export async function sendAppEmail(input: SendEmailInput): Promise<void> {
   const html = buildBrandedEmailHtml(input);
 
   if (!isEmailConfigured()) {
-    console.info("[BizList email preview]", {
+    console.info("[BizList email — NOT SENT, no RESEND_API_KEY configured]", {
       to: input.to,
       subject: input.subject,
-      title: input.title,
     });
     return;
   }
 
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-  await sgMail.send({
-    from: getEmailFrom(),
+  const resend = new Resend(process.env.RESEND_API_KEY!);
+  const from = getEmailFrom();
+
+  const { error } = await resend.emails.send({
+    from,
     to: input.to,
     subject: input.subject,
     html,
   });
+
+  if (error) {
+    console.error("[BizList email send error]", error);
+  }
 }
 
 export async function sendTemplateEmail(
