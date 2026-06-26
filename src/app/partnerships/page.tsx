@@ -23,7 +23,7 @@ export default async function CollaboratePage({
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const isBusinessAccount =
-    profile?.role === "business" || profile?.role === "organization";
+    profile?.role === "business" || profile?.role === "organization" || profile?.role === "marketer";
 
   const collaborations = await getCollaborations(tab, userId);
   const commentsById: Map<string, CollaborationComment[]> =
@@ -45,7 +45,7 @@ export default async function CollaboratePage({
               href={`/partnerships/new?type=${tab}`}
               className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
             >
-              Create proposal
+              {tab === "contract" ? "Create contract" : tab === "b2b_sale" ? "Create B2B sale" : "Create proposal"}
             </Link>
           ) : (
             <Link
