@@ -117,23 +117,6 @@ export function BusinessListingCard({
           </div>
         </Link>
 
-        <div className="mt-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest update</p>
-          {latestPost ? (
-            <Link
-              href={`/listings/${business.id}#post-${latestPost.id}`}
-              className="mt-1 block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
-            >
-              <p className="line-clamp-2 text-xs font-medium leading-snug">{latestPost.title}</p>
-              <p className="mt-0.5 text-[11px] text-muted">
-                {formatPostDateTime(latestPost.createdAt)}
-              </p>
-            </Link>
-          ) : (
-            <p className="mt-1 text-xs text-muted">No posts yet.</p>
-          )}
-        </div>
-
         {topServices.length > 0 && (
           <div className="mt-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Offerings</p>
@@ -177,6 +160,23 @@ export function BusinessListingCard({
             </ul>
           </div>
         )}
+
+        <div className="mt-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Latest update</p>
+          {latestPost ? (
+            <Link
+              href={`/listings/${business.id}#post-${latestPost.id}`}
+              className="mt-1 block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
+            >
+              <p className="line-clamp-2 text-xs font-medium leading-snug">{latestPost.title}</p>
+              <p className="mt-0.5 text-[11px] text-muted">
+                {formatPostDateTime(latestPost.createdAt)}
+              </p>
+            </Link>
+          ) : (
+            <p className="mt-1 text-xs text-muted">No posts yet.</p>
+          )}
+        </div>
 
         <div className="mt-auto pt-3">
           {!isOwner && (

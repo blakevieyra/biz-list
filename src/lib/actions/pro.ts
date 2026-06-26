@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { generateBusinessAssessment, assessmentInputFromBusiness } from "@/lib/ai/assessment";
+import { assessmentInputFromBusiness } from "@/lib/ai/assessment";
 import {
-  generateAutomatedPost,
-  generateMarketingCampaignDraft,
-  generateOnboardingWelcome,
-  generateOutreachMessage,
-} from "@/lib/ai/platinum-automation";
+  generateBusinessAssessmentAI,
+  generateFreshAutomatedPostAI,
+  generateMarketingCampaignDraftAI,
+  generateOnboardingWelcomeAI,
+  generateOutreachMessageFromLeadAI,
+  generateVirtualAgentReplyAI,
+} from "@/lib/ai/ai-services";
 import { emailAssessmentComplete } from "@/lib/email/actions";
 import { canAccess } from "@/lib/plans";
 import type { PlanFeature } from "@/lib/plans";
@@ -52,14 +54,14 @@ export async function runAiAssessment(input: {
   tagline: string;
 }) {
   if (!isSupabaseConfigured()) {
-    const result = generateBusinessAssessment(input);
+    const result = await generateBusinessAssessmentAI(input);
     return { success: true, assessment: { ...result, id: "demo" } };
   }
 
   try {
     const { supabase, user } = await requireUserWithPlan("aiAudit");
 
-    const result = generateBusinessAssessment(input);
+    const result = await generateBusinessAssessmentAI(input);
 
     const { data: business } = await supabase
       .from("businesses")
@@ -82,6 +84,7 @@ export async function runAiAssessment(input: {
         business_clarity_score: result.businessClarityScore,
         summary: result.summary,
         recommendations: result.recommendations,
+        topic_breakdown: result.topicBreakdown,
       })
       .select("id")
       .single();
@@ -95,17 +98,19 @@ export async function runAiAssessment(input: {
       .single();
 
     if (profile?.email) {
-      await emailAssessmentComplete(
-        profile.email,
-        profile.display_name ?? "there",
-        result.overallScore,
-      );
+      await emailAssessmentComplete(profile.email, profile.display_name ?? "there", {
+        businessName: input.businessName,
+        overallScore: result.overallScore,
+        summary: result.summary,
+        recommendations: result.recommendations,
+        topicBreakdown: result.topicBreakdown,
+      });
     }
 
     revalidatePath("/dashboard/assessment");
     revalidatePath("/dashboard/profile");
     revalidatePath("/profile");
-    return { success: true, assessment: { ...result, id: data.id, websiteScore: result.websiteScore, profileScore: result.profileScore } };
+    return { success: true, assessment: { ...result, id: data.id, websiteScore: result.websiteScore, profileScore: result.profileScore, topicBreakdown: result.topicBreakdown } };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Assessment failed." };
   }
@@ -113,7 +118,7 @@ export async function runAiAssessment(input: {
 
 export async function runBusinessProfileAudit() {
   if (!isSupabaseConfigured()) {
-    const result = generateBusinessAssessment({
+    const result = await generateBusinessAssessmentAI({
       websiteUrl: "https://example.com",
       businessName: "Demo Business",
       category: "Retail & Community",
@@ -142,11 +147,51 @@ export async function runBusinessProfileAudit() {
       .eq("post_type", "job")
       .limit(1);
 
+    const { data: businessPosts } = await supabase
+      .from("business_posts")
+      .select("id")
+      .eq("business_id", business.id);
+
+    const postIds = (businessPosts ?? []).map((p) => p.id);
+    let commentCount = 0;
+    if (postIds.length) {
+      const { count } = await supabase
+        .from("business_post_comments")
+        .select("*", { count: "exact", head: true })
+        .in("post_id", postIds);
+      commentCount = count ?? 0;
+    }
+
+    const [{ count: postLikeCount }, { count: pageViewCount }, { count: offeringClickCount }, { count: followerCount }] =
+      await Promise.all([
+        supabase
+          .from("business_content_likes")
+          .select("*", { count: "exact", head: true })
+          .eq("business_id", business.id),
+        supabase
+          .from("business_page_views")
+          .select("*", { count: "exact", head: true })
+          .eq("business_id", business.id),
+        supabase
+          .from("business_offering_clicks")
+          .select("*", { count: "exact", head: true })
+          .eq("business_id", business.id),
+        supabase
+          .from("business_follows")
+          .select("*", { count: "exact", head: true })
+          .eq("business_id", business.id),
+      ]);
+
     const input = assessmentInputFromBusiness(business, {
       postCount: postCount ?? 0,
       hasHiringPost: Boolean(jobPosts?.length) || business.isHiring,
+      commentCount: commentCount ?? 0,
+      postLikeCount: postLikeCount ?? 0,
+      pageViewCount: pageViewCount ?? 0,
+      offeringClickCount: offeringClickCount ?? 0,
+      followerCount: followerCount ?? 0,
     });
-    const result = generateBusinessAssessment(input);
+    const result = await generateBusinessAssessmentAI(input);
 
     const { data, error } = await supabase
       .from("ai_assessments")
@@ -162,6 +207,7 @@ export async function runBusinessProfileAudit() {
         business_clarity_score: result.businessClarityScore,
         summary: result.summary,
         recommendations: result.recommendations,
+        topic_breakdown: result.topicBreakdown,
       })
       .select("id")
       .single();
@@ -175,11 +221,13 @@ export async function runBusinessProfileAudit() {
       .single();
 
     if (profile?.email) {
-      await emailAssessmentComplete(
-        profile.email,
-        profile.display_name ?? "there",
-        result.overallScore,
-      );
+      await emailAssessmentComplete(profile.email, profile.display_name ?? "there", {
+        businessName: business.name,
+        overallScore: result.overallScore,
+        summary: result.summary,
+        recommendations: result.recommendations,
+        topicBreakdown: result.topicBreakdown,
+      });
     }
 
     revalidatePath("/dashboard/profile");
@@ -192,6 +240,7 @@ export async function runBusinessProfileAudit() {
         id: data.id,
         websiteScore: result.websiteScore,
         profileScore: result.profileScore,
+        topicBreakdown: result.topicBreakdown,
       },
     };
   } catch (e) {
@@ -213,7 +262,7 @@ export async function generatePlatinumPost(): Promise<{ message?: string; error?
   try {
     const { supabase, user } = await requireUserWithPlan("automatedMarketing");
     const business = await loadOwnerBusiness(user.id);
-    const draft = generateAutomatedPost(business);
+    const draft = await generateFreshAutomatedPostAI(business);
 
     const { error } = await supabase.from("business_posts").insert({
       business_id: business.id,
@@ -228,7 +277,7 @@ export async function generatePlatinumPost(): Promise<{ message?: string; error?
 
     if (error) return { error: error.message };
 
-    const campaign = generateMarketingCampaignDraft(business, "social");
+    const campaign = await generateMarketingCampaignDraftAI(business, "social");
     await supabase.from("marketing_campaigns").insert({
       user_id: user.id,
       business_id: business.id,
@@ -265,7 +314,7 @@ export async function automatePlatinumOutreach(): Promise<{ message?: string; er
     for (const lead of leads) {
       const convo = await getOrCreateConversation(lead.id);
       if (convo.error || !convo.conversationId) continue;
-      const body = generateOutreachMessage(business, lead);
+      const body = await generateOutreachMessageFromLeadAI(business, lead);
       const result = await sendMessage(convo.conversationId, body);
       if (!result.error) sent += 1;
     }
@@ -306,7 +355,7 @@ export async function runPlatinumOnboarding(): Promise<{ message?: string; error
       const name = profile?.display_name ?? "there";
       const convo = await getOrCreateConversation(follow.follower_id);
       if (convo.error || !convo.conversationId) continue;
-      const body = generateOnboardingWelcome(business, name);
+      const body = await generateOnboardingWelcomeAI(business, name);
       const result = await sendMessage(convo.conversationId, body);
       if (!result.error) sent += 1;
     }
@@ -357,27 +406,185 @@ export async function virtualAgentReply(input: {
   category: string;
   services: string;
   message: string;
+  tagline?: string;
+  description?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
+  hours?: string;
+  isHiring?: boolean;
+  agentInstructions?: string;
+  agentTopicRules?: { topic: string; response: string }[];
 }) {
   try {
     await requireUserWithPlan("virtualAgent");
 
-    const lower = input.message.toLowerCase();
-    let reply =
-      `Thanks for reaching out to ${input.businessName}. We're a ${input.category} business focused on serving our local community.`;
-
-    if (lower.includes("price") || lower.includes("cost") || lower.includes("rate")) {
-      reply += ` Our services include: ${input.services || "custom packages"}. Reply with your needs and we'll follow up with pricing.`;
-    } else if (lower.includes("hours") || lower.includes("open")) {
-      reply += " Check our profile for hours and contact options, or leave your email and we'll confirm availability.";
-    } else if (lower.includes("hire") || lower.includes("job")) {
-      reply += " We're always interested in great local talent — share your background and we'll connect you with the right person on our team.";
-    } else {
-      reply += " How can we help you today? We can share services, booking info, or connect you with our team.";
-    }
+    const reply = await generateVirtualAgentReplyAI(
+      {
+        business: {
+          name: input.businessName,
+          category: input.category,
+          subcategory: "",
+          tagline: input.tagline ?? "",
+          description: input.description ?? input.services,
+          city: input.city ?? "",
+          state: input.state ?? "",
+          phone: input.phone ?? "",
+          hours: input.hours ?? "",
+          website: "",
+          isHiring: input.isHiring ?? false,
+          services: input.services
+            .split(",")
+            .map((name) => ({ name: name.trim(), description: "" }))
+            .filter((s) => s.name),
+        },
+        agentInstructions: input.agentInstructions,
+        agentTopicRules: input.agentTopicRules,
+      },
+      input.message,
+    );
 
     return { reply };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Virtual agent unavailable." };
+  }
+}
+
+export async function saveAgentInstructions(input: {
+  instructions: string;
+  topicRules: { topic: string; response: string }[];
+}) {
+  try {
+    const supabase = await createClient();
+    if (!supabase) throw new Error("Database not configured.");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Sign in required.");
+
+    const { error } = await supabase
+      .from("businesses")
+      .update({
+        agent_instructions: input.instructions.trim(),
+        agent_topic_rules: input.topicRules,
+      })
+      .eq("owner_id", user.id);
+
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/agent");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not save." };
+  }
+}
+
+export async function askListingAgent(input: {
+  businessId: string;
+  message: string;
+  customerName?: string;
+}) {
+  if (!isSupabaseConfigured()) {
+    return {
+      reply: await generateVirtualAgentReplyAI(
+        {
+          business: {
+            name: "Demo Business",
+            category: "Local services",
+            subcategory: "",
+            tagline: "Serving the community",
+            description: "We help local customers every day.",
+            city: "Austin",
+            state: "TX",
+            phone: "",
+            hours: "Mon–Fri 9am–5pm",
+            website: "",
+            isHiring: false,
+            services: [{ name: "Consulting", description: "" }],
+          },
+          customerName: input.customerName,
+        },
+        input.message,
+      ),
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    if (!supabase) return { error: "Agent unavailable." };
+
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("*")
+      .eq("id", input.businessId)
+      .maybeSingle();
+
+    if (!business?.virtual_agent_enabled) {
+      return { error: "This business has not enabled the virtual agent." };
+    }
+
+    const { data: owner } = await supabase
+      .from("profiles")
+      .select("plan_tier")
+      .eq("id", business.owner_id)
+      .maybeSingle();
+
+    if (!canAccess((owner?.plan_tier ?? "free") as PlanTier, "virtualAgent")) {
+      return { error: "Virtual agent is not active for this listing." };
+    }
+
+    const reply = await generateVirtualAgentReplyAI(
+      {
+        business: {
+          name: business.name,
+          category: business.category,
+          subcategory: business.subcategory ?? "",
+          tagline: business.tagline ?? "",
+          description: business.description ?? "",
+          city: business.city ?? "",
+          state: business.state ?? "",
+          phone: business.phone ?? "",
+          hours: business.hours ?? "",
+          website: business.website ?? "",
+          isHiring: business.is_hiring ?? false,
+          services: (Array.isArray(business.services) ? business.services : []).map(
+            (s: { name?: string; description?: string; price?: string }) => ({
+              name: s.name ?? "Service",
+              description: s.description ?? "",
+              price: s.price,
+            }),
+          ),
+        },
+        customerName: input.customerName,
+      },
+      input.message,
+    );
+
+    return { reply };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Agent unavailable." };
+  }
+}
+
+export async function toggleVirtualAgent(enabled: boolean) {
+  if (!isSupabaseConfigured()) {
+    return { success: true, enabled };
+  }
+
+  try {
+    const { supabase, user } = await requireUserWithPlan("virtualAgent");
+    const business = await loadOwnerBusiness(user.id);
+
+    const { error } = await supabase
+      .from("businesses")
+      .update({ virtual_agent_enabled: enabled })
+      .eq("id", business.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/agent");
+    revalidatePath(`/listings/${business.id}`);
+    revalidatePath("/dashboard/profile");
+    return { success: true, enabled };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not update agent." };
   }
 }
 
@@ -391,7 +598,7 @@ export async function generatePlatinumMarketingDraft(
   try {
     const { supabase, user } = await requireUserWithPlan("automatedMarketing");
     const business = await loadOwnerBusiness(user.id);
-    const draft = generateMarketingCampaignDraft(business, channel);
+    const draft = await generateMarketingCampaignDraftAI(business, channel);
 
     const { error } = await supabase.from("marketing_campaigns").insert({
       user_id: user.id,
