@@ -119,15 +119,23 @@ type CollaborationRow = {
   collaboration_type?: CollaborationIdea["collaborationType"];
   status: CollaborationIdea["status"];
   created_at: string;
-  profiles?: { display_name: string } | { display_name: string }[] | null;
+  profiles?: { display_name: string; avatar_url?: string | null } | { display_name: string; avatar_url?: string | null }[] | null;
 };
 
 function profileName(
-  profiles: { display_name: string } | { display_name: string }[] | null | undefined,
+  profiles: { display_name: string; avatar_url?: string | null } | { display_name: string; avatar_url?: string | null }[] | null | undefined,
 ): string {
   if (!profiles) return "Unknown";
   if (Array.isArray(profiles)) return profiles[0]?.display_name ?? "Unknown";
   return profiles.display_name;
+}
+
+function profileAvatar(
+  profiles: { display_name: string; avatar_url?: string | null } | { display_name: string; avatar_url?: string | null }[] | null | undefined,
+): string | undefined {
+  if (!profiles) return undefined;
+  const p = Array.isArray(profiles) ? profiles[0] : profiles;
+  return p?.avatar_url ?? undefined;
 }
 
 export function mapProfile(row: ProfileRow): UserProfile {
@@ -261,6 +269,7 @@ export function mapCollaboration(row: CollaborationRow): CollaborationIdea {
     id: row.id,
     authorId: row.author_id,
     authorName: profileName(row.profiles),
+    authorAvatarUrl: profileAvatar(row.profiles),
     businessId: row.business_id ?? undefined,
     title: row.title,
     summary: row.summary,

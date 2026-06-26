@@ -59,19 +59,36 @@ export function CollaborationProposalCard({
     <Card className="overflow-hidden p-0">
       <div className="grid grid-cols-1 md:grid-cols-3">
         <div className="md:col-span-2 p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
-              {typeLabels[idea.collaborationType]}
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}
-            >
-              {idea.status.replace("_", " ")}
-            </span>
-            <span className="text-xs text-muted">{formatPostDateTime(idea.createdAt)}</span>
+          {/* Author row */}
+          <div className="mb-3 flex items-center gap-2.5">
+            {idea.authorAvatarUrl ? (
+              <img
+                src={idea.authorAvatarUrl}
+                alt={idea.authorName}
+                className="h-9 w-9 rounded-full object-cover ring-1 ring-border"
+              />
+            ) : (
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                {idea.authorName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-tight">{idea.authorName}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
+                  {typeLabels[idea.collaborationType]}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}
+                >
+                  {idea.status.replace("_", " ")}
+                </span>
+                <span className="text-xs text-muted">{formatPostDateTime(idea.createdAt)}</span>
+              </div>
+            </div>
           </div>
 
-          <Link href={`/partnerships/${idea.id}`} className="mt-3 block group">
+          <Link href={`/partnerships/${idea.id}`} className="block group">
             <h3 className="text-lg font-semibold group-hover:text-accent">{idea.title}</h3>
           </Link>
           <p className="mt-2 line-clamp-3 text-sm text-muted">{idea.summary}</p>
@@ -83,7 +100,6 @@ export function CollaborationProposalCard({
             <p>
               <span className="font-medium">Location:</span> {idea.location}
             </p>
-            <p className="text-xs text-muted">Posted by {idea.authorName}</p>
           </div>
 
           <Link

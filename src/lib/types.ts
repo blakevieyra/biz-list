@@ -291,6 +291,7 @@ export interface CollaborationIdea {
   id: string;
   authorId: string;
   authorName: string;
+  authorAvatarUrl?: string;
   businessId?: string;
   title: string;
   summary: string;

@@ -564,7 +564,7 @@ export async function getCollaborations(
 
   let query = supabase
     .from("collaborations")
-    .select("*, profiles(display_name, role), businesses(name)")
+    .select("*, profiles(display_name, avatar_url, role), businesses(name)")
     .not("business_id", "is", null)
     .order("created_at", { ascending: false });
 
@@ -591,7 +591,7 @@ export async function getCollaborationById(
 
   const { data: row } = await supabase
     .from("collaborations")
-    .select("*, profiles(display_name)")
+    .select("*, profiles(display_name, avatar_url)")
     .eq("id", id)
     .maybeSingle();
 
