@@ -124,7 +124,7 @@ export async function saveProfile(input: {
     });
     if (location.error) return { error: location.error };
 
-    const isBusiness = input.role === "business" || input.role === "organization";
+    const isBusiness = input.role === "business" || input.role === "organization" || input.role === "marketer";
     let industryInterests = input.industryInterests ?? [];
     if (!isBusiness) {
       const industries = validateIndustryInterests(industryInterests);

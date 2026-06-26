@@ -115,7 +115,7 @@ export function ProfileCreateWizard({
     forumInterests: [],
   });
 
-  const isBusiness = form.role === "business" || form.role === "organization";
+  const isBusiness = form.role === "business" || form.role === "organization" || form.role === "marketer";
   const steps = isBusiness ? BUSINESS_STEPS : CUSTOMER_STEPS;
   const step = steps[stepIndex]?.id ?? "welcome";
   const progress = Math.round(((stepIndex + 1) / steps.length) * 100);
@@ -319,7 +319,7 @@ export function ProfileCreateWizard({
         {step === "welcome" && (
           <StepBlock title="How will you use BizList?">
             <div className="grid gap-3 sm:grid-cols-2">
-              {(["business", "organization", "customer"] as UserRole[]).map((role) => (
+              {(["business", "organization", "marketer", "customer"] as UserRole[]).map((role) => (
                 <button
                   key={role}
                   type="button"
@@ -339,7 +339,9 @@ export function ProfileCreateWizard({
                   <p className="mt-2 text-xs leading-relaxed text-muted">
                     {role === "customer"
                       ? "Discover local businesses, follow updates, join forums, and connect as a customer or job seeker."
-                      : "List products & services, upload photos, post updates, and grow in the local directory."}
+                      : role === "marketer"
+                        ? "Offer marketing services, promote local brands, manage campaigns, and grow your client base."
+                        : "List products & services, upload photos, post updates, and grow in the local directory."}
                   </p>
                 </button>
               ))}

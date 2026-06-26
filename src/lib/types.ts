@@ -39,7 +39,7 @@ export type FeedScope = DiscoveryRadius;
 
 export type PlanTier = "free" | "pro" | "platinum";
 
-export type UserRole = "business" | "organization" | "customer";
+export type UserRole = "business" | "organization" | "customer" | "marketer";
 
 export type BusinessIntent =
   | "hiring"
@@ -407,6 +407,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   business: "Business",
   organization: "Organization",
   customer: "Customer / Community Member",
+  marketer: "Marketer",
 };
 
 export type PaidPlanTier = "pro" | "platinum" | "customer_pro";
