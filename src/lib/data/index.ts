@@ -550,6 +550,20 @@ async function attachCollaborationInterests(
   }));
 }
 
+function enrichCollaborationWithBusiness(idea: CollaborationIdea): CollaborationIdea {
+  if (!idea.businessId || idea.businessName) return idea;
+  const business = SEED_BUSINESSES.find((item) => item.id === idea.businessId);
+  if (!business) return idea;
+  return {
+    ...idea,
+    businessName: business.name,
+    businessCategory: business.category,
+    businessMediaUrl: business.mediaUrls[0],
+    businessRatingAvg: business.ratingAvg,
+    businessRatingCount: business.ratingCount,
+  };
+}
+
 export async function getCollaborations(
   type?: CollaborationIdea["collaborationType"],
   userId?: string | null,
@@ -559,12 +573,16 @@ export async function getCollaborations(
     const seed = type
       ? SEED_COLLABORATIONS.filter((item) => item.collaborationType === type)
       : SEED_COLLABORATIONS;
-    return seed.filter((item) => Boolean(item.businessId));
+    return seed
+      .filter((item) => Boolean(item.businessId))
+      .map(enrichCollaborationWithBusiness);
   }
 
   let query = supabase
     .from("collaborations")
-    .select("*, profiles(display_name, avatar_url, role), businesses(name)")
+    .select(
+      "*, profiles(display_name, avatar_url, role), businesses(name, category, media_urls, rating_avg, rating_count)",
+    )
     .not("business_id", "is", null)
     .order("created_at", { ascending: false });
 
@@ -586,12 +604,15 @@ export async function getCollaborationById(
 ): Promise<CollaborationIdea | null> {
   const supabase = await getSupabase();
   if (!supabase) {
-    return SEED_COLLABORATIONS.find((item) => item.id === id) ?? null;
+    const idea = SEED_COLLABORATIONS.find((item) => item.id === id);
+    return idea ? enrichCollaborationWithBusiness(idea) : null;
   }
 
   const { data: row } = await supabase
     .from("collaborations")
-    .select("*, profiles(display_name, avatar_url)")
+    .select(
+      "*, profiles(display_name, avatar_url), businesses(name, category, media_urls, rating_avg, rating_count)",
+    )
     .eq("id", id)
     .maybeSingle();
 

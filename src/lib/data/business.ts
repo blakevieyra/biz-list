@@ -450,6 +450,7 @@ export async function getFeedBusinessPosts(options: {
     .select(
       "*, profiles(display_name), businesses(name, category, media_urls, like_count, rating_avg, rating_count, owner_id, city, state, zip_code, county, country, latitude, longitude)",
     )
+    .not("business_id", "is", null)
     .order("created_at", { ascending: false })
     .limit(Math.max(limit * 3, 60));
 
@@ -468,7 +469,8 @@ export async function getFeedBusinessPosts(options: {
     businesses?: FeedBusinessMeta | FeedBusinessMeta[] | null;
   })[]) {
     const meta = businessMetaFromRow(row.businesses);
-    if (!meta || !viewer) {
+    if (!meta) continue;
+    if (!viewer) {
       filteredRows.push(row);
       continue;
     }

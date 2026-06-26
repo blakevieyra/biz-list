@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
@@ -11,7 +12,7 @@ import {
 import { uploadCollaborationAttachment } from "@/lib/actions/upload";
 import { ReportButton } from "@/components/report-button";
 import type { CollaborationComment, CollaborationIdea } from "@/lib/types";
-import { Card, formatPostDateTime } from "@/components/ui";
+import { Card, formatPostDateTime, StarRating } from "@/components/ui";
 
 const statusStyles = {
   open: "bg-emerald-100 text-emerald-800",
@@ -221,6 +222,8 @@ export function CollaborationDetailCard({
   const isAuthor = currentUserId === idea.authorId;
   const interestCount = idea.interestedCount ?? 0;
   const type = idea.collaborationType;
+  const businessName = idea.businessName ?? "Local business";
+  const listingHref = idea.businessId ? `/listings/${idea.businessId}` : null;
 
   function handleDelete() {
     if (!confirm("Delete this collaboration? This cannot be undone.")) return;
@@ -262,34 +265,60 @@ export function CollaborationDetailCard({
   return (
     <div className="space-y-6">
       {/* Main card */}
-      <Card>
-        {/* Author row */}
-        <div className="flex items-center gap-3">
-          {idea.authorAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={idea.authorAvatarUrl}
-              alt={idea.authorName}
-              className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-border"
-            />
-          ) : (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/10 text-base font-semibold text-accent">
-              {idea.authorName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <p className="font-medium">{idea.authorName}</p>
-            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+      <Card className="overflow-hidden p-0">
+        <div className="flex">
+          {listingHref ? (
+            <Link
+              href={listingHref}
+              className="relative block w-24 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-32"
+            >
+              {idea.businessMediaUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={idea.businessMediaUrl}
+                  alt={businessName}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-accent/10 text-3xl font-bold text-accent/30">
+                  {businessName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </Link>
+          ) : null}
+
+          <div className="min-w-0 flex-1 p-5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
                 {typeLabels[type] ?? type}
               </span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}
+              >
                 {idea.status.replace("_", " ")}
               </span>
               <span className="text-xs text-muted">{formatPostDateTime(idea.createdAt)}</span>
             </div>
-          </div>
-        </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              {listingHref ? (
+                <Link href={listingHref} className="text-xl font-bold text-accent hover:underline">
+                  {businessName}
+                </Link>
+              ) : (
+                <p className="text-xl font-bold text-accent">{businessName}</p>
+              )}
+              {(idea.businessRatingCount ?? 0) > 0 && (
+                <StarRating
+                  rating={idea.businessRatingAvg ?? 0}
+                  count={idea.businessRatingCount}
+                  size="md"
+                />
+              )}
+            </div>
+            {idea.businessCategory && (
+              <p className="text-sm font-medium text-muted">{idea.businessCategory}</p>
+            )}
 
         <h1 className="mt-4 text-2xl font-bold leading-snug">{idea.title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">{idea.summary}</p>
@@ -367,6 +396,8 @@ export function CollaborationDetailCard({
             </span>
           )}
         </div>
+          </div>
+        </div>
       </Card>
 
       {/* Offer form — shown to non-authors only */}
@@ -374,7 +405,7 @@ export function CollaborationDetailCard({
         <Card>
           <h2 className="font-semibold">{offerHeading[type] ?? "Submit an offer"}</h2>
           <p className="mt-1 text-sm text-muted">
-            Your offer will be sent directly to {idea.authorName} and appear in the discussion below.
+            Your offer will be sent directly to {businessName} and appear in the discussion below.
           </p>
           {offerSent ? (
             <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">

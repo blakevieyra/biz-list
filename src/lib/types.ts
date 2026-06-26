@@ -297,6 +297,11 @@ export interface CollaborationIdea {
   authorName: string;
   authorAvatarUrl?: string;
   businessId?: string;
+  businessName?: string;
+  businessCategory?: string;
+  businessMediaUrl?: string;
+  businessRatingAvg?: number;
+  businessRatingCount?: number;
   title: string;
   summary: string;
   requirements?: string;

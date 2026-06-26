@@ -123,7 +123,44 @@ type CollaborationRow = {
   status: CollaborationIdea["status"];
   created_at: string;
   profiles?: { display_name: string; avatar_url?: string | null } | { display_name: string; avatar_url?: string | null }[] | null;
+  businesses?:
+    | {
+        name: string;
+        category?: string;
+        media_urls?: string[];
+        rating_avg?: number;
+        rating_count?: number;
+      }
+    | {
+        name: string;
+        category?: string;
+        media_urls?: string[];
+        rating_avg?: number;
+        rating_count?: number;
+      }[]
+    | null;
 };
+
+function collaborationBusinessMeta(
+  businesses: CollaborationRow["businesses"],
+): {
+  name?: string;
+  category?: string;
+  mediaUrl?: string;
+  ratingAvg?: number;
+  ratingCount?: number;
+} {
+  if (!businesses) return {};
+  const row = Array.isArray(businesses) ? businesses[0] : businesses;
+  if (!row) return {};
+  return {
+    name: row.name,
+    category: row.category,
+    mediaUrl: row.media_urls?.[0],
+    ratingAvg: row.rating_avg != null ? Number(row.rating_avg) : undefined,
+    ratingCount: row.rating_count,
+  };
+}
 
 function profileName(
   profiles: { display_name: string; avatar_url?: string | null } | { display_name: string; avatar_url?: string | null }[] | null | undefined,
@@ -268,12 +305,18 @@ export function mapComment(row: CommentRow): Comment {
 }
 
 export function mapCollaboration(row: CollaborationRow): CollaborationIdea {
+  const business = collaborationBusinessMeta(row.businesses);
   return {
     id: row.id,
     authorId: row.author_id,
     authorName: profileName(row.profiles),
     authorAvatarUrl: profileAvatar(row.profiles),
     businessId: row.business_id ?? undefined,
+    businessName: business.name,
+    businessCategory: business.category,
+    businessMediaUrl: business.mediaUrl,
+    businessRatingAvg: business.ratingAvg,
+    businessRatingCount: business.ratingCount,
     title: row.title,
     summary: row.summary,
     requirements: row.requirements ?? undefined,

@@ -26,6 +26,8 @@ loadEnvFile(path.join(root, ".env"));
 
 const MIGRATIONS = [
   "supabase/fix-plan-tier-enum.sql",
+  "supabase/migrations/20260623120000_init.sql",
+  "supabase/migrations/20260623140000_pro_plan.sql",
   "supabase/migrations/20260623160000_business_platform.sql",
   "supabase/migrations/20260623180000_security_hardening.sql",
   "supabase/migrations/20260623200000_pending_signups.sql",
@@ -37,9 +39,21 @@ const MIGRATIONS = [
   "supabase/migrations/20260624240000_business_post_types.sql",
   "supabase/migrations/20260624250000_business_subcategory.sql",
   "supabase/migrations/20260624260000_county_and_content_likes.sql",
+  "supabase/migrations/20260624270000_comment_threads_attachments.sql",
   "supabase/migrations/20260624270000_post_types_help_free.sql",
   "supabase/migrations/20260624280000_profile_hub_and_applications.sql",
   "supabase/migrations/20260624290000_events_and_customer_pro.sql",
+  "supabase/migrations/20260624300000_job_application_form.sql",
+  "supabase/migrations/20260624310000_collaboration_types_comments.sql",
+  "supabase/migrations/20260624320000_profile_avatar_url.sql",
+  "supabase/migrations/20260624330000_profile_country.sql",
+  "supabase/migrations/20260624340000_event_comments.sql",
+  "supabase/migrations/20260624350000_collaboration_interests.sql",
+  "supabase/migrations/20260625100000_forum_enhancements.sql",
+  "supabase/migrations/20260625200000_business_analytics.sql",
+  "supabase/migrations/20260625220000_business_media_video.sql",
+  "supabase/migrations/20260626100000_collaboration_requirements_attachments.sql",
+  "supabase/migrations/20260626200000_rls_delete_policies.sql",
 ];
 
 const POOLER_REGIONS = [

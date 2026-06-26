@@ -23,7 +23,7 @@ export default async function CollaboratePage({
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const isBusinessAccount =
-    profile?.role === "business" || profile?.role === "organization" || profile?.role === "marketer";
+    profile?.role === "business" || profile?.role === "organization";
 
   const collaborations = await getCollaborations(tab, userId);
   // Sort by interest count descending
@@ -45,10 +45,10 @@ export default async function CollaboratePage({
         title="Collaborations"
         description={
           tab === "b2b_sale"
-            ? "B2B sales opportunities posted by local businesses and organizations."
+            ? "B2B sales from local businesses."
             : tab === "contract"
-            ? "Contract opportunities posted by local businesses and organizations."
-            : "Proposals posted by local businesses and organizations."
+            ? "Contract opportunities from local businesses."
+            : "Partnership proposals from local businesses."
         }
         action={
           isBusinessAccount ? (

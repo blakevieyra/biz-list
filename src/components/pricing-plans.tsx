@@ -11,7 +11,7 @@ const communityFeatures = [
   "Full business profile, services & hiring status",
   "Business posts with photo & video links",
   "Like, follow, review, and message businesses",
-  "Forum, collaboration board & work groups",
+  "Forum, collaboration board & B2B partnerships",
 ];
 
 const proFeatures = [

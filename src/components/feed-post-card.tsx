@@ -123,10 +123,10 @@ export function FeedPostCard({
                     </span>
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Link
                     href={`/listings/${post.businessId}`}
-                    className="text-base font-bold text-accent hover:underline"
+                    className="text-xl font-bold text-accent hover:underline"
                   >
                     {post.businessName ?? "Local business"}
                   </Link>
@@ -134,6 +134,7 @@ export function FeedPostCard({
                     <StarRating
                       rating={post.businessRatingAvg ?? 0}
                       count={post.businessRatingCount}
+                      size="md"
                     />
                   )}
                 </div>

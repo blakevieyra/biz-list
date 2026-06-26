@@ -97,7 +97,7 @@ export default async function HomeHubPage({
         title={`Welcome back, ${profile.displayName}`}
         description={
           view === "activity"
-            ? "Business posts filtered by distance and area near you."
+            ? undefined
             : "Saved events and businesses you follow — all in one place."
         }
         action={

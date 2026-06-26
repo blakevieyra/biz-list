@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
 import type { CollaborationIdea } from "@/lib/types";
-import { formatPostDateTime } from "@/components/ui";
+import { formatPostDateTime, StarRating } from "@/components/ui";
 
 const statusStyles = {
   open: "bg-emerald-100 text-emerald-800",
@@ -32,54 +32,90 @@ export function CollaborationGridCard({
 }) {
   const interestCount = idea.interestedCount ?? 0;
   const isAuthor = currentUserId != null && currentUserId === idea.authorId;
+  const businessName = idea.businessName ?? "Local business";
+  const businessInitial = businessName.charAt(0).toUpperCase();
+  const listingHref = idea.businessId ? `/listings/${idea.businessId}` : undefined;
 
   return (
-    <div className="group flex flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-accent/40 hover:shadow-md">
-      {/* Author row */}
-      <div className="flex items-center gap-2.5">
-        {idea.authorAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={idea.authorAvatarUrl}
-            alt={idea.authorName}
-            className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border"
-          />
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md">
+      <div className="flex min-h-[220px]">
+        {listingHref ? (
+          <Link
+            href={listingHref}
+            className="relative block w-20 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-24"
+          >
+            {idea.businessMediaUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={idea.businessMediaUrl}
+                alt={businessName}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-accent/10 text-2xl font-bold text-accent/40">
+                {businessInitial}
+              </div>
+            )}
+          </Link>
         ) : (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
-            {idea.authorName.charAt(0).toUpperCase()}
+          <div className="flex w-20 shrink-0 items-center justify-center self-stretch border-r border-border bg-accent/10 text-2xl font-bold text-accent/40 sm:w-24">
+            {businessInitial}
           </div>
         )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{idea.authorName}</p>
+
+        <div className="flex min-w-0 flex-1 flex-col p-4">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
               {typeLabels[idea.collaborationType] ?? idea.collaborationType}
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}>
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}
+            >
               {idea.status.replace("_", " ")}
             </span>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {listingHref ? (
+              <Link href={listingHref} className="text-lg font-bold text-accent hover:underline">
+                {businessName}
+              </Link>
+            ) : (
+              <p className="text-lg font-bold text-accent">{businessName}</p>
+            )}
+            {(idea.businessRatingCount ?? 0) > 0 && (
+              <StarRating
+                rating={idea.businessRatingAvg ?? 0}
+                count={idea.businessRatingCount}
+                size="sm"
+              />
+            )}
+          </div>
+
+          {idea.businessCategory && (
+            <p className="text-sm font-medium text-muted">{idea.businessCategory}</p>
+          )}
+
+          <Link href={`/partnerships/${idea.id}`} className="mt-3 block">
+            <h3 className="text-base font-semibold leading-snug group-hover:text-accent">
+              {idea.title}
+            </h3>
+          </Link>
+
+          <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted">{idea.summary}</p>
+
+          <div className="mt-3 space-y-0.5 text-xs text-muted">
+            <p>
+              <span className="font-medium text-foreground/80">Looking for:</span> {idea.lookingFor}
+            </p>
+            <p>
+              <span className="font-medium text-foreground/80">Location:</span> {idea.location}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Title */}
-      <Link href={`/partnerships/${idea.id}`} className="mt-3 block">
-        <h3 className="text-base font-semibold leading-snug hover:text-accent">
-          {idea.title}
-        </h3>
-      </Link>
-
-      {/* Summary */}
-      <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted">{idea.summary}</p>
-
-      {/* Details */}
-      <div className="mt-3 space-y-0.5 text-xs text-muted">
-        <p><span className="font-medium text-foreground/80">Looking for:</span> {idea.lookingFor}</p>
-        <p><span className="font-medium text-foreground/80">Location:</span> {idea.location}</p>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
         {!isAuthor ? (
           <div onClick={(e) => e.stopPropagation()}>
             <CollaborationInterestedButton
@@ -100,7 +136,9 @@ export function CollaborationGridCard({
           {viewLabel[idea.collaborationType] ?? "View →"}
         </Link>
       </div>
-      <p className="mt-2 text-xs text-muted">{interestCount} interested · {formatPostDateTime(idea.createdAt)}</p>
+      <p className="border-t border-border px-4 py-2 text-xs text-muted">
+        {interestCount} interested · {formatPostDateTime(idea.createdAt)}
+      </p>
     </div>
   );
 }

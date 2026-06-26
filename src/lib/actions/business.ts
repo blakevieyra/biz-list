@@ -347,6 +347,16 @@ export async function createBusinessPost(input: {
       return { error: "Upgrade your plan to publish posts." };
     }
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "business" && profile?.role !== "organization") {
+      return { error: "Only business accounts can publish to the feed." };
+    }
+
     const title = input.title.trim().slice(0, 200);
     const body = input.body.trim().slice(0, 5000);
     const moderation = moderateMultiple({ Title: title, Post: body });

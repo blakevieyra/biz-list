@@ -105,10 +105,6 @@ export function ActivityFeedPanel({
         </p>
       )}
 
-      <p className="mb-4 text-sm text-muted">
-        Posts from businesses near you — filtered by distance and area. Follow businesses to see their updates first.
-      </p>
-
       <div className="filter-scroll mb-4">
         {ACTIVITY_TABS.map((t) => (
           <Link
