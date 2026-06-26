@@ -32,13 +32,13 @@ export function BusinessCard({ business }: { business: BusinessProfile }) {
     <Link href={`/listings/${business.id}`} className="block h-full">
       <Card className="flex h-full min-h-[340px] flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
         {cover ? (
-          <div className="aspect-[3/1] max-h-[120px] shrink-0 overflow-hidden border-b border-border bg-slate-100">
+          <div className="h-44 shrink-0 overflow-hidden border-b border-border bg-slate-100 sm:h-48">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={cover} alt="" className="h-full w-full object-cover" />
           </div>
         ) : (
-          <div className="flex aspect-[3/1] max-h-[120px] shrink-0 items-center justify-center border-b border-border bg-gradient-to-br from-blue-50 to-slate-50">
-            <span className="text-3xl font-bold text-accent/30">{business.name.charAt(0)}</span>
+          <div className="flex h-44 shrink-0 items-center justify-center border-b border-border bg-gradient-to-br from-blue-50 to-slate-50 sm:h-48">
+            <span className="text-4xl font-bold text-accent/30">{business.name.charAt(0)}</span>
           </div>
         )}
 
