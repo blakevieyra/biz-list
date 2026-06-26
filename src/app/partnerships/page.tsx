@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { CollaborationProposalCard } from "@/components/collaboration-proposal-card";
+import { CollaborationGridCard } from "@/components/collaboration-grid-card";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { Card, PageHeader } from "@/components/ui";
-import { getCollaborationCommentsByIds, getCollaborations, getCurrentProfile } from "@/lib/data";
-import type { CollaborationComment, CollaborationType } from "@/lib/types";
+import { getCollaborations, getCurrentProfile } from "@/lib/data";
+import type { CollaborationType } from "@/lib/types";
 
 const collaborationTabs: { id: CollaborationType; label: string }[] = [
   { id: "proposal", label: "Proposals" },
   { id: "contract", label: "Contracts" },
-  { id: "b2b_sale", label: "B2B sales" },
+  { id: "b2b_sale", label: "B2B Sales" },
 ];
 
 export default async function CollaboratePage({
@@ -26,26 +26,37 @@ export default async function CollaboratePage({
     profile?.role === "business" || profile?.role === "organization" || profile?.role === "marketer";
 
   const collaborations = await getCollaborations(tab, userId);
-  const commentsById: Map<string, CollaborationComment[]> =
-    await getCollaborationCommentsByIds(collaborations.map((idea) => idea.id));
+  // Sort by interest count descending
+  const sorted = [...collaborations].sort((a, b) => (b.interestedCount ?? 0) - (a.interestedCount ?? 0));
 
   function tabHref(next: CollaborationType) {
     if (next === "proposal") return "/partnerships";
     return `/partnerships?tab=${next}`;
   }
 
+  const createLabel =
+    tab === "contract" ? "Create contract" :
+    tab === "b2b_sale" ? "Create B2B sale" :
+    "Create proposal";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Collaborations"
-        description="Proposals, contracts, and B2B sales posted by local businesses and organizations."
+        description={
+          tab === "b2b_sale"
+            ? "B2B sales opportunities posted by local businesses and organizations."
+            : tab === "contract"
+            ? "Contract opportunities posted by local businesses and organizations."
+            : "Proposals posted by local businesses and organizations."
+        }
         action={
           isBusinessAccount ? (
             <Link
               href={`/partnerships/new?type=${tab}`}
               className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
             >
-              {tab === "contract" ? "Create contract" : tab === "b2b_sale" ? "Create B2B sale" : "Create proposal"}
+              {createLabel}
             </Link>
           ) : (
             <Link
@@ -74,10 +85,10 @@ export default async function CollaboratePage({
         ))}
       </div>
 
-      {collaborations.length === 0 ? (
+      {sorted.length === 0 ? (
         <Card>
           <p className="text-sm text-muted">
-            No shared {collaborationTabs.find((t) => t.id === tab)?.label.toLowerCase()} yet.{" "}
+            No {collaborationTabs.find((t) => t.id === tab)?.label.toLowerCase()} yet.{" "}
             <Link href={`/partnerships/new?type=${tab}`} className="text-accent hover:underline">
               Create the first one
             </Link>
@@ -85,14 +96,9 @@ export default async function CollaboratePage({
           </p>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {collaborations.map((idea) => (
-            <CollaborationProposalCard
-              key={idea.id}
-              idea={idea}
-              comments={commentsById.get(idea.id) ?? []}
-              currentUserId={userId}
-            />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {sorted.map((idea) => (
+            <CollaborationGridCard key={idea.id} idea={idea} />
           ))}
         </div>
       )}

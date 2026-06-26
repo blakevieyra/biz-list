@@ -56,6 +56,27 @@ export async function emailCollaborationPublished(to: string, name: string, titl
   await sendTemplateEmail(to, emailTemplates.collaboration(name, title));
 }
 
+export async function emailCollaborationOffer(
+  creatorId: string,
+  senderName: string,
+  collaborationTitle: string,
+  message: string,
+  collaborationId: string,
+) {
+  const profile = await getProfileEmail(creatorId);
+  if (!profile?.email) return;
+  await sendTemplateEmail(
+    profile.email,
+    emailTemplates.collaborationOffer(
+      profile.display_name || "there",
+      senderName,
+      collaborationTitle,
+      message,
+      `/partnerships/${collaborationId}`,
+    ),
+  );
+}
+
 export async function emailNotificationToUser(
   userId: string,
   type: "follow" | "connection" | "comment" | "message",

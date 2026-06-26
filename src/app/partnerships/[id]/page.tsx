@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CollaborationProposalCard } from "@/components/collaboration-proposal-card";
 import { getAuthUserId } from "@/lib/actions/auth";
-import { getCollaborationById, getCollaborationComments } from "@/lib/data";
+import { getCollaborationById, getCollaborationComments, getCurrentProfile } from "@/lib/data";
+import { CollaborationDetailCard } from "@/components/collaboration-detail-card";
 
 export default async function CollaborationDetailPage({
   params,
@@ -11,9 +11,10 @@ export default async function CollaborationDetailPage({
 }) {
   const { id } = await params;
   const userId = await getAuthUserId();
-  const [idea, comments] = await Promise.all([
+  const [idea, comments, profile] = await Promise.all([
     getCollaborationById(id, userId),
     getCollaborationComments(id),
+    getCurrentProfile(),
   ]);
 
   if (!idea) notFound();
@@ -24,10 +25,11 @@ export default async function CollaborationDetailPage({
         ← Back to collaborations
       </Link>
       <div className="mt-6">
-        <CollaborationProposalCard
+        <CollaborationDetailCard
           idea={idea}
           comments={comments}
           currentUserId={userId}
+          currentUserName={profile?.displayName ?? null}
         />
       </div>
     </div>

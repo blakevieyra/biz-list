@@ -790,6 +790,72 @@ export async function toggleCollaborationInterest(collaborationId: string) {
   }
 }
 
+export async function submitCollaborationOffer(collaborationId: string, message: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to submit an offer." };
+  try {
+    const { supabase, user } = await requireUser();
+    const raw = message.trim();
+    if (!raw) return { error: "Message cannot be empty." };
+    const moderation = moderateUserContent(raw, "Message");
+    if (!moderation.ok) return { error: moderation.reason };
+    const trimmed = raw.slice(0, 2000);
+
+    const { data: collab } = await supabase
+      .from("collaborations")
+      .select("author_id, title")
+      .eq("id", collaborationId)
+      .single();
+
+    if (!collab) return { error: "Collaboration not found." };
+    if (collab.author_id === user.id) return { error: "You cannot submit an offer on your own collaboration." };
+
+    const { error } = await supabase.from("collaboration_comments").insert({
+      collaboration_id: collaborationId,
+      author_id: user.id,
+      body: trimmed,
+    });
+    if (error) return { error: error.message };
+
+    // Mark collaboration as in discussion
+    await supabase
+      .from("collaborations")
+      .update({ status: "in_discussion" })
+      .eq("id", collaborationId)
+      .eq("status", "open");
+
+    // Notify creator
+    const { data: sender } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+
+    const { emailCollaborationOffer } = await import("@/lib/email/actions");
+    await emailCollaborationOffer(
+      collab.author_id,
+      sender?.display_name ?? "Someone",
+      collab.title,
+      trimmed,
+      collaborationId,
+    );
+
+    await createNotification(supabase, {
+      userId: collab.author_id,
+      type: "collaboration",
+      title: "New offer on your collaboration",
+      body: `${sender?.display_name ?? "Someone"} submitted an offer on "${collab.title}"`,
+      link: `/partnerships/${collaborationId}`,
+      actorName: sender?.display_name,
+    });
+
+    revalidatePath("/partnerships");
+    revalidatePath(`/partnerships/${collaborationId}`);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to submit offer." };
+  }
+}
+
 export async function commentOnCollaboration(collaborationId: string, body: string) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to comment." };

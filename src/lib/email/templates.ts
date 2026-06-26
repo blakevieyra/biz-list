@@ -147,6 +147,21 @@ export const emailTemplates = {
     ctaUrl: `${getAppUrl()}${link}`,
   }),
 
+  collaborationOffer: (
+    recipientName: string,
+    senderName: string,
+    collaborationTitle: string,
+    message: string,
+    link: string,
+  ) => ({
+    subject: `New offer on your collaboration: ${collaborationTitle}`,
+    title: "Someone responded to your collaboration",
+    greeting: `Hi ${recipientName},`,
+    body: `${senderName} submitted an offer on your collaboration "${collaborationTitle}":\n\n"${message}"\n\nLog in to view the full discussion and respond.`,
+    ctaLabel: "View collaboration",
+    ctaUrl: `${getAppUrl()}${link}`,
+  }),
+
   collaboration: (name: string, title: string) => ({
     subject: `Collaboration idea posted: ${title}`,
     title: "Collaboration idea published",
