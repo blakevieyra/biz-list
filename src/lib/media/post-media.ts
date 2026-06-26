@@ -57,6 +57,7 @@ export function isVideoUrl(url: string): boolean {
 }
 
 export function isImageUrl(url: string): boolean {
+  if (isDirectVideoUrl(url)) return false;
   if (/\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/i.test(url)) return true;
   if (url.includes("supabase.co/storage")) return true;
   if (url.includes("images.unsplash.com")) return true;
