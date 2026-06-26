@@ -12,6 +12,25 @@ import {
 } from "@/lib/feed/location-scope";
 import { INDUSTRY_OPTIONS, isIndustryOption } from "@/lib/industries";
 
+const RATING_OPTIONS = [
+  { value: "4", label: "4★ & up" },
+  { value: "3", label: "3★ & up" },
+  { value: "2", label: "2★ & up" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "hiring", label: "Hiring" },
+  { value: "deals", label: "Has deals" },
+];
+
+function filterChipClass(active: boolean) {
+  return `rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
+    active
+      ? "bg-accent text-white"
+      : "border border-border bg-card text-muted hover:text-foreground"
+  }`;
+}
+
 export default async function ListingsPage({
   searchParams,
 }: {
@@ -21,6 +40,8 @@ export default async function ListingsPage({
     scope?: string;
     miles?: string;
     category?: string;
+    rating?: string;
+    status?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -32,6 +53,9 @@ export default async function ListingsPage({
     profile?.discoveryRadius,
   );
   const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
+  const minRating = ["2", "3", "4"].includes(params.rating ?? "") ? Number(params.rating) : null;
+  const statusFilter =
+    params.status === "hiring" || params.status === "deals" ? params.status : null;
 
   const viewer = profile
     ? {
@@ -46,20 +70,39 @@ export default async function ListingsPage({
       }
     : null;
 
-  const businesses = await getBusinesses({
+  const allBusinesses = await getBusinesses({
     query: query || undefined,
     category: categoryFilter,
     discoveryRadius: discoveryFilter,
     viewer,
   });
 
-  const latestPosts = await getLatestPostsForBusinessIds(businesses.map((b) => b.id));
+  const latestPosts = await getLatestPostsForBusinessIds(allBusinesses.map((b) => b.id));
+
+  // Apply rating + status filters after fetching (uses already-loaded data)
+  const businesses = allBusinesses.filter((b) => {
+    if (minRating !== null) {
+      if (b.ratingCount === 0 || b.ratingAvg < minRating) return false;
+    }
+    if (statusFilter === "hiring") {
+      const posts = latestPosts.get(b.id) ?? [];
+      const hasJobPost = posts.some((p) => p.postType === "job");
+      if (!b.intents.includes("hiring") && !hasJobPost) return false;
+    }
+    if (statusFilter === "deals") {
+      const posts = latestPosts.get(b.id) ?? [];
+      if (!posts.some((p) => p.postType === "deal")) return false;
+    }
+    return true;
+  });
 
   function buildHref(next: Record<string, string | undefined>) {
-    const merged = {
+    const merged: Record<string, string | undefined> = {
       q: query || undefined,
       near: discoveryFilterHrefValue(discoveryFilter),
       category: categoryFilter,
+      rating: minRating !== null ? String(minRating) : undefined,
+      status: statusFilter ?? undefined,
       ...next,
     };
     const search = new URLSearchParams();
@@ -86,55 +129,54 @@ export default async function ListingsPage({
         </p>
       )}
 
-      {/* Near filter */}
-      <section className="mb-4">
+      {/* Near */}
+      <section className="mb-3">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Near
-          </span>
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Near</span>
           {DISCOVERY_FILTER_OPTIONS.map((option) => (
-            <Link
-              key={option}
-              href={buildHref({ near: discoveryFilterHrefValue(option) })}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
-                discoveryFilter === option
-                  ? "bg-accent text-white"
-                  : "border border-border bg-card text-muted hover:text-foreground"
-              }`}
-            >
+            <Link key={option} href={buildHref({ near: discoveryFilterHrefValue(option) })}
+              className={filterChipClass(discoveryFilter === option)}>
               {DISCOVERY_RADIUS_LABELS[option]}
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Industry filter */}
-      <section className="mb-4">
+      {/* Industry */}
+      <section className="mb-3">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Industry
-          </span>
-          <Link
-            href={buildHref({ category: undefined })}
-            className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
-              !categoryFilter
-                ? "bg-accent text-white"
-                : "border border-border bg-card text-muted hover:text-foreground"
-            }`}
-          >
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Industry</span>
+          <Link href={buildHref({ category: undefined })} className={filterChipClass(!categoryFilter)}>
             All industries
           </Link>
           {INDUSTRY_OPTIONS.map((category) => (
-            <Link
-              key={category}
-              href={buildHref({ category })}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
-                categoryFilter === category
-                  ? "bg-accent text-white"
-                  : "border border-border bg-card text-muted hover:text-foreground"
-              }`}
-            >
+            <Link key={category} href={buildHref({ category })} className={filterChipClass(categoryFilter === category)}>
               {category}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Rating + Status on one row */}
+      <section className="mb-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Rating</span>
+          <Link href={buildHref({ rating: undefined })} className={filterChipClass(minRating === null)}>
+            All ratings
+          </Link>
+          {RATING_OPTIONS.map(({ value, label }) => (
+            <Link key={value} href={buildHref({ rating: value })} className={filterChipClass(minRating === Number(value))}>
+              {label}
+            </Link>
+          ))}
+          <span className="mx-2 text-border">|</span>
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Status</span>
+          <Link href={buildHref({ status: undefined })} className={filterChipClass(!statusFilter)}>
+            All
+          </Link>
+          {STATUS_OPTIONS.map(({ value, label }) => (
+            <Link key={value} href={buildHref({ status: value })} className={filterChipClass(statusFilter === value)}>
+              {label}
             </Link>
           ))}
         </div>
@@ -145,6 +187,8 @@ export default async function ListingsPage({
           <input type="hidden" name="near" value={discoveryFilterHrefValue(discoveryFilter)} />
         )}
         {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
+        {minRating !== null && <input type="hidden" name="rating" value={String(minRating)} />}
+        {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
         <input
           name="q"
           defaultValue={params.q ?? ""}
@@ -161,8 +205,7 @@ export default async function ListingsPage({
 
       {businesses.length === 0 ? (
         <p className="text-muted">
-          No businesses found in this area. Try expanding your distance or choosing a different
-          filter.
+          No businesses match your filters. Try expanding your distance or adjusting the filters above.
         </p>
       ) : (
         <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
