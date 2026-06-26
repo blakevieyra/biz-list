@@ -18,9 +18,9 @@ async function getProfileEmail(userId: string) {
 export async function emailSignupVerification(
   to: string,
   name: string,
-  verifyUrl: string,
+  code: string,
 ) {
-  await sendTemplateEmail(to, emailTemplates.emailVerification(name, verifyUrl));
+  await sendTemplateEmail(to, emailTemplates.emailVerification(name, code));
 }
 
 export async function emailWelcome(to: string, name: string) {

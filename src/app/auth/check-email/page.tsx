@@ -1,11 +1,13 @@
+"use server";
+
 import Link from "next/link";
-import { ResendVerificationForm } from "@/components/auth-forms";
+import { ResendVerificationForm, VerifyOtpForm } from "@/components/auth-forms";
 import { LogoMark } from "@/components/logo";
 import { Card } from "@/components/ui";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  invalid: "That verification link is invalid or has already been used.",
-  expired: "That verification link has expired. Request a new one below.",
+  invalid: "That code is incorrect. Double-check and try again.",
+  expired: "That code has expired. Request a new one below.",
   exists: "An account with this email already exists. You can sign in instead.",
   failed: "We could not finish creating your account. Please try again or contact support.",
 };
@@ -30,22 +32,21 @@ export default async function CheckEmailPage({
         </p>
         <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Check your email</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-          We sent a verification link from BizList
+          We sent a 6-digit verification code from BizList
           {email ? (
             <>
-              {" "}
-              to <span className="font-medium text-foreground">{email}</span>
+              {" "}to <span className="font-medium text-foreground">{email}</span>
             </>
           ) : (
             " to your inbox"
           )}
-          . Click the link to verify your email and finish creating your account.
+          . Enter it below to continue.
         </p>
       </div>
 
       <ol className="mb-8 space-y-3">
         <OnboardingStep done label="Enter your details" />
-        <OnboardingStep active label="Verify your email" detail="Open the link we sent you" />
+        <OnboardingStep active label="Verify your email" detail="Enter the code we sent you" />
         <OnboardingStep label="Complete your profile" detail="Choose business or customer" />
       </ol>
 
@@ -55,8 +56,21 @@ export default async function CheckEmailPage({
         </p>
       )}
 
-      <Card>
-        <h2 className="font-semibold">Didn&apos;t get the email?</h2>
+      {email ? (
+        <VerifyOtpForm email={email} />
+      ) : (
+        <Card>
+          <p className="text-sm text-muted">
+            No email address found.{" "}
+            <Link href="/auth/signup" className="text-accent hover:underline">
+              Start signup again
+            </Link>
+          </p>
+        </Card>
+      )}
+
+      <Card className="mt-4">
+        <h2 className="font-semibold">Didn&apos;t get the code?</h2>
         <ul className="mt-3 space-y-2 text-sm text-muted">
           <li>• Check spam or promotions folders</li>
           <li>• Make sure {email || "your email"} is spelled correctly</li>

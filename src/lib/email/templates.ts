@@ -4,12 +4,22 @@ export function buildBrandedEmailHtml(input: {
   title: string;
   greeting?: string;
   body: string;
+  code?: string;
   ctaLabel?: string;
   ctaUrl?: string;
   footerNote?: string;
 }): string {
   const appUrl = getAppUrl();
   const logoUrl = getLogoUrl();
+
+  const codeBlock = input.code
+    ? `<div style="background:#f0f7ff;border-radius:14px;padding:28px 20px;text-align:center;margin:24px 0;border:2px dashed #bfdbfe;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#64748b;">Your verification code</p>
+        <p style="margin:0;font-size:42px;font-weight:800;letter-spacing:16px;color:#001B44;font-family:monospace;">${input.code}</p>
+        <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">Expires in 24 hours · Do not share this code</p>
+      </div>`
+    : "";
+
   const ctaBlock =
     input.ctaLabel && input.ctaUrl
       ? `<p style="margin:28px 0 0;">
@@ -36,6 +46,7 @@ export function buildBrandedEmailHtml(input: {
                 <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#001B44;">${input.title}</h1>
                 ${input.greeting ? `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">${input.greeting}</p>` : ""}
                 <p style="margin:0;font-size:15px;line-height:1.7;color:#475569;white-space:pre-line;">${input.body}</p>
+                ${codeBlock}
                 ${ctaBlock}
               </td>
             </tr>
@@ -55,13 +66,12 @@ export function buildBrandedEmailHtml(input: {
 }
 
 export const emailTemplates = {
-  emailVerification: (name: string, verifyUrl: string) => ({
-    subject: "Verify your email to join BizList",
+  emailVerification: (name: string, code: string) => ({
+    subject: "Your BizList verification code",
     title: "Confirm your email",
     greeting: `Hi ${name},`,
-    body: "Thanks for signing up for BizList — your local hub to discover businesses, join forums, and collaborate with neighbors.\n\nTap the button below to verify your email and finish creating your account. This link expires in 24 hours.",
-    ctaLabel: "Verify email & continue",
-    ctaUrl: verifyUrl,
+    body: "Thanks for signing up for BizList. Enter the code below on the verification page to finish creating your account.",
+    code,
     footerNote: "You're receiving this because you started signing up for BizList.",
   }),
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  createOtpCode,
   createVerificationToken,
   decryptSignupPassword,
   encryptSignupPassword,
@@ -64,7 +65,7 @@ export async function signUp(formData: FormData) {
     return { error: "An account with this email already exists. Try signing in." };
   }
 
-  const { token, hash } = createVerificationToken();
+  const { code, hash } = createOtpCode();
   const { ciphertext, iv } = encryptSignupPassword(password);
   const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS).toISOString();
 
@@ -84,12 +85,10 @@ export async function signUp(formData: FormData) {
     return { error: "Could not start signup. Please try again." };
   }
 
-  const verifyUrl = `${getAppUrl()}/auth/verify-email?token=${encodeURIComponent(token)}`;
-
-  await emailSignupVerification(email, displayName, verifyUrl);
+  await emailSignupVerification(email, displayName, code);
 
   if (!isEmailConfigured()) {
-    console.info("[BizList] EMAIL NOT CONFIGURED — signup verify URL:", verifyUrl);
+    console.info("[BizList] EMAIL NOT CONFIGURED — signup OTP code:", code);
   }
 
   redirect(`/auth/check-email?email=${encodeURIComponent(email)}`);
@@ -124,7 +123,7 @@ export async function resendSignupVerification(emailInput: string) {
     return { error: "No pending signup found. Please sign up again." };
   }
 
-  const { token, hash } = createVerificationToken();
+  const { code, hash } = createOtpCode();
   const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS).toISOString();
 
   const { error: updateError } = await admin
@@ -136,11 +135,10 @@ export async function resendSignupVerification(emailInput: string) {
     return { error: "Could not resend verification email." };
   }
 
-  const verifyUrl = `${getAppUrl()}/auth/verify-email?token=${encodeURIComponent(token)}`;
-  await emailSignupVerification(email, pending.display_name, verifyUrl);
+  await emailSignupVerification(email, pending.display_name, code);
 
   if (!isEmailConfigured()) {
-    console.info("[BizList] EMAIL NOT CONFIGURED — resend verify URL:", verifyUrl);
+    console.info("[BizList] EMAIL NOT CONFIGURED — resend OTP code:", code);
   }
 
   return { success: true };
@@ -220,6 +218,68 @@ export async function verifySignupToken(token: string): Promise<
   await emailWelcome(pending.email, pending.display_name);
 
   return { ok: true };
+}
+
+export async function verifySignupOtp(
+  email: string,
+  code: string,
+): Promise<{ ok: true } | { error: "invalid" | "expired" | "exists" | "failed" }> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return { error: "failed" };
+
+  const codeHash = hashVerificationToken(code.trim());
+  const { data: pending, error: lookupError } = await admin
+    .from("pending_signups")
+    .select("*")
+    .eq("email", email.toLowerCase().trim())
+    .eq("token_hash", codeHash)
+    .maybeSingle();
+
+  if (lookupError || !pending) return { error: "invalid" };
+  if (new Date(pending.expires_at).getTime() < Date.now()) return { error: "expired" };
+  if (await emailAlreadyRegistered(pending.email)) {
+    await admin.from("pending_signups").delete().eq("id", pending.id);
+    return { error: "exists" };
+  }
+
+  let password: string;
+  try {
+    password = decryptSignupPassword(pending.password_ciphertext, pending.password_iv);
+  } catch {
+    return { error: "invalid" };
+  }
+
+  const { error: createError } = await admin.auth.admin.createUser({
+    email: pending.email,
+    password,
+    email_confirm: true,
+    user_metadata: { display_name: pending.display_name },
+  });
+
+  if (createError) {
+    console.error("[signup otp] createUser", createError.message);
+    return createError.message.toLowerCase().includes("already")
+      ? { error: "exists" }
+      : { error: "failed" };
+  }
+
+  await admin.from("pending_signups").delete().eq("id", pending.id);
+
+  const supabase = await createClient();
+  if (!supabase) return { error: "failed" };
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: pending.email,
+    password,
+  });
+
+  if (signInError) {
+    console.error("[signup otp] signIn after create", signInError.message);
+    return { error: "failed" };
+  }
+
+  await emailWelcome(pending.email, pending.display_name);
+  redirect("/profile/create?welcome=1");
 }
 
 export async function signIn(formData: FormData) {

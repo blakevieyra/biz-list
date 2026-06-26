@@ -26,6 +26,12 @@ export function createVerificationToken(): { token: string; hash: string } {
   return { token, hash };
 }
 
+export function createOtpCode(): { code: string; hash: string } {
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const hash = hashVerificationToken(code);
+  return { code, hash };
+}
+
 export function hashVerificationToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }

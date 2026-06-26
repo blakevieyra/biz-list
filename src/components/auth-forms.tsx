@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { resendSignupVerification, signIn, signUp } from "@/lib/actions/auth";
+import { resendSignupVerification, signIn, signUp, verifySignupOtp } from "@/lib/actions/auth";
 import {
   getDisplayNameError,
   getEmailError,
@@ -116,7 +116,7 @@ export function SignUpForm() {
           autoComplete="email"
           inputMode="email"
           placeholder="you@example.com"
-          hint="We'll send a one-time verification link here."
+          hint="We'll send a 6-digit verification code here."
           error={fieldErrors.email}
         />
         <Field
@@ -138,6 +138,69 @@ export function SignUpForm() {
           className="min-h-11 w-full rounded-full bg-accent py-2.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
         >
           {pending ? "Sending verification..." : "Send verification email"}
+        </button>
+      </form>
+    </Card>
+  );
+}
+
+const OTP_ERROR_MESSAGES: Record<string, string> = {
+  invalid: "That code is incorrect. Double-check and try again.",
+  expired: "That code has expired. Request a new one below.",
+  exists: "An account with this email already exists. You can sign in instead.",
+  failed: "We could not finish creating your account. Please try again.",
+};
+
+export function VerifyOtpForm({ email }: { email: string }) {
+  const [state, formAction, pending] = useActionState(
+    async (_prev: { error?: string }, _formData: FormData) => {
+      const code = String(_formData.get("code") ?? "").trim();
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+        return { error: "Please enter the 6-digit code from your email." };
+      }
+      const result = await verifySignupOtp(email, code);
+      if ("error" in result) {
+        return { error: OTP_ERROR_MESSAGES[result.error] ?? OTP_ERROR_MESSAGES.failed };
+      }
+      return {};
+    },
+    {} as { error?: string },
+  );
+
+  return (
+    <Card>
+      <form action={formAction} className="space-y-4">
+        <div className="space-y-1">
+          <label htmlFor="field-code" className="block text-sm font-medium">
+            Verification code
+          </label>
+          <p id="field-code-hint" className="text-xs text-muted">
+            Enter the 6-digit code we emailed you.
+          </p>
+          <input
+            id="field-code"
+            name="code"
+            type="text"
+            inputMode="numeric"
+            pattern="\d{6}"
+            maxLength={6}
+            autoComplete="one-time-code"
+            placeholder="000000"
+            aria-describedby="field-code-hint"
+            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-accent focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        {state.error && (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {state.error}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={pending}
+          className="min-h-11 w-full rounded-full bg-accent py-2.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+        >
+          {pending ? "Verifying..." : "Verify code"}
         </button>
       </form>
     </Card>
