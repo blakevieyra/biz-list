@@ -21,12 +21,9 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:h-20 lg:px-10">
+      <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
         <div className="flex min-w-0 items-center gap-3">
-          {/* Small logo — left side on mobile only; hidden on desktop where the big right logo shows */}
-          <span className="lg:hidden">
-            <Logo size="md" href={userId ? "/home" : "/"} />
-          </span>
+          <Logo size="md" href={userId ? "/home" : "/"} />
           <Suspense fallback={null}>
             <MobileNav
               userId={userId}
@@ -51,12 +48,7 @@ export async function SiteHeader() {
           <SiteNavLinks userId={userId} />
         </Suspense>
 
-        <div className="flex shrink-0 items-center gap-4">
-          {/* Big logo — right side, desktop only */}
-          <span className="hidden lg:inline-flex">
-            <Logo size="lg" href={userId ? "/home" : "/"} />
-          </span>
-
+        <div className="flex shrink-0 items-center gap-2">
           {!isSupabaseConfigured() && (
             <span className="hidden text-xs text-amber-700 xl:inline">Demo mode</span>
           )}
