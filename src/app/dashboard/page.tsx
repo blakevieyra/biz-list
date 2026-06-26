@@ -5,7 +5,7 @@ import { AiAuditPanel } from "@/components/ai-audit-panel";
 import { LeadsPreviewPanel } from "@/components/leads-preview-panel";
 import { PlatinumGrowthPanel } from "@/components/platinum-growth-panel";
 import { getAuthUserId } from "@/lib/actions/auth";
-import { getBusinessPosts } from "@/lib/data/business";
+import { getBusinessPosts, getServiceOrdersForBusiness } from "@/lib/data/business";
 import { getBusinessById, getCurrentProfile } from "@/lib/data";
 import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
 import { getConversations } from "@/lib/data/messages";
@@ -36,7 +36,7 @@ export default async function DashboardPage() {
   const businessRow = isBusiness ? await getOwnerBusiness(userId) : null;
   const business = businessRow ? await getBusinessById(businessRow.id) : null;
 
-  const [posts, leads, latestAudit, conversations] = await Promise.all([
+  const [posts, leads, latestAudit, conversations, orders] = await Promise.all([
     business ? getBusinessPosts(business.id) : Promise.resolve([]),
     isBusiness && canAccess(profile.planTier, "localLeads")
       ? getLocalLeads(userId)
@@ -45,6 +45,7 @@ export default async function DashboardPage() {
       ? getLatestAiAssessment(userId)
       : Promise.resolve(null),
     getConversations(userId),
+    business ? getServiceOrdersForBusiness(business.id, userId) : Promise.resolve([]),
   ]);
 
   const unreadCount = conversations.reduce((n, c) => n + c.unreadCount, 0);
@@ -60,8 +61,8 @@ export default async function DashboardPage() {
         }
       />
 
-      {/* Row 1: Conversations · Business profile · Posts & marketing */}
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Row 1: Conversations · Business profile · Service orders · Posts & marketing */}
+      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Conversations */}
         <Card>
           <div className="flex items-start justify-between">
@@ -104,32 +105,35 @@ export default async function DashboardPage() {
         {isBusiness ? (
           <Card>
             <h2 className="font-semibold">Business profile</h2>
-            <p className="mt-2 text-sm text-muted">
-              {business
-                ? `${business.name} · ${business.likeCount} likes · ${business.ratingCount} reviews`
-                : "Complete your business profile to appear in listings."}
-            </p>
             {business ? (
-              <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                <Link href={`/listings/${business.id}`} className="text-accent hover:underline">
-                  View public listing →
-                </Link>
-                <Link href="/dashboard/profile" className="text-accent hover:underline">
-                  Edit listing →
-                </Link>
-                <Link href="/dashboard/orders" className="text-accent hover:underline">
-                  Service orders →
-                </Link>
-                {business.isHiring && (
-                  <Link href="/dashboard/applications" className="text-accent hover:underline">
-                    Job applications →
+              <>
+                <p className="mt-2 text-sm text-muted">{business.name}</p>
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  <span><span className="font-semibold">{business.followerIds.length}</span> <span className="text-muted">followers</span></span>
+                  <span><span className="font-semibold">{business.likeCount}</span> <span className="text-muted">likes</span></span>
+                  <span><span className="font-semibold">{business.ratingCount}</span> <span className="text-muted">reviews</span></span>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                  <Link href={`/listings/${business.id}`} className="text-accent hover:underline">
+                    View public listing →
                   </Link>
-                )}
-              </div>
+                  <Link href="/dashboard/profile" className="text-accent hover:underline">
+                    Edit listing →
+                  </Link>
+                  {business.isHiring && (
+                    <Link href="/dashboard/applications" className="text-accent hover:underline">
+                      Job applications →
+                    </Link>
+                  )}
+                </div>
+              </>
             ) : (
-              <Link href="/profile/create" className="mt-4 inline-block text-sm text-accent hover:underline">
-                Complete onboarding →
-              </Link>
+              <>
+                <p className="mt-2 text-sm text-muted">Complete your business profile to appear in listings.</p>
+                <Link href="/profile/create" className="mt-4 inline-block text-sm text-accent hover:underline">
+                  Complete onboarding →
+                </Link>
+              </>
             )}
           </Card>
         ) : (
@@ -143,6 +147,51 @@ export default async function DashboardPage() {
             </Link>
           </Card>
         )}
+
+        {/* Service orders */}
+        {isBusiness && business ? (() => {
+          const pending = orders.filter((o) => o.status === "pending").length;
+          const total = orders.length;
+          return (
+            <Card>
+              <h2 className="font-semibold">Service orders</h2>
+              <p className="mt-3 text-3xl font-bold">{total}</p>
+              <p className="text-xs text-muted">total orders</p>
+              {pending > 0 && (
+                <p className="mt-1 text-sm font-medium text-amber-700">
+                  {pending} pending review
+                </p>
+              )}
+              {total > 0 ? (
+                <ul className="mt-3 space-y-1.5">
+                  {orders.slice(0, 3).map((o) => (
+                    <li key={o.id} className="flex items-center justify-between text-sm">
+                      <span className="truncate text-muted">{o.serviceName}</span>
+                      <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                        o.status === "pending" ? "bg-amber-100 text-amber-800"
+                        : o.status === "accepted" ? "bg-emerald-100 text-emerald-800"
+                        : "bg-slate-100 text-slate-600"
+                      }`}>{o.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-muted">No orders yet.</p>
+              )}
+              <Link href="/dashboard/orders" className="mt-4 inline-block text-sm text-accent hover:underline">
+                Manage orders →
+              </Link>
+            </Card>
+          );
+        })() : isBusiness ? (
+          <Card>
+            <h2 className="font-semibold">Service orders</h2>
+            <p className="mt-2 text-sm text-muted">Set up your listing to start receiving service orders.</p>
+            <Link href="/dashboard/profile" className="mt-4 inline-block text-sm text-accent hover:underline">
+              Set up listing →
+            </Link>
+          </Card>
+        ) : null}
 
         {/* Posts & marketing */}
         {isBusiness && canAccess(profile.planTier, "businessPosts") ? (
