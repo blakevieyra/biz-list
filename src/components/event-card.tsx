@@ -16,7 +16,7 @@ export function EventCard({ event }: { event: BusinessEvent }) {
           <img
             src={event.imageUrl}
             alt=""
-            className="h-40 w-full object-cover"
+            className="h-44 w-full object-cover sm:h-48"
             loading="lazy"
           />
         ) : event.businessMediaUrl ? (
@@ -24,11 +24,11 @@ export function EventCard({ event }: { event: BusinessEvent }) {
           <img
             src={event.businessMediaUrl}
             alt=""
-            className="h-40 w-full object-cover"
+            className="h-44 w-full object-cover sm:h-48"
             loading="lazy"
           />
         ) : (
-          <div className="flex h-40 items-center justify-center bg-blue-50 text-sm font-medium text-accent">
+          <div className="flex h-44 items-center justify-center bg-blue-50 text-sm font-medium text-accent sm:h-48">
             Local event
           </div>
         )}
