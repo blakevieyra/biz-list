@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ForumDiscussionsSection } from "@/components/forum-discussions-section";
 import { PageHeader } from "@/components/ui";
-import { getAuthUserId } from "@/lib/actions/auth";
+import { getCurrentProfile } from "@/lib/data";
 import type { ForumCategory } from "@/lib/types";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
@@ -13,7 +13,8 @@ export default async function ForumPage({
   searchParams: Promise<{ category?: string; q?: string; post?: string }>;
 }) {
   const params = await searchParams;
-  const userId = await getAuthUserId();
+  const profile = await getCurrentProfile();
+  const canPost = profile && ["business", "organization", "marketer"].includes(profile.role);
 
   const category = forumCategories.includes(params.category as ForumCategory)
     ? (params.category as ForumCategory)
@@ -27,21 +28,21 @@ export default async function ForumPage({
         title="Forum"
         description="Community discussions about partnerships, local tips, hiring, and more."
         action={
-          userId ? (
+          canPost ? (
             <Link
               href="/forum/new"
               className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
             >
               New discussion
             </Link>
-          ) : (
+          ) : !profile ? (
             <Link
               href="/auth/login"
               className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
             >
               Sign in to post
             </Link>
-          )
+          ) : null
         }
       />
 

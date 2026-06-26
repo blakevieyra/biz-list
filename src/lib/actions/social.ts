@@ -540,6 +540,16 @@ export async function createForumPost(input: {
   try {
     const { supabase, user } = await requireUser();
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    const allowedRoles = ["business", "organization", "marketer"];
+    if (!profile || !allowedRoles.includes(profile.role)) {
+      return { error: "Only business, organization, or marketer accounts can create forum posts." };
+    }
+
     const moderation = moderateMultiple({ Title: input.title, Post: input.body });
     if (!moderation.ok) return { error: moderation.reason };
 
@@ -1008,11 +1018,86 @@ export async function sendMessage(conversationId: string, body: string) {
 
     if (error) return { error: error.message };
 
+    const recipientId =
+      conversation.participant_a === user.id
+        ? conversation.participant_b
+        : conversation.participant_a;
+
+    const { data: senderProfile } = await supabase
+      .from("profiles")
+      .select("role, display_name")
+      .eq("id", user.id)
+      .single();
+
+    if (senderProfile?.role === "customer") {
+      const { data: business } = await supabase
+        .from("businesses")
+        .select("*")
+        .eq("owner_id", recipientId)
+        .eq("virtual_agent_enabled", true)
+        .maybeSingle();
+
+      if (business) {
+        const { data: owner } = await supabase
+          .from("profiles")
+          .select("plan_tier")
+          .eq("id", recipientId)
+          .maybeSingle();
+
+        const { canAccess } = await import("@/lib/plans");
+        const { generateVirtualAgentReplyAI } = await import("@/lib/ai/ai-services");
+
+        if (canAccess((owner?.plan_tier ?? "free") as import("@/lib/types").PlanTier, "virtualAgent")) {
+          const services = Array.isArray(business.services)
+            ? (business.services as { name?: string; description?: string; price?: string }[])
+            : [];
+
+          const reply = await generateVirtualAgentReplyAI(
+            {
+              business: {
+                name: business.name,
+                category: business.category,
+                subcategory: business.subcategory ?? "",
+                tagline: business.tagline ?? "",
+                description: business.description ?? "",
+                city: business.city ?? "",
+                state: business.state ?? "",
+                phone: business.phone ?? "",
+                hours: business.hours ?? "",
+                website: business.website ?? "",
+                isHiring: business.is_hiring ?? false,
+                services: services.map((s) => ({
+                  name: s.name ?? "Service",
+                  description: s.description ?? "",
+                  price: s.price,
+                })),
+              },
+              customerName: senderProfile.display_name,
+            },
+            trimmed,
+          );
+
+          await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: recipientId,
+            body: reply,
+          });
+
+          await createNotification(supabase, {
+            userId: user.id,
+            type: "message",
+            title: `Reply from ${business.name}`,
+            body: "Your message received an automated assistant reply.",
+            link: `/messages/${conversationId}`,
+            actorName: business.name,
+            businessName: business.name,
+          });
+        }
+      }
+    }
+
     if (conversation) {
-      const recipientId =
-        conversation.participant_a === user.id
-          ? conversation.participant_b
-          : conversation.participant_a;
+      const notifyRecipientId = recipientId;
 
       const { data: sender } = await supabase
         .from("profiles")
@@ -1021,7 +1106,7 @@ export async function sendMessage(conversationId: string, body: string) {
         .single();
 
       await createNotification(supabase, {
-        userId: recipientId,
+        userId: notifyRecipientId,
         type: "message",
         title: "New message",
         body: `${sender?.display_name ?? "Someone"} sent you a message`,
