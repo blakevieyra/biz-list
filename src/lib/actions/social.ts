@@ -15,7 +15,7 @@ import {
   validateLocationFields,
 } from "@/lib/validation/profile-fields";
 import { geocodeUsZipCode } from "@/lib/geo/geocode";
-import { DEFAULT_DISCOVERY_RADIUS } from "@/lib/feed/location-scope";
+import { DEFAULT_DISCOVERY_FILTER } from "@/lib/feed/location-scope";
 import {
   emailCollaborationPublished,
   emailForumPostPublished,
@@ -141,7 +141,7 @@ export async function saveProfile(input: {
       subcategory = validatedCategory.subcategory;
     }
 
-    const discoveryRadius = input.discoveryRadius ?? DEFAULT_DISCOVERY_RADIUS;
+    const discoveryRadius = input.discoveryRadius ?? DEFAULT_DISCOVERY_FILTER;
     const geo = await geocodeUsZipCode(location.zipCode);
 
     const { error: profileError } = await supabase
@@ -290,7 +290,7 @@ export async function updateUserProfile(input: {
     const industries = validateIndustryInterests(input.industryInterests ?? []);
     if (industries.error) return { error: industries.error };
 
-    const discoveryRadius = input.discoveryRadius ?? DEFAULT_DISCOVERY_RADIUS;
+    const discoveryRadius = input.discoveryRadius ?? DEFAULT_DISCOVERY_FILTER;
     const geo = await geocodeUsZipCode(location.zipCode);
 
     const { error } = await supabase

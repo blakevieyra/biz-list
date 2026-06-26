@@ -94,7 +94,7 @@ export function ProfileCreateWizard({
     headline: "",
     skills: [],
     isSeekingWork: false,
-    discoveryRadius: "city",
+    discoveryRadius: "25",
     businessName: "",
     tagline: "",
     description: "",
