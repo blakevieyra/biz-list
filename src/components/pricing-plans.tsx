@@ -30,47 +30,46 @@ const platinumFeatures = [
   "One-click welcome messages for new followers",
 ];
 
-export function PricingPlans() {
+export function PricingPlans({ userRole }: { userRole: string | null }) {
   const [interval, setInterval] = useState<BillingInterval>("monthly");
   const isAnnual = interval === "annual";
 
-  return (
-    <>
-      <div className="mb-8 flex justify-center">
-        <div className="inline-flex rounded-full border border-border bg-card p-1">
-          <button
-            type="button"
-            onClick={() => setInterval("monthly")}
-            className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-              !isAnnual ? "bg-accent text-white" : "text-muted hover:text-foreground"
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            onClick={() => setInterval("annual")}
-            className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-              isAnnual ? "bg-accent text-white" : "text-muted hover:text-foreground"
-            }`}
-          >
-            Yearly · save ~20%
-          </button>
-        </div>
-      </div>
+  const showCustomer = userRole === "customer" || userRole === null;
+  const showBusiness = userRole !== "customer";
 
-      <div className="mb-10" id="BizList-plus">
-        <h2 className="mb-2 text-2xl font-bold">For customers & job seekers</h2>
-        <p className="mb-6 text-sm text-muted">
-          {BIZLIST_PLUS_LABEL} for customer accounts. Business Pro and Platinum include the same perks
-          at no extra charge.
-        </p>
+  const intervalToggle = (
+    <div className="mb-8 flex justify-center">
+      <div className="inline-flex rounded-full border border-border bg-card p-1">
+        <button
+          type="button"
+          onClick={() => setInterval("monthly")}
+          className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+            !isAnnual ? "bg-accent text-white" : "text-muted hover:text-foreground"
+          }`}
+        >
+          Monthly
+        </button>
+        <button
+          type="button"
+          onClick={() => setInterval("annual")}
+          className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+            isAnnual ? "bg-accent text-white" : "text-muted hover:text-foreground"
+          }`}
+        >
+          Yearly · save ~20%
+        </button>
+      </div>
+    </div>
+  );
+
+  if (userRole === "customer") {
+    return (
+      <>
+        {intervalToggle}
         <div className="grid gap-6 md:grid-cols-2">
           <PlanCard
             name={BIZLIST_PLUS_LABEL}
-            price={
-              isAnnual ? PLAN_PRICES.customerPro.annual : PLAN_PRICES.customerPro.monthly
-            }
+            price={isAnnual ? PLAN_PRICES.customerPro.annual : PLAN_PRICES.customerPro.monthly}
             interval={interval}
             savings={isAnnual ? annualSavings("customerPro") : undefined}
             description="Alerts, matches, early deals, and event notifications."
@@ -90,52 +89,102 @@ export function PricingPlans() {
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
             <h3 className="font-semibold">Why {BIZLIST_PLUS_LABEL}?</h3>
             <p className="mt-2 text-sm text-muted">
-              If you are job hunting or want the best local deals first, {BIZLIST_PLUS_LABEL} sends alerts and matches
-              straight to your profile hub — including new events from businesses you follow.
+              Get job alerts, early access to deals, and event notifications from businesses you follow — all in one place.
             </p>
             <p className="mt-4 text-sm text-muted">
-              Manage alerts, following, and messages from your home profile tab after you upgrade.
+              Manage alerts, following, and messages from your dashboard after you upgrade.
             </p>
           </div>
         </div>
-      </div>
+      </>
+    );
+  }
 
-      <h2 className="mb-6 text-2xl font-bold">For businesses</h2>
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <PlanCard
-          name="Community"
-          price={PLAN_PRICES.free}
-          interval={interval}
-          description="Free for customers and businesses building local presence."
-          features={communityFeatures}
-          cta={{ label: "Join free", href: "/auth/signup" }}
-        />
-        <PlanCard
-          name="Pro"
-          price={isAnnual ? PLAN_PRICES.pro.annual : PLAN_PRICES.pro.monthly}
-          interval={interval}
-          savings={isAnnual ? annualSavings("pro") : undefined}
-          description="Local leads and AI audits to grow faster."
-          features={proFeatures}
-          highlighted
-          cta={{
-            label: isAnnual ? "Pro — yearly" : "Pro — monthly",
-            component: <UpgradeButton tier="pro" interval={interval} label="Upgrade to Pro" />,
-          }}
-        />
-        <PlanCard
-          name="Platinum"
-          price={isAnnual ? PLAN_PRICES.platinum.annual : PLAN_PRICES.platinum.monthly}
-          interval={interval}
-          savings={isAnnual ? annualSavings("platinum") : undefined}
-          description="Automated marketing and a virtual agent for your business."
-          features={platinumFeatures}
-          cta={{
-            label: isAnnual ? "Platinum — yearly" : "Platinum — monthly",
-            component: <UpgradeButton tier="platinum" interval={interval} label="Go Platinum" />,
-          }}
-        />
-      </div>
+  return (
+    <>
+      {intervalToggle}
+
+      {showCustomer && (
+        <div className="mb-10" id="BizList-plus">
+          <h2 className="mb-2 text-2xl font-bold">For customers & job seekers</h2>
+          <p className="mb-6 text-sm text-muted">
+            {BIZLIST_PLUS_LABEL} for customer accounts. Business Pro and Platinum include the same perks
+            at no extra charge.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2">
+            <PlanCard
+              name={BIZLIST_PLUS_LABEL}
+              price={isAnnual ? PLAN_PRICES.customerPro.annual : PLAN_PRICES.customerPro.monthly}
+              interval={interval}
+              savings={isAnnual ? annualSavings("customerPro") : undefined}
+              description="Alerts, matches, early deals, and event notifications."
+              features={[...BIZLIST_PLUS_FEATURES]}
+              highlighted
+              cta={{
+                label: isAnnual ? `${BIZLIST_PLUS_LABEL} — yearly` : `${BIZLIST_PLUS_LABEL} — monthly`,
+                component: (
+                  <UpgradeButton
+                    tier="customer_pro"
+                    interval={interval}
+                    label={`Upgrade to ${BIZLIST_PLUS_LABEL}`}
+                  />
+                ),
+              }}
+            />
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <h3 className="font-semibold">Why {BIZLIST_PLUS_LABEL}?</h3>
+              <p className="mt-2 text-sm text-muted">
+                If you are job hunting or want the best local deals first, {BIZLIST_PLUS_LABEL} sends alerts and matches
+                straight to your profile hub — including new events from businesses you follow.
+              </p>
+              <p className="mt-4 text-sm text-muted">
+                Manage alerts, following, and messages from your home profile tab after you upgrade.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBusiness && (
+        <>
+          {showCustomer && <h2 className="mb-6 text-2xl font-bold">For businesses</h2>}
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <PlanCard
+              name="Community"
+              price={PLAN_PRICES.free}
+              interval={interval}
+              description="Free for businesses building a local presence."
+              features={communityFeatures}
+              cta={{ label: "Join free", href: "/auth/signup" }}
+            />
+            <PlanCard
+              name="Pro"
+              price={isAnnual ? PLAN_PRICES.pro.annual : PLAN_PRICES.pro.monthly}
+              interval={interval}
+              savings={isAnnual ? annualSavings("pro") : undefined}
+              description="Local leads and AI audits to grow faster."
+              features={proFeatures}
+              highlighted
+              cta={{
+                label: isAnnual ? "Pro — yearly" : "Pro — monthly",
+                component: <UpgradeButton tier="pro" interval={interval} label="Upgrade to Pro" />,
+              }}
+            />
+            <PlanCard
+              name="Platinum"
+              price={isAnnual ? PLAN_PRICES.platinum.annual : PLAN_PRICES.platinum.monthly}
+              interval={interval}
+              savings={isAnnual ? annualSavings("platinum") : undefined}
+              description="Automated marketing and a virtual agent for your business."
+              features={platinumFeatures}
+              cta={{
+                label: isAnnual ? "Platinum — yearly" : "Platinum — monthly",
+                component: <UpgradeButton tier="platinum" interval={interval} label="Go Platinum" />,
+              }}
+            />
+          </div>
+        </>
+      )}
     </>
   );
 }
