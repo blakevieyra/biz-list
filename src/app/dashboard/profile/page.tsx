@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BusinessGrowthHub } from "@/components/business-growth-hub";
 import { BusinessProfileEditor } from "@/components/business-profile-editor";
 import { ProfilePreferencesPanel } from "@/components/profile-preferences-panel";
 import { PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessByOwnerId, getCurrentProfile } from "@/lib/data";
-import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
-import { canAccess, hasBizListPlusPerks } from "@/lib/plans";
+import { hasBizListPlusPerks } from "@/lib/plans";
 
 export default async function DashboardProfilePage() {
   const userId = await getAuthUserId();
@@ -36,16 +34,11 @@ export default async function DashboardProfilePage() {
     );
   }
 
-  const [latestAudit, leads] = await Promise.all([
-    canAccess(profile.planTier, "aiAudit") ? getLatestAiAssessment(userId) : Promise.resolve(null),
-    canAccess(profile.planTier, "localLeads") ? getLocalLeads(userId) : Promise.resolve([]),
-  ]);
-
   return (
     <>
       <PageHeader
         title="Business profile"
-        description="Your listing, growth tools, AI audit scores, and matched leads."
+        description="Edit your listing details, photos, and services."
         action={
           <Link
             href="/pricing"
@@ -55,10 +48,6 @@ export default async function DashboardProfilePage() {
           </Link>
         }
       />
-
-      <div className="mb-8">
-        <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />
-      </div>
 
       {hasBizListPlusPerks(profile.planTier) && (
         <div className="mb-8">
