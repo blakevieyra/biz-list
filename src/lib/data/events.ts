@@ -252,7 +252,7 @@ export async function getBusinessEvents(filters?: {
   }
 
   const { data: rows } = await query;
-  if (!rows?.length) return filterSeedEvents({ ...filters, discoveryRadius });
+  if (!rows?.length) return [];
 
   let events = (rows as EventRow[]).map((row) => mapEventRow(row));
 

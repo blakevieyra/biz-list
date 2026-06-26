@@ -75,20 +75,22 @@ export function BusinessListingCard({
   return (
     <>
     <Card className="flex h-full flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
-      <Link href={`/listings/${business.id}`} className="block h-48 shrink-0">
-        {cover ? (
-          <div className="h-full overflow-hidden border-b border-border bg-slate-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={cover} alt="" className="h-full w-full object-cover" />
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center border-b border-border bg-gradient-to-br from-blue-50 to-slate-50">
-            <span className="text-4xl font-bold text-accent/30">{business.name.charAt(0)}</span>
-          </div>
-        )}
-      </Link>
+      <div className="flex flex-1 min-h-[260px]">
+        <Link
+          href={`/listings/${business.id}`}
+          className="relative block w-1/3 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100"
+        >
+          {cover ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-50">
+              <span className="text-4xl font-bold text-accent/30">{business.name.charAt(0)}</span>
+            </div>
+          )}
+        </Link>
 
-      <div className="flex flex-1 flex-col p-3">
+      <div className="flex min-w-0 flex-1 flex-col p-3">
         <Link href={`/listings/${business.id}`} className="block">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             {displayCategoryLabel(business.category, business.subcategory)}
@@ -212,6 +214,7 @@ export function BusinessListingCard({
             <span className="ml-1 text-accent">· View listing →</span>
           </Link>
         </div>
+      </div>
       </div>
     </Card>
 

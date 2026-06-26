@@ -285,7 +285,7 @@ export async function getRecentListingsPosts(limit = 12): Promise<BusinessPost[]
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (!rows?.length) return SEED_BUSINESS_POSTS.slice(0, limit);
+  if (!rows?.length) return [];
 
   return ((rows as (BusinessPostRow & {
     businesses?: { name: string; category: string } | { name: string; category: string }[] | null;
@@ -310,7 +310,7 @@ export async function getTrendingBusinessPosts(limit = 10): Promise<BusinessPost
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (!rows?.length) return SEED_BUSINESS_POSTS.slice(0, limit);
+  if (!rows?.length) return [];
 
   return ((rows as (BusinessPostRow & {
     businesses?: { name: string; category: string } | { name: string; category: string }[] | null;
@@ -459,7 +459,7 @@ export async function getFeedBusinessPosts(options: {
   }
 
   const { data: rows } = await query;
-  if (!rows?.length) return sortFeedPosts(SEED_BUSINESS_POSTS.slice(0, limit));
+  if (!rows?.length) return [];
 
   const filteredRows: (BusinessPostRow & {
     businesses?: FeedBusinessMeta | FeedBusinessMeta[] | null;
