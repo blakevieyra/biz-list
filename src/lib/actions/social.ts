@@ -673,6 +673,9 @@ export async function toggleForumPostLike(postId: string) {
 export async function createCollaboration(input: {
   title: string;
   summary: string;
+  requirements?: string;
+  deadline?: string;
+  attachmentUrls?: string[];
   lookingFor: string;
   location: string;
   businessId?: string;
@@ -690,6 +693,7 @@ export async function createCollaboration(input: {
       Summary: input.summary,
       "Looking for": input.lookingFor,
       Location: input.location,
+      ...(input.requirements ? { Requirements: input.requirements } : {}),
     });
     if (!moderation.ok) return { error: moderation.reason };
 
@@ -725,6 +729,9 @@ export async function createCollaboration(input: {
       business_id: business.id,
       title: input.title.trim().slice(0, 200),
       summary: input.summary.trim().slice(0, 2000),
+      requirements: input.requirements?.trim().slice(0, 2000) || null,
+      deadline: input.deadline || null,
+      attachment_urls: input.attachmentUrls ?? [],
       looking_for: input.lookingFor.trim().slice(0, 500),
       location: input.location.trim().slice(0, 200),
       collaboration_type: collaborationType,
@@ -790,7 +797,7 @@ export async function toggleCollaborationInterest(collaborationId: string) {
   }
 }
 
-export async function submitCollaborationOffer(collaborationId: string, message: string) {
+export async function submitCollaborationOffer(collaborationId: string, message: string, attachmentUrls?: string[]) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to submit an offer." };
   try {
     const { supabase, user } = await requireUser();
@@ -813,6 +820,7 @@ export async function submitCollaborationOffer(collaborationId: string, message:
       collaboration_id: collaborationId,
       author_id: user.id,
       body: trimmed,
+      attachment_urls: attachmentUrls ?? [],
     });
     if (error) return { error: error.message };
 
@@ -856,7 +864,7 @@ export async function submitCollaborationOffer(collaborationId: string, message:
   }
 }
 
-export async function commentOnCollaboration(collaborationId: string, body: string) {
+export async function commentOnCollaboration(collaborationId: string, body: string, attachmentUrls?: string[]) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to comment." };
   }
@@ -873,6 +881,7 @@ export async function commentOnCollaboration(collaborationId: string, body: stri
       collaboration_id: collaborationId,
       author_id: user.id,
       body: trimmed,
+      attachment_urls: attachmentUrls ?? [],
     });
 
     if (error) return { error: error.message };

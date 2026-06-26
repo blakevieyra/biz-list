@@ -116,6 +116,9 @@ type CollaborationRow = {
   summary: string;
   looking_for: string;
   location: string;
+  requirements?: string | null;
+  deadline?: string | null;
+  attachment_urls?: string[] | null;
   collaboration_type?: CollaborationIdea["collaborationType"];
   status: CollaborationIdea["status"];
   created_at: string;
@@ -273,6 +276,9 @@ export function mapCollaboration(row: CollaborationRow): CollaborationIdea {
     businessId: row.business_id ?? undefined,
     title: row.title,
     summary: row.summary,
+    requirements: row.requirements ?? undefined,
+    deadline: row.deadline ?? undefined,
+    attachmentUrls: row.attachment_urls ?? [],
     lookingFor: row.looking_for,
     location: row.location,
     collaborationType:

@@ -299,12 +299,15 @@ export interface CollaborationIdea {
   businessId?: string;
   title: string;
   summary: string;
+  requirements?: string;
+  deadline?: string;
   lookingFor: string;
   location: string;
   collaborationType: CollaborationType;
   status: "open" | "in_discussion" | "closed";
   interestedCount: number;
   userInterested?: boolean;
+  attachmentUrls: string[];
   createdAt: string;
 }
 
@@ -314,6 +317,7 @@ export interface CollaborationComment {
   authorId: string;
   authorName: string;
   body: string;
+  attachmentUrls: string[];
   createdAt: string;
 }
 

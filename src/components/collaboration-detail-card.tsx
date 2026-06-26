@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
 import {
@@ -8,6 +8,7 @@ import {
   commentOnCollaboration,
   deleteCollaboration,
 } from "@/lib/actions/social";
+import { uploadCollaborationAttachment } from "@/lib/actions/upload";
 import { ReportButton } from "@/components/report-button";
 import type { CollaborationComment, CollaborationIdea } from "@/lib/types";
 import { Card, formatPostDateTime } from "@/components/ui";
@@ -31,7 +32,8 @@ const offerHeading: Record<string, string> = {
 };
 
 const offerPlaceholder: Record<string, string> = {
-  proposal: "Describe your offer — what you can provide, your timeline, and why you're a good fit...",
+  proposal:
+    "Describe your offer — what you can provide, your timeline, and why you're a good fit...",
   contract: "Outline your contract terms, deliverables, and pricing...",
   b2b_sale: "Describe what you're selling, pricing, and how it benefits them...",
 };
@@ -41,6 +43,157 @@ const offerButtonLabel: Record<string, string> = {
   contract: "Submit response",
   b2b_sale: "Submit bid",
 };
+
+function isDocUrl(url: string) {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes(".pdf") ||
+    lower.includes(".doc") ||
+    lower.includes(".docx") ||
+    lower.includes(".xls") ||
+    lower.includes(".xlsx") ||
+    lower.includes(".txt")
+  );
+}
+
+function filenameFromUrl(url: string) {
+  const parts = url.split("/");
+  return decodeURIComponent(parts[parts.length - 1] ?? url);
+}
+
+function AttachmentList({ urls }: { urls: string[] }) {
+  if (!urls.length) return null;
+  const images = urls.filter((u) => !isDocUrl(u));
+  const docs = urls.filter(isDocUrl);
+  return (
+    <div className="mt-3 space-y-2">
+      {images.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {images.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt=""
+                className="aspect-square w-full rounded-xl border border-border object-cover hover:opacity-90 transition"
+              />
+            </a>
+          ))}
+        </div>
+      )}
+      {docs.map((url) => (
+        <a
+          key={url}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-xl border border-border bg-slate-50 px-3 py-2 hover:border-accent/40 transition"
+        >
+          <span className="text-lg">📄</span>
+          <span className="flex-1 truncate text-sm text-accent hover:underline">
+            {filenameFromUrl(url)}
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function AttachmentUploader({
+  attachmentUrls,
+  setAttachmentUrls,
+  label = "Attach files",
+}: {
+  attachmentUrls: string[];
+  setAttachmentUrls: React.Dispatch<React.SetStateAction<string[]>>;
+  label?: string;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadPending, startUploadTransition] = useTransition();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setUploadError(null);
+    startUploadTransition(async () => {
+      const uploaded: string[] = [];
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.set("file", file);
+        const result = await uploadCollaborationAttachment(fd);
+        if (result.error) {
+          setUploadError(result.error);
+          return;
+        }
+        if (result.url) uploaded.push(result.url);
+      }
+      setAttachmentUrls((prev) => [...prev, ...uploaded]);
+    });
+  }
+
+  function removeAttachment(url: string) {
+    setAttachmentUrls((prev) => prev.filter((u) => u !== url));
+  }
+
+  return (
+    <div className="space-y-2">
+      {attachmentUrls.length > 0 && (
+        <div className="space-y-1.5">
+          {attachmentUrls.filter((u) => !isDocUrl(u)).length > 0 && (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {attachmentUrls
+                .filter((u) => !isDocUrl(u))
+                .map((url) => (
+                  <div key={url} className="relative overflow-hidden rounded-xl border border-border bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="aspect-square w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(url)}
+                      className="absolute right-1.5 top-1.5 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
+          {attachmentUrls.filter(isDocUrl).map((url) => (
+            <div key={url} className="flex items-center gap-2 rounded-xl border border-border bg-slate-50 px-3 py-2">
+              <span className="text-lg">📄</span>
+              <span className="flex-1 truncate text-sm">{filenameFromUrl(url)}</span>
+              <button
+                type="button"
+                onClick={() => removeAttachment(url)}
+                className="shrink-0 text-xs text-muted hover:text-red-600"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <button
+        type="button"
+        disabled={uploadPending}
+        onClick={() => fileInputRef.current?.click()}
+        className="rounded-full border border-dashed border-border px-4 py-1.5 text-xs font-medium hover:border-accent/40 disabled:opacity-50"
+      >
+        {uploadPending ? "Uploading..." : attachmentUrls.length ? "Add more files" : label}
+      </button>
+      {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
+    </div>
+  );
+}
 
 export function CollaborationDetailCard({
   idea,
@@ -59,6 +212,8 @@ export function CollaborationDetailCard({
   const [deletePending, startDeleteTransition] = useTransition();
   const [offerText, setOfferText] = useState("");
   const [commentText, setCommentText] = useState("");
+  const [offerAttachments, setOfferAttachments] = useState<string[]>([]);
+  const [commentAttachments, setCommentAttachments] = useState<string[]>([]);
   const [offerSent, setOfferSent] = useState(false);
   const [offerError, setOfferError] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -81,9 +236,10 @@ export function CollaborationDetailCard({
     if (!currentUserId) { router.push("/auth/login"); return; }
     startOfferTransition(async () => {
       setOfferError(null);
-      const result = await submitCollaborationOffer(idea.id, offerText.trim());
+      const result = await submitCollaborationOffer(idea.id, offerText.trim(), offerAttachments);
       if (result.error) { setOfferError(result.error); return; }
       setOfferText("");
+      setOfferAttachments([]);
       setOfferSent(true);
       router.refresh();
     });
@@ -95,9 +251,10 @@ export function CollaborationDetailCard({
     if (!currentUserId) { router.push("/auth/login"); return; }
     startCommentTransition(async () => {
       setCommentError(null);
-      const result = await commentOnCollaboration(idea.id, commentText.trim());
+      const result = await commentOnCollaboration(idea.id, commentText.trim(), commentAttachments);
       if (result.error) { setCommentError(result.error); return; }
       setCommentText("");
+      setCommentAttachments([]);
       router.refresh();
     });
   }
@@ -137,7 +294,15 @@ export function CollaborationDetailCard({
         <h1 className="mt-4 text-2xl font-bold leading-snug">{idea.title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">{idea.summary}</p>
 
-        <dl className="mt-5 grid gap-3 rounded-xl border border-border bg-slate-50/60 p-4 text-sm sm:grid-cols-2">
+        {/* Requirements */}
+        {idea.requirements && (
+          <div className="mt-4 rounded-xl border border-border bg-slate-50/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Requirements</p>
+            <p className="mt-1.5 text-sm leading-relaxed">{idea.requirements}</p>
+          </div>
+        )}
+
+        <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-slate-50/60 p-4 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Looking for</dt>
             <dd className="mt-1 font-medium">{idea.lookingFor}</dd>
@@ -146,7 +311,27 @@ export function CollaborationDetailCard({
             <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Location</dt>
             <dd className="mt-1 font-medium">{idea.location}</dd>
           </div>
+          {idea.deadline && (
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Deadline</dt>
+              <dd className="mt-1 font-medium">
+                {new Date(idea.deadline).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </dd>
+            </div>
+          )}
         </dl>
+
+        {/* Attachments */}
+        {idea.attachmentUrls.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Attachments</p>
+            <AttachmentList urls={idea.attachmentUrls} />
+          </div>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           {!isAuthor && (
@@ -204,6 +389,11 @@ export function CollaborationDetailCard({
                 placeholder={offerPlaceholder[type] ?? "Describe your offer..."}
                 className="w-full rounded-xl border border-border px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              <AttachmentUploader
+                attachmentUrls={offerAttachments}
+                setAttachmentUrls={setOfferAttachments}
+                label="Attach supporting files"
+              />
               {offerError && <p className="text-sm text-red-600">{offerError}</p>}
               <button
                 type="submit"
@@ -237,30 +427,40 @@ export function CollaborationDetailCard({
                   <span className="text-xs text-muted">{formatPostDateTime(comment.createdAt)}</span>
                 </div>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted">{comment.body}</p>
+                {comment.attachmentUrls.length > 0 && (
+                  <AttachmentList urls={comment.attachmentUrls} />
+                )}
               </li>
             ))}
           </ul>
         )}
 
-        {/* Reply form — for author to respond, or anyone to follow up */}
+        {/* Reply form */}
         {currentUserId && (
-          <form onSubmit={handleComment} className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder={isAuthor ? "Reply to an offer or add more details..." : "Ask a follow-up question..."}
-              className="min-h-10 min-w-0 flex-1 rounded-xl border border-border px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
+          <form onSubmit={handleComment} className="mt-4 space-y-3">
+            <div className="flex gap-2">
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder={isAuthor ? "Reply to an offer or add more details..." : "Ask a follow-up question..."}
+                className="min-h-10 min-w-0 flex-1 rounded-xl border border-border px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="submit"
+                disabled={commentPending || !commentText.trim()}
+                className="min-h-10 shrink-0 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {commentPending ? "Sending…" : "Reply"}
+              </button>
+            </div>
+            <AttachmentUploader
+              attachmentUrls={commentAttachments}
+              setAttachmentUrls={setCommentAttachments}
+              label="Attach files to reply"
             />
-            <button
-              type="submit"
-              disabled={commentPending || !commentText.trim()}
-              className="min-h-10 shrink-0 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              {commentPending ? "Sending…" : "Reply"}
-            </button>
+            {commentError && <p className="text-sm text-red-600">{commentError}</p>}
           </form>
         )}
-        {commentError && <p className="mt-2 text-sm text-red-600">{commentError}</p>}
       </Card>
     </div>
   );

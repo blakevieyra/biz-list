@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { NewCollaborationForm } from "@/components/new-collaboration-form";
-import { PageHeader } from "@/components/ui";
 import { getCurrentProfile } from "@/lib/data";
 import type { CollaborationType } from "@/lib/types";
 
@@ -22,15 +21,17 @@ export default async function NewCollaborationPage({
   const initialType: CollaborationType =
     params.type === "contract" || params.type === "b2b_sale" ? params.type : "proposal";
 
+  const backHref =
+    initialType === "proposal" ? "/partnerships" : `/partnerships?tab=${initialType}`;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <Link href="/partnerships" className="text-sm text-accent hover:underline">
+      <Link href={backHref} className="text-sm text-accent hover:underline">
         ← Back
       </Link>
-      <PageHeader
-        title="Create proposal"
-        description="Share a proposal, contract opportunity, or B2B sale from your business profile."
-      />
+      <div className="mt-6 mb-6">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">BizList · Collaborations</p>
+      </div>
       <NewCollaborationForm initialType={initialType} />
     </div>
   );

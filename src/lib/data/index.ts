@@ -608,6 +608,7 @@ type CollaborationCommentRow = {
   collaboration_id: string;
   author_id: string;
   body: string;
+  attachment_urls?: string[] | null;
   created_at: string;
   profiles?: { display_name: string } | { display_name: string }[] | null;
 };
@@ -656,6 +657,7 @@ export async function getCollaborationCommentsByIds(
         ? row.profiles[0]?.display_name ?? "Unknown"
         : row.profiles?.display_name ?? "Unknown",
       body: row.body,
+      attachmentUrls: row.attachment_urls ?? [],
       createdAt: row.created_at,
     });
     result.set(row.collaboration_id, list);

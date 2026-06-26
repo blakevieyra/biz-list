@@ -705,6 +705,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     status: "open",
     createdAt: "2026-03-01T10:00:00Z",
     interestedCount: 4,
+    attachmentUrls: [],
   },
   {
     id: "collab-2",
@@ -720,6 +721,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     status: "in_discussion",
     createdAt: "2026-03-06T15:00:00Z",
     interestedCount: 7,
+    attachmentUrls: [],
   },
   {
     id: "collab-3",
@@ -734,6 +736,7 @@ export const SEED_COLLABORATIONS: CollaborationIdea[] = [
     status: "open",
     createdAt: "2026-04-18T09:00:00Z",
     interestedCount: 2,
+    attachmentUrls: [],
   },
 ];
 
@@ -744,6 +747,7 @@ export const SEED_COLLABORATION_COMMENTS: CollaborationComment[] = [
     authorId: "user-4",
     authorName: "Alex Rivera",
     body: "We roast in South Austin — interested in testing a weekend box.",
+    attachmentUrls: [],
     createdAt: "2026-03-02T11:00:00Z",
   },
   {
@@ -752,6 +756,7 @@ export const SEED_COLLABORATION_COMMENTS: CollaborationComment[] = [
     authorId: "user-1",
     authorName: "Maria Chen",
     body: "Great — let's compare margins and pickup logistics.",
+    attachmentUrls: [],
     createdAt: "2026-03-02T14:30:00Z",
   },
 ];
