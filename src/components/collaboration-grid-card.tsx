@@ -39,6 +39,30 @@ export function CollaborationGridCard({
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md">
       <div className="flex min-h-[220px]">
+        {listingHref ? (
+          <Link
+            href={listingHref}
+            className="relative block w-1/3 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100"
+          >
+            {idea.businessMediaUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={idea.businessMediaUrl}
+                alt={businessName}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-accent/10 text-2xl font-bold text-accent/40">
+                {businessInitial}
+              </div>
+            )}
+          </Link>
+        ) : (
+          <div className="flex w-1/3 shrink-0 items-center justify-center self-stretch border-r border-border bg-accent/10 text-2xl font-bold text-accent/40">
+            {businessInitial}
+          </div>
+        )}
+
         <div className="flex min-w-0 flex-1 flex-col p-4">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
@@ -112,30 +136,6 @@ export function CollaborationGridCard({
             {interestCount} interested · {formatPostDateTime(idea.createdAt)}
           </p>
         </div>
-
-        {listingHref ? (
-          <Link
-            href={listingHref}
-            className="relative block w-24 shrink-0 self-stretch overflow-hidden border-l border-border bg-slate-100 sm:w-32"
-          >
-            {idea.businessMediaUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={idea.businessMediaUrl}
-                alt={businessName}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-accent/10 text-2xl font-bold text-accent/40">
-                {businessInitial}
-              </div>
-            )}
-          </Link>
-        ) : (
-          <div className="flex w-24 shrink-0 items-center justify-center self-stretch border-l border-border bg-accent/10 text-2xl font-bold text-accent/40 sm:w-32">
-            {businessInitial}
-          </div>
-        )}
       </div>
     </div>
   );
