@@ -79,25 +79,24 @@ export async function startCheckout(tier: PaidPlanTier, interval: BillingInterva
 
 
   if (isStripeConfigured()) {
-
-    const session = await createCheckoutSession({
-
-      tier,
-
-      interval,
-
-      userId: user.id,
-
-      email: profile?.email ?? user.email ?? "",
-
-      stripeCustomerId: profile?.stripe_customer_id ?? undefined,
-
-    });
-
-    if (session.url) redirect(session.url);
-
-    return { error: "Could not start checkout." };
-
+    try {
+      const session = await createCheckoutSession({
+        tier,
+        interval,
+        userId: user.id,
+        email: profile?.email ?? user.email ?? "",
+        stripeCustomerId: profile?.stripe_customer_id ?? undefined,
+      });
+      if (session.url) redirect(session.url);
+      return { error: "Could not start checkout." };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[billing] createCheckoutSession error:", msg);
+      if (msg.includes("price not configured")) {
+        return { error: "Checkout is not fully set up yet. Stripe price IDs are missing — add STRIPE_PRICE_PRO_MONTHLY etc. in Vercel." };
+      }
+      return { error: "Could not start checkout. Please try again or contact support." };
+    }
   }
 
 
