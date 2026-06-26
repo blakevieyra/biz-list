@@ -75,7 +75,7 @@ export function BusinessListingCard({
   return (
     <>
     <Card className="flex h-full flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
-      <Link href={`/listings/${business.id}`} className="block h-36 shrink-0">
+      <Link href={`/listings/${business.id}`} className="block h-48 shrink-0">
         {cover ? (
           <div className="h-full overflow-hidden border-b border-border bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -83,7 +83,7 @@ export function BusinessListingCard({
           </div>
         ) : (
           <div className="flex h-full items-center justify-center border-b border-border bg-gradient-to-br from-blue-50 to-slate-50">
-            <span className="text-3xl font-bold text-accent/30">{business.name.charAt(0)}</span>
+            <span className="text-4xl font-bold text-accent/30">{business.name.charAt(0)}</span>
           </div>
         )}
       </Link>
@@ -93,14 +93,14 @@ export function BusinessListingCard({
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             {displayCategoryLabel(business.category, business.subcategory)}
           </p>
-          <h3 className="mt-0.5 text-base font-semibold leading-snug">{business.name}</h3>
+          <h3 className="mt-0.5 text-lg font-bold leading-snug">{business.name}</h3>
           {business.tagline && (
-            <p className="mt-0.5 line-clamp-1 text-xs text-muted">{business.tagline}</p>
+            <p className="mt-0.5 line-clamp-1 text-sm text-muted">{business.tagline}</p>
           )}
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             {business.ratingCount > 0 && (
-              <StarRating rating={business.ratingAvg} count={business.ratingCount} />
+              <StarRating rating={business.ratingAvg} count={business.ratingCount} size="md" />
             )}
             {business.likeCount > 0 && (
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold">
@@ -135,35 +135,41 @@ export function BusinessListingCard({
         {topServices.length > 0 && (
           <div className="mt-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Offerings</p>
-            <ul className="mt-1 divide-y divide-border">
+            <ul className="mt-1 space-y-1">
               {topServices.map((service) => (
-                <li key={service.name} className="flex items-center gap-2 py-1.5 first:pt-0 last:pb-0">
-                  {service.imageUrl ? (
-                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-slate-50 text-xs font-bold text-accent/40">
-                      {service.name.charAt(0)}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
-                    {service.price && (
-                      <p className="text-[11px] font-medium text-accent">{service.price}</p>
+                <li key={service.name} onClick={(e) => e.stopPropagation()}>
+                  <ServiceListing
+                    service={service}
+                    businessId={business.id}
+                    businessName={business.name}
+                    currentUserId={currentUserId}
+                    isOwner={isOwner}
+                    renderTrigger={(onClick) => (
+                      <button
+                        type="button"
+                        onClick={onClick}
+                        className="flex w-full items-center gap-2 rounded-lg border border-border p-2 text-left transition hover:border-accent/40 hover:bg-slate-50"
+                      >
+                        {service.imageUrl ? (
+                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-slate-50 text-xs font-bold text-accent/40">
+                            {service.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
+                          {service.price && (
+                            <p className="text-[11px] font-medium text-accent">{service.price}</p>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-accent">Order →</span>
+                      </button>
                     )}
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ServiceListing
-                      service={service}
-                      businessId={business.id}
-                      businessName={business.name}
-                      currentUserId={currentUserId}
-                      isOwner={isOwner}
-                      compact
-                    />
-                  </div>
+                  />
                 </li>
               ))}
             </ul>

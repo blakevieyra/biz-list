@@ -16,6 +16,7 @@ export function ServiceListing({
   currentUserId,
   isOwner,
   compact = false,
+  renderTrigger,
 }: {
   service: BusinessService;
   businessId: string;
@@ -23,6 +24,7 @@ export function ServiceListing({
   currentUserId: string | null;
   isOwner: boolean;
   compact?: boolean;
+  renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
   if (isOwner) return null;
 
@@ -33,6 +35,7 @@ export function ServiceListing({
       businessName={businessName}
       currentUserId={currentUserId}
       compact={compact}
+      renderTrigger={renderTrigger}
     />
   );
 }
@@ -66,12 +69,14 @@ function ServiceOrderForm({
   businessName,
   currentUserId,
   compact = false,
+  renderTrigger,
 }: {
   service: BusinessService;
   businessId: string;
   businessName?: string;
   currentUserId: string | null;
   compact?: boolean;
+  renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [quantity, setQuantity] = useState("");
@@ -133,17 +138,19 @@ function ServiceOrderForm({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleOpen}
-        className={
-          compact
-            ? "shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
-            : "w-full rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
-        }
-      >
-        {buttonLabel}
-      </button>
+      {renderTrigger ? renderTrigger(handleOpen) : (
+        <button
+          type="button"
+          onClick={handleOpen}
+          className={
+            compact
+              ? "shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
+              : "w-full rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
+          }
+        >
+          {buttonLabel}
+        </button>
+      )}
 
       {open && (
         <div
