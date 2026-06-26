@@ -13,7 +13,7 @@ export function getEmailFrom(): string {
 }
 
 export function isEmailConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY);
+  return Boolean(process.env.SENDGRID_API_KEY);
 }
 
 export function getLogoUrl(): string {
