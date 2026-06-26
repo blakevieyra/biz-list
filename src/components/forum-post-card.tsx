@@ -33,27 +33,29 @@ export function ForumPostCard({
     });
   }
 
+  const photoUrl = post.imageUrl ?? post.authorAvatarUrl;
+
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition hover:border-accent/40 hover:shadow-sm">
-      {/* Avatar */}
-      <div className="shrink-0 self-center">
-        {post.authorAvatarUrl ? (
+    <div className="flex min-h-[100px] overflow-hidden rounded-2xl border border-border bg-card transition hover:border-accent/40 hover:shadow-sm">
+      {/* Left photo column */}
+      <div className="w-16 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-20">
+        {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={post.authorAvatarUrl}
+            src={photoUrl}
             alt=""
-            className="h-10 w-10 rounded-full object-cover ring-1 ring-border"
+            className="h-full w-full object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
+          <div className="flex h-full w-full items-center justify-center bg-accent/10 text-xl font-bold text-accent/40">
             {post.authorName.charAt(0)}
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 px-4 py-3">
         {/* Top row: category · time */}
         <div className="flex flex-wrap items-center gap-2">
           <CategoryBadge category={post.category} />
@@ -108,7 +110,7 @@ export function ForumPostCard({
       </div>
 
       {/* Like button */}
-      <div className="shrink-0 self-center">
+      <div className="flex shrink-0 items-center border-l border-border px-3">
         <ForumPostLikeButton
           postId={post.id}
           initialLiked={post.likedByViewer ?? false}
