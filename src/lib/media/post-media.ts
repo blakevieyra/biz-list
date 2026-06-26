@@ -49,7 +49,7 @@ export function youtubeEmbedUrl(url: string): string | null {
 }
 
 export function isDirectVideoUrl(url: string): boolean {
-  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+  return /\.(mp4|webm|mov|m4v|avi|mkv|flv|wmv|3gp|ogv|ts|mts|m2ts|hevc|h265)(\?|$)/i.test(url);
 }
 
 export function isVideoUrl(url: string): boolean {

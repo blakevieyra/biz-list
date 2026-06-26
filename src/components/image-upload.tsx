@@ -53,7 +53,7 @@ export function ImageUpload({
   }
 
   const accept = acceptVideo
-    ? "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+    ? "image/jpeg,image/png,image/webp,image/gif,video/*"
     : "image/jpeg,image/png,image/webp,image/gif";
 
   return (

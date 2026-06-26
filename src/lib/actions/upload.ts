@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"]);
+// Accept any video/* MIME type — codec support is the browser's concern, not ours
 
 const MAX_BYTES = MAX_IMAGE_BYTES;
 const ALLOWED_TYPES = ALLOWED_IMAGE_TYPES;
@@ -77,10 +77,10 @@ export async function uploadBusinessMedia(
   }
 
   const isImage = ALLOWED_IMAGE_TYPES.has(file.type);
-  const isVideo = ALLOWED_VIDEO_TYPES.has(file.type);
+  const isVideo = file.type.startsWith("video/");
 
   if (!isImage && !isVideo) {
-    return { error: "Upload a JPG, PNG, WebP, GIF, MP4, WebM, or MOV file." };
+    return { error: "Upload an image (JPG/PNG/WebP/GIF) or any video file." };
   }
 
   const limit = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
@@ -88,13 +88,13 @@ export async function uploadBusinessMedia(
     return { error: isVideo ? "Video must be 50 MB or smaller." : "Image must be 5 MB or smaller." };
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || (isVideo ? "mp4" : "jpg");
-  const safeExts = isVideo
-    ? ["mp4", "webm", "mov", "m4v"]
-    : ["jpg", "jpeg", "png", "webp", "gif"];
-  const safeExt = safeExts.includes(ext) ? ext : safeExts[0];
+  const rawExt = file.name.split(".").pop()?.toLowerCase() || "";
+  const safeImageExts = ["jpg", "jpeg", "png", "webp", "gif"];
+  const ext = isVideo
+    ? (rawExt.match(/^[a-z0-9]{1,8}$/) ? rawExt : "mp4")
+    : (safeImageExts.includes(rawExt) ? rawExt : "jpg");
   const folder = isVideo ? "videos" : "images";
-  const path = `${user.id}/${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${safeExt}`;
+  const path = `${user.id}/${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const { error } = await supabase.storage.from("business-media").upload(path, file, {
     cacheControl: "3600",
