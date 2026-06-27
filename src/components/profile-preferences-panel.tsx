@@ -8,9 +8,15 @@ import { uploadResumeFile } from "@/lib/actions/upload";
 import { IndustryPicker } from "@/components/industry-picker";
 import { JobTitlePicker } from "@/components/job-title-picker";
 import { Card } from "@/components/ui";
-import type { FollowDigestFrequency, UserProfile } from "@/lib/types";
+import type { DiscoveryRadius, FollowDigestFrequency, UserProfile } from "@/lib/types";
 import { BIZLIST_PLUS_LABEL } from "@/lib/plans";
 import { buildResumeSnapshot } from "@/lib/resume";
+import {
+  AREA_SCOPE_LABELS,
+  AREA_SCOPE_OPTIONS,
+  MILE_RADIUS_LABELS,
+  MILE_RADIUS_OPTIONS,
+} from "@/lib/feed/location-scope";
 
 const digestOptions: { value: FollowDigestFrequency; label: string }[] = [
   { value: "none", label: "Off" },
@@ -52,6 +58,8 @@ export function ProfilePreferencesPanel({
     headline: profile.headline,
     skills: profile.skills.join(", "),
     resumeUrl: profile.resumeUrl ?? "",
+    zipCode: profile.zipCode ?? "",
+    discoveryRadius: (profile.discoveryRadius ?? "25") as DiscoveryRadius,
   });
 
   const previewResume = buildResumeSnapshot({
@@ -83,6 +91,8 @@ export function ProfilePreferencesPanel({
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
+        zipCode: form.zipCode || undefined,
+        discoveryRadius: form.discoveryRadius,
       });
       if (result.error) {
         setError(result.error);
@@ -103,6 +113,61 @@ export function ProfilePreferencesPanel({
             Included with your Pro or Platinum plan. Choose what you want notified about from
             businesses you follow and local matches.
           </p>
+        </Card>
+
+        <Card>
+          <h2 className="font-semibold">Discovery defaults</h2>
+          <p className="mt-1 text-sm text-muted">
+            Sets the default location and radius used on Feed, Listings, Events, and all discovery pages.
+          </p>
+          <div className="mt-4 space-y-4">
+            <label className="block text-sm">
+              <span className="font-medium">Your zip code</span>
+              <input
+                value={form.zipCode}
+                onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
+                placeholder="e.g. 78701"
+                maxLength={10}
+                className="mt-1 w-48 rounded-lg border border-border px-3 py-2 text-sm"
+              />
+            </label>
+            <div>
+              <p className="text-sm font-medium">Default radius</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted">Distance</span>
+                {MILE_RADIUS_OPTIONS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setForm({ ...form, discoveryRadius: m })}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                      form.discoveryRadius === m
+                        ? "bg-accent text-white"
+                        : "border border-border bg-card text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {MILE_RADIUS_LABELS[m]}
+                  </button>
+                ))}
+                <span className="self-center text-xs text-border">|</span>
+                <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted">Area</span>
+                {AREA_SCOPE_OPTIONS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setForm({ ...form, discoveryRadius: s })}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                      form.discoveryRadius === s
+                        ? "bg-accent text-white"
+                        : "border border-border bg-card text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {AREA_SCOPE_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </Card>
 
         <Card>
@@ -165,29 +230,86 @@ export function ProfilePreferencesPanel({
       </div>
 
       {activeTab === "general" && (
-        <Card>
-          <h2 className="font-semibold">Follow digest emails</h2>
-          <p className="mt-1 text-sm text-muted">
-            Get an email summary of new posts from businesses you follow. Available for customers
-            and business accounts.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {digestOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setForm({ ...form, followDigestFrequency: option.value })}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                  form.followDigestFrequency === option.value
-                    ? "bg-accent text-white"
-                    : "border border-border bg-card text-muted hover:text-foreground"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </Card>
+        <>
+          <Card>
+            <h2 className="font-semibold">Discovery defaults</h2>
+            <p className="mt-1 text-sm text-muted">
+              Sets the default location and radius used on Feed, Listings, Events, and all discovery pages.
+            </p>
+            <div className="mt-4 space-y-4">
+              <label className="block text-sm">
+                <span className="font-medium">Your zip code</span>
+                <input
+                  value={form.zipCode}
+                  onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
+                  placeholder="e.g. 78701"
+                  maxLength={10}
+                  className="mt-1 w-48 rounded-lg border border-border px-3 py-2 text-sm"
+                />
+              </label>
+              <div>
+                <p className="text-sm font-medium">Default radius</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted">Distance</span>
+                  {MILE_RADIUS_OPTIONS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setForm({ ...form, discoveryRadius: m })}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                        form.discoveryRadius === m
+                          ? "bg-accent text-white"
+                          : "border border-border bg-card text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {MILE_RADIUS_LABELS[m]}
+                    </button>
+                  ))}
+                  <span className="self-center text-xs text-border">|</span>
+                  <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted">Area</span>
+                  {AREA_SCOPE_OPTIONS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setForm({ ...form, discoveryRadius: s })}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                        form.discoveryRadius === s
+                          ? "bg-accent text-white"
+                          : "border border-border bg-card text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {AREA_SCOPE_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <h2 className="font-semibold">Follow digest emails</h2>
+            <p className="mt-1 text-sm text-muted">
+              Get an email summary of new posts from businesses you follow. Available for customers
+              and business accounts.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {digestOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, followDigestFrequency: option.value })}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                    form.followDigestFrequency === option.value
+                      ? "bg-accent text-white"
+                      : "border border-border bg-card text-muted hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+        </>
       )}
 
       {activeTab === "jobs" && (

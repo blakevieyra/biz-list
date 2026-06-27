@@ -346,6 +346,8 @@ export async function updateProfilePreferences(input: {
   industryInterests?: string[];
   headline?: string;
   skills?: string[];
+  zipCode?: string;
+  discoveryRadius?: DiscoveryRadius;
 }) {
   if (!isSupabaseConfigured()) {
     return { error: "Supabase is not configured." };
@@ -384,6 +386,8 @@ export async function updateProfilePreferences(input: {
         industry_interests: industries.values,
         headline: input.headline?.trim().slice(0, 200) ?? "",
         skills: (input.skills ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 20),
+        ...(input.zipCode !== undefined ? { zip_code: input.zipCode.trim().slice(0, 10) } : {}),
+        ...(input.discoveryRadius !== undefined ? { discovery_radius: input.discoveryRadius } : {}),
       })
       .eq("id", user.id);
 
