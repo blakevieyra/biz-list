@@ -102,52 +102,57 @@ export function FeedPostCard({
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]">
 
         {/* ── Left: business content (2/3) ── */}
-        <div className="flex min-w-0 border-b border-border lg:border-b-0 lg:border-r">
-          {/* Avatar strip — self-stretch fills whatever height the content grows to */}
-          <Link
-            href={`/listings/${post.businessId}`}
-            className="relative block w-24 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-32"
-          >
-            <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
-          </Link>
+        <div className="flex min-w-0 flex-col border-b border-border lg:border-b-0 lg:border-r">
 
-          {/* Post content — no height cap, expands freely */}
-          <div className="flex min-w-0 flex-1 flex-col p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <PostTypeBadge type={post.postType} />
-                  {post.feedBadge && (
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
-                      {badgeLabels[post.feedBadge]}
-                    </span>
+          {/* Header row: photo (left) + business meta (right), photo height = meta height only */}
+          <div className="flex border-b border-border">
+            <Link
+              href={`/listings/${post.businessId}`}
+              className="relative block w-24 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-32"
+            >
+              <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
+            </Link>
+
+            <div className="flex min-w-0 flex-1 flex-col justify-center p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PostTypeBadge type={post.postType} />
+                    {post.feedBadge && (
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
+                        {badgeLabels[post.feedBadge]}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <Link
+                      href={`/listings/${post.businessId}`}
+                      className="text-xl font-bold text-accent hover:underline"
+                    >
+                      {post.businessName ?? "Local business"}
+                    </Link>
+                    {(post.businessRatingCount ?? 0) > 0 && (
+                      <StarRating
+                        rating={post.businessRatingAvg ?? 0}
+                        count={post.businessRatingCount}
+                        size="md"
+                      />
+                    )}
+                  </div>
+                  {post.businessCategory && (
+                    <p className="text-sm font-medium text-muted">{post.businessCategory}</p>
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <Link
-                    href={`/listings/${post.businessId}`}
-                    className="text-xl font-bold text-accent hover:underline"
-                  >
-                    {post.businessName ?? "Local business"}
-                  </Link>
-                  {(post.businessRatingCount ?? 0) > 0 && (
-                    <StarRating
-                      rating={post.businessRatingAvg ?? 0}
-                      count={post.businessRatingCount}
-                      size="md"
-                    />
-                  )}
-                </div>
-                {post.businessCategory && (
-                  <p className="text-sm font-medium text-muted">{post.businessCategory}</p>
-                )}
+                <span className="shrink-0 text-right text-xs leading-snug text-muted">
+                  {formatPostDateTime(post.createdAt)}
+                </span>
               </div>
-              <span className="shrink-0 text-right text-xs leading-snug text-muted">
-                {formatPostDateTime(post.createdAt)}
-              </span>
             </div>
+          </div>
 
-            <h3 className="mt-3 text-base font-semibold leading-snug">{post.title}</h3>
+          {/* Post content — full width below the header */}
+          <div className="flex min-w-0 flex-1 flex-col p-4">
+            <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-muted">{post.body}</p>
 
             {postMediaSrc && postMediaSrc !== avatarSrc && (
