@@ -281,20 +281,21 @@ export async function getRecentListingsPosts(limit = 12): Promise<BusinessPost[]
 
   const { data: rows } = await supabase
     .from("business_posts")
-    .select("*, profiles(display_name), businesses(name, category)")
+    .select("*, profiles(display_name), businesses(name, category, media_urls)")
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (!rows?.length) return [];
 
   return ((rows as (BusinessPostRow & {
-    businesses?: { name: string; category: string } | { name: string; category: string }[] | null;
+    businesses?: { name: string; category: string; media_urls?: string[] } | { name: string; category: string; media_urls?: string[] }[] | null;
   })[] | null) ?? []).map((row) => {
     const business = row.businesses;
     const businessMeta = Array.isArray(business) ? business[0] : business;
     return mapPostRow(row, {
       businessName: businessMeta?.name,
       businessCategory: businessMeta?.category,
+      businessMediaUrl: businessMeta?.media_urls?.[0],
       commentCount: 0,
     });
   });
@@ -306,20 +307,21 @@ export async function getTrendingBusinessPosts(limit = 10): Promise<BusinessPost
 
   const { data: rows } = await supabase
     .from("business_posts")
-    .select("*, profiles(display_name), businesses(name, category)")
+    .select("*, profiles(display_name), businesses(name, category, media_urls)")
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (!rows?.length) return [];
 
   return ((rows as (BusinessPostRow & {
-    businesses?: { name: string; category: string } | { name: string; category: string }[] | null;
+    businesses?: { name: string; category: string; media_urls?: string[] } | { name: string; category: string; media_urls?: string[] }[] | null;
   })[] | null) ?? []).map((row) => {
     const business = row.businesses;
     const businessMeta = Array.isArray(business) ? business[0] : business;
     return mapPostRow(row, {
       businessName: businessMeta?.name,
       businessCategory: businessMeta?.category,
+      businessMediaUrl: businessMeta?.media_urls?.[0],
       commentCount: 0,
     });
   });
