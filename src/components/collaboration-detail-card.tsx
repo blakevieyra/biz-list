@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
 import {
   submitCollaborationOffer,
-  commentOnCollaboration,
   deleteCollaboration,
 } from "@/lib/actions/social";
 import { uploadCollaborationAttachment } from "@/lib/actions/upload";
@@ -209,15 +208,11 @@ export function CollaborationDetailCard({
 }) {
   const router = useRouter();
   const [offerPending, startOfferTransition] = useTransition();
-  const [commentPending, startCommentTransition] = useTransition();
   const [deletePending, startDeleteTransition] = useTransition();
   const [offerText, setOfferText] = useState("");
-  const [commentText, setCommentText] = useState("");
   const [offerAttachments, setOfferAttachments] = useState<string[]>([]);
-  const [commentAttachments, setCommentAttachments] = useState<string[]>([]);
   const [offerSent, setOfferSent] = useState(false);
   const [offerError, setOfferError] = useState<string | null>(null);
-  const [commentError, setCommentError] = useState<string | null>(null);
 
   const isAuthor = currentUserId === idea.authorId;
   const interestCount = idea.interestedCount ?? 0;
@@ -244,20 +239,6 @@ export function CollaborationDetailCard({
       setOfferText("");
       setOfferAttachments([]);
       setOfferSent(true);
-      router.refresh();
-    });
-  }
-
-  function handleComment(e: React.FormEvent) {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    if (!currentUserId) { router.push("/auth/login"); return; }
-    startCommentTransition(async () => {
-      setCommentError(null);
-      const result = await commentOnCollaboration(idea.id, commentText.trim(), commentAttachments);
-      if (result.error) { setCommentError(result.error); return; }
-      setCommentText("");
-      setCommentAttachments([]);
       router.refresh();
     });
   }
@@ -442,61 +423,6 @@ export function CollaborationDetailCard({
         </Card>
       )}
 
-      {/* Discussion */}
-      <Card>
-        <h2 className="font-semibold">Discussion</h2>
-        <p className="mt-1 text-sm text-muted">
-          {isAuthor
-            ? "Offers and questions from interested parties appear here. Reply to continue the conversation."
-            : "Ask questions or follow up on your offer below."}
-        </p>
-
-        {comments.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">No messages yet.</p>
-        ) : (
-          <ul className="mt-4 space-y-4">
-            {comments.map((comment) => (
-              <li key={comment.id} className="rounded-xl border border-border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium">{comment.authorName}</span>
-                  <span className="text-xs text-muted">{formatPostDateTime(comment.createdAt)}</span>
-                </div>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{comment.body}</p>
-                {comment.attachmentUrls.length > 0 && (
-                  <AttachmentList urls={comment.attachmentUrls} />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Reply form */}
-        {currentUserId && (
-          <form onSubmit={handleComment} className="mt-4 space-y-3">
-            <div className="flex gap-2">
-              <input
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder={isAuthor ? "Reply to an offer or add more details..." : "Ask a follow-up question..."}
-                className="min-h-10 min-w-0 flex-1 rounded-xl border border-border px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                type="submit"
-                disabled={commentPending || !commentText.trim()}
-                className="min-h-10 shrink-0 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              >
-                {commentPending ? "Sending…" : "Reply"}
-              </button>
-            </div>
-            <AttachmentUploader
-              attachmentUrls={commentAttachments}
-              setAttachmentUrls={setCommentAttachments}
-              label="Attach files to reply"
-            />
-            {commentError && <p className="text-sm text-red-600">{commentError}</p>}
-          </form>
-        )}
-      </Card>
     </div>
   );
 }
