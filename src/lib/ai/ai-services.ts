@@ -36,7 +36,8 @@ function businessContextBlock(business: VirtualAgentContext["business"]): string
     `Website: ${business.website || "Not listed"}`,
     `Hiring: ${business.isHiring ? "Yes" : "No"}`,
     services ? `Services:\n${services}` : "Services: None listed",
-  ].join("\n");
+    business.importantInfo ? `Important info: ${business.importantInfo}` : "",
+  ].filter(Boolean).join("\n");
 }
 
 type AuditEnhancement = {

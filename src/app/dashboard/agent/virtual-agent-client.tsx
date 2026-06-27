@@ -47,6 +47,7 @@ export default function VirtualAgentClient({
   businessName = "Your business",
   category = "local services",
   services = "our services",
+  serviceObjects = [],
   tagline = "",
   description = "",
   city = "",
@@ -65,6 +66,7 @@ export default function VirtualAgentClient({
   businessName?: string;
   category?: string;
   services?: string;
+  serviceObjects?: { name: string; description?: string; price?: string }[];
   tagline?: string;
   description?: string;
   city?: string;
@@ -111,6 +113,7 @@ export default function VirtualAgentClient({
         businessName,
         category,
         services,
+        serviceObjects: serviceObjects.length ? serviceObjects : undefined,
         message: text,
         tagline,
         description,
@@ -118,6 +121,8 @@ export default function VirtualAgentClient({
         state,
         phone,
         hours,
+        website,
+        importantInfo,
         isHiring,
         agentInstructions: instructions,
         agentTopicRules: topicRules,

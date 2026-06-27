@@ -53,6 +53,7 @@ import { contentLikeKey, isContentLiked } from "@/lib/content-likes-types";
 import { displayCategoryLabel } from "@/lib/industries";
 import { ListingVirtualAgent } from "@/components/listing-virtual-agent";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { canAccess } from "@/lib/plans";
 
 
 
@@ -584,7 +585,8 @@ export default async function BusinessDetailPage({
 
       </div>
 
-      {business.virtualAgentEnabled && (
+      {(business.virtualAgentEnabled ||
+        canAccess(owner?.planTier ?? "free", "virtualAgent")) && (
         <ListingVirtualAgent
           businessId={business.id}
           businessName={business.name}

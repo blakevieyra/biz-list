@@ -15,7 +15,7 @@ export type VirtualAgentContext = {
     | "website"
     | "isHiring"
     | "services"
-  >;
+  > & { importantInfo?: string };
   customerName?: string;
   agentInstructions?: string;
   agentTopicRules?: { topic: string; response: string }[];

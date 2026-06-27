@@ -16,6 +16,7 @@ export default async function VirtualAgentPage() {
   let businessName = profile.displayName;
   let category = "local business";
   let services = "our services";
+  let serviceObjects: { name: string; description?: string; price?: string }[] = [];
   let tagline = "";
   let description = "";
   let city = "";
@@ -46,6 +47,7 @@ export default async function VirtualAgentPage() {
       if (business) {
         businessName = business.name;
         category = business.category;
+        serviceObjects = business.services;
         services = business.services.map((s) => s.name).join(", ") || services;
         tagline = business.tagline;
         description = business.description;
@@ -104,6 +106,7 @@ export default async function VirtualAgentPage() {
       businessName={businessName}
       category={category}
       services={services}
+      serviceObjects={serviceObjects}
       tagline={tagline}
       description={description}
       city={city}

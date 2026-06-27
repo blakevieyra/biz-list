@@ -412,6 +412,7 @@ export async function virtualAgentReply(input: {
   businessName: string;
   category: string;
   services: string;
+  serviceObjects?: { name: string; description?: string; price?: string }[];
   message: string;
   tagline?: string;
   description?: string;
@@ -419,12 +420,21 @@ export async function virtualAgentReply(input: {
   state?: string;
   phone?: string;
   hours?: string;
+  website?: string;
+  importantInfo?: string;
   isHiring?: boolean;
   agentInstructions?: string;
   agentTopicRules?: { topic: string; response: string }[];
 }) {
   try {
     await requireUserWithPlan("virtualAgent");
+
+    const services = input.serviceObjects?.length
+      ? input.serviceObjects
+      : input.services
+          .split(",")
+          .map((name) => ({ name: name.trim(), description: "" }))
+          .filter((s) => s.name);
 
     const reply = await generateVirtualAgentReplyAI(
       {
@@ -433,17 +443,15 @@ export async function virtualAgentReply(input: {
           category: input.category,
           subcategory: "",
           tagline: input.tagline ?? "",
-          description: input.description ?? input.services,
+          description: input.description ?? "",
           city: input.city ?? "",
           state: input.state ?? "",
           phone: input.phone ?? "",
           hours: input.hours ?? "",
-          website: "",
+          website: input.website ?? "",
+          importantInfo: input.importantInfo ?? "",
           isHiring: input.isHiring ?? false,
-          services: input.services
-            .split(",")
-            .map((name) => ({ name: name.trim(), description: "" }))
-            .filter((s) => s.name),
+          services,
         },
         agentInstructions: input.agentInstructions,
         agentTopicRules: input.agentTopicRules,
@@ -519,12 +527,12 @@ export async function askListingAgent(input: {
 
     const { data: business } = await supabase
       .from("businesses")
-      .select("*")
+      .select("*, agent_instructions, agent_topic_rules")
       .eq("id", input.businessId)
       .maybeSingle();
 
-    if (!business?.virtual_agent_enabled) {
-      return { error: "This business has not enabled the virtual agent." };
+    if (!business) {
+      return { error: "Business not found." };
     }
 
     const { data: owner } = await supabase
@@ -533,9 +541,21 @@ export async function askListingAgent(input: {
       .eq("id", business.owner_id)
       .maybeSingle();
 
-    if (!canAccess((owner?.plan_tier ?? "free") as PlanTier, "virtualAgent")) {
+    const ownerPlan = (owner?.plan_tier ?? "free") as PlanTier;
+
+    if (!canAccess(ownerPlan, "virtualAgent")) {
       return { error: "Virtual agent is not active for this listing." };
     }
+
+    // Auto-enable for Platinum; otherwise require manual toggle
+    if (!business.virtual_agent_enabled && ownerPlan !== "platinum") {
+      return { error: "This business has not enabled the virtual agent." };
+    }
+
+    const agentInstructions = (business.agent_instructions as string | null) ?? "";
+    const agentTopicRules = Array.isArray(business.agent_topic_rules)
+      ? (business.agent_topic_rules as { topic: string; response: string }[])
+      : [];
 
     const reply = await generateVirtualAgentReplyAI(
       {
@@ -550,6 +570,7 @@ export async function askListingAgent(input: {
           phone: business.phone ?? "",
           hours: business.hours ?? "",
           website: business.website ?? "",
+          importantInfo: (business.important_info as string | null) ?? "",
           isHiring: business.is_hiring ?? false,
           services: (Array.isArray(business.services) ? business.services : []).map(
             (s: { name?: string; description?: string; price?: string }) => ({
@@ -560,6 +581,8 @@ export async function askListingAgent(input: {
           ),
         },
         customerName: input.customerName,
+        agentInstructions: agentInstructions || undefined,
+        agentTopicRules: agentTopicRules.length ? agentTopicRules : undefined,
       },
       input.message,
     );
