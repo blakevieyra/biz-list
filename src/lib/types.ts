@@ -414,6 +414,7 @@ export interface LocalLead {
   leadSource?: "follower" | "interest" | "seeking" | "local";
   isFollower?: boolean;
   isSeekingWork?: boolean;
+  isMock?: boolean;
 }
 
 export const FORUM_CATEGORY_LABELS: Record<ForumCategory, string> = {

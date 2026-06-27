@@ -66,10 +66,10 @@ export function BusinessListingCard({
   return (
     <>
       <Card className="group flex overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
-        {/* Left: cover image — full-height, matches collab card style */}
+        {/* Left: cover image */}
         <Link
           href={`/listings/${business.id}`}
-          className="relative block w-36 shrink-0 self-stretch overflow-hidden bg-slate-100 sm:w-52"
+          className="relative block w-24 shrink-0 self-stretch overflow-hidden bg-slate-100 sm:w-52"
         >
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -82,16 +82,16 @@ export function BusinessListingCard({
         </Link>
 
         {/* Right: content */}
-        <div className="flex min-w-0 flex-1 flex-col p-4">
+        <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
           {/* Header: name/rating left, Follow/Message right */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted sm:text-xs">
                 {displayCategoryLabel(business.category, business.subcategory)}
               </p>
-              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                 <Link href={`/listings/${business.id}`}>
-                  <h3 className="text-base font-bold leading-snug group-hover:text-accent sm:text-xl">
+                  <h3 className="text-sm font-bold leading-snug group-hover:text-accent sm:text-xl">
                     {business.name}
                   </h3>
                 </Link>
@@ -100,16 +100,16 @@ export function BusinessListingCard({
                 )}
               </div>
               {business.tagline && (
-                <p className="mt-0.5 line-clamp-1 text-sm text-muted">{business.tagline}</p>
+                <p className="mt-0.5 line-clamp-1 text-xs text-muted sm:text-sm">{business.tagline}</p>
               )}
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {business.likeCount > 0 && (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold sm:text-xs">
                     {business.likeCount} likes
                   </span>
                 )}
                 {business.followerIds.length > 0 && (
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-accent">
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-accent sm:text-xs">
                     {business.followerIds.length} followers
                   </span>
                 )}
@@ -118,24 +118,24 @@ export function BusinessListingCard({
 
             {/* Follow / Message — top right */}
             {!isOwner && (
-              <div className="flex shrink-0 gap-1.5 sm:gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:gap-2" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
                   disabled={pending}
                   onClick={handleFollow}
-                  className={`${actionButtonClass} px-3 text-xs sm:px-4 sm:text-sm ${
+                  className={`${actionButtonClass} min-h-8 px-2.5 text-[11px] sm:min-h-9 sm:px-4 sm:text-sm ${
                     isFollowing
                       ? "border-accent bg-teal-50 text-accent"
                       : "border-border bg-card hover:border-accent/40"
                   }`}
                 >
-                  {isFollowing ? "Following" : "Follow"}
+                  {isFollowing ? "✓ Follow" : "Follow"}
                 </button>
                 <button
                   type="button"
                   disabled={pending}
                   onClick={handleMessage}
-                  className={`${actionButtonClass} border-border bg-card px-3 text-xs hover:border-accent/40 sm:px-4 sm:text-sm`}
+                  className={`${actionButtonClass} min-h-8 border-border bg-card px-2.5 text-[11px] hover:border-accent/40 sm:min-h-9 sm:px-4 sm:text-sm`}
                 >
                   <span className="hidden sm:inline">Message</span>
                   <span className="sm:hidden" aria-label="Message">✉</span>
@@ -144,8 +144,8 @@ export function BusinessListingCard({
             )}
           </div>
 
-          {/* Offerings + Latest update in two columns */}
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          {/* Offerings + Latest update — stack on mobile, side-by-side on sm+ */}
+          <div className="mt-2 grid gap-3 sm:mt-3 sm:grid-cols-2 sm:gap-4">
             {topServices.length > 0 && (
               <div>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Offerings</p>
@@ -229,7 +229,7 @@ export function BusinessListingCard({
           </div>
 
           {/* Footer: location */}
-          <div className="mt-auto border-t border-border pt-3 mt-3">
+          <div className="mt-auto mt-2 border-t border-border pt-2 sm:pt-3">
             <Link
               href={`/listings/${business.id}`}
               className="text-xs text-muted hover:text-accent"

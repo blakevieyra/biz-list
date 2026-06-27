@@ -338,7 +338,7 @@ export async function getLatestAiAssessment(userId: string): Promise<AiAssessmen
 function getMockLeads(): LocalLead[] {
   return [
     {
-      id: "user-4",
+      id: "mock-1",
       displayName: "Alex Rivera",
       city: "Austin",
       state: "TX",
@@ -350,9 +350,10 @@ function getMockLeads(): LocalLead[] {
       matchReasons: ["Follows your business on BizList", "Industry interest: Food & Beverage › Restaurant"],
       leadSource: "follower",
       isFollower: true,
+      isMock: true,
     },
     {
-      id: "user-6",
+      id: "mock-2",
       displayName: "Sam Nguyen",
       city: "Austin",
       state: "TX",
@@ -364,6 +365,7 @@ function getMockLeads(): LocalLead[] {
       matchReasons: ["Industry interest: Marketing & Print › Photography", "Same city: Austin"],
       leadSource: "interest",
       isFollower: false,
+      isMock: true,
     },
   ];
 }

@@ -16,6 +16,7 @@ export default async function DashboardLeadsPage() {
   if (!profile || !canAccess(profile.planTier, "localLeads")) redirect("/pricing");
 
   const leads = await getLocalLeads(userId);
+  const hasMockLeads = leads.some((l) => l.isMock);
 
   return (
     <>
@@ -23,6 +24,12 @@ export default async function DashboardLeadsPage() {
         title="Local leads"
         description="Potential customers from followers, shared industry interests, job seekers, and local profiles."
       />
+
+      {hasMockLeads && (
+        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <strong>Preview mode</strong> — these are example leads. Real leads appear as customers join BizList in your area and follow or match your business.
+        </div>
+      )}
 
       {leads.length === 0 ? (
         <Card>
@@ -36,18 +43,23 @@ export default async function DashboardLeadsPage() {
           {leads.map((lead) => (
             <Card key={lead.id}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold">{lead.displayName}</h2>
                     <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
                       {lead.matchScore}% match
                     </span>
-                    {lead.isFollower && (
+                    {lead.isMock && (
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500">
+                        Preview
+                      </span>
+                    )}
+                    {lead.isFollower && !lead.isMock && (
                       <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-accent">
                         Follows you
                       </span>
                     )}
-                    {lead.leadSource && !lead.isFollower && (
+                    {lead.leadSource && !lead.isFollower && !lead.isMock && (
                       <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-muted capitalize">
                         {lead.leadSource} match
                       </span>
@@ -73,14 +85,23 @@ export default async function DashboardLeadsPage() {
                     </p>
                   )}
                 </div>
-                <form action={async () => { "use server"; await contactLead(lead.id); }}>
-                  <button
-                    type="submit"
-                    className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-                  >
-                    Message lead
-                  </button>
-                </form>
+
+                <div className="shrink-0">
+                  {lead.isMock ? (
+                    <span className="inline-block rounded-full border border-border bg-slate-50 px-4 py-2 text-sm text-muted cursor-default">
+                      Message lead
+                    </span>
+                  ) : (
+                    <form action={async () => { "use server"; await contactLead(lead.id); }}>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+                      >
+                        Message lead
+                      </button>
+                    </form>
+                  )}
+                </div>
               </div>
             </Card>
           ))}
