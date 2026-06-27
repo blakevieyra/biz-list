@@ -121,59 +121,37 @@ export function ProfilePreferencesPanel({
         </div>
       </Card>
 
-      <Card>
+      {!isBizListPlusVariant && <Card>
         <h2 className="font-semibold">
-          {isBizListPlusVariant ? "Job & deal matching" : "Job seeker profile"}
+          {"Job seeker profile"}
         </h2>
         <p className="mt-1 text-sm text-muted">
-          {isBizListPlusVariant
-            ? "Opt into job alerts and set industries and roles so BizList can match you to local openings and hiring businesses."
-            : "Build a reusable resume and opt into job alerts by industry and role."}
+          Build a reusable resume and opt into job alerts by industry and role.
         </p>
         <div className="mt-4 space-y-4">
-          {!isBizListPlusVariant && (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.isSeekingWork}
-                onChange={(e) => setForm({ ...form, isSeekingWork: e.target.checked })}
-              />
-              <span>I&apos;m looking for local work</span>
-            </label>
-          )}
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.isSeekingWork}
+              onChange={(e) => setForm({ ...form, isSeekingWork: e.target.checked })}
+            />
+            <span>I&apos;m looking for local work</span>
+          </label>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.jobAlertOptIn}
               onChange={(e) => setForm({ ...form, jobAlertOptIn: e.target.checked })}
             />
-            <span>
-              {isBizListPlusVariant
-                ? "Notify me about local job posts and matches in my industries"
-                : "Email me when followed businesses post jobs in my industries"}
-            </span>
+            <span>Email me when followed businesses post jobs in my industries</span>
           </label>
-          {isBizListPlusVariant && (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.isSeekingWork}
-                onChange={(e) => setForm({ ...form, isSeekingWork: e.target.checked })}
-              />
-              <span>I&apos;m also open to local work opportunities</span>
-            </label>
-          )}
           <label className="block text-sm">
             <span className="font-medium">Headline</span>
             <input
               value={form.headline}
               onChange={(e) => setForm({ ...form, headline: e.target.value })}
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-              placeholder={
-                isBizListPlusVariant
-                  ? "e.g. Open to weekend shifts or part-time roles"
-                  : "e.g. Open to part-time bakery roles"
-              }
+              placeholder="e.g. Open to part-time bakery roles"
             />
           </label>
           <label className="block text-sm">
@@ -185,8 +163,7 @@ export function ProfilePreferencesPanel({
               placeholder="Comma-separated skills"
             />
           </label>
-          {!isBizListPlusVariant && (
-            <>
+          <>
               <label className="block text-sm">
                 <span className="font-medium">Experience</span>
                 <textarea
@@ -255,8 +232,7 @@ export function ProfilePreferencesPanel({
                 </label>
                 {resumeError && <p className="mt-1 text-xs text-red-600">{resumeError}</p>}
               </div>
-            </>
-          )}
+          </>
           <JobTitlePicker
             selected={form.targetJobTitles}
             onChange={(targetJobTitles) => setForm({ ...form, targetJobTitles })}
@@ -268,16 +244,14 @@ export function ProfilePreferencesPanel({
             label="Target industries"
             hint="Used for job alerts, deal alerts, and discovery."
           />
-          {!isBizListPlusVariant && (
-            <div>
-              <p className="text-sm font-medium">Resume preview (sent with applications)</p>
-              <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-xs leading-relaxed text-muted">
-                {previewResume}
-              </pre>
-            </div>
-          )}
+          <div>
+            <p className="text-sm font-medium">Resume preview (sent with applications)</p>
+            <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-xs leading-relaxed text-muted">
+              {previewResume}
+            </pre>
+          </div>
         </div>
-      </Card>
+      </Card>}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {saved && <p className="text-sm text-emerald-700">Preferences saved.</p>}
