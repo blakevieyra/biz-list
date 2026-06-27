@@ -75,6 +75,26 @@ export async function ForumDiscussionsSection({
         <ForumPostThreadPanel postId={selectedPostId} closeHref={closeThreadHref} />
       )}
 
+      <form action={formAction} method="get" className="mb-5 flex flex-col gap-3 sm:flex-row">
+        {Object.entries(preservedParams).map(([key, value]) => (
+          <input key={key} type="hidden" name={key} value={value} />
+        ))}
+        {category && <input type="hidden" name="category" value={category} />}
+        <input
+          type="search"
+          name="q"
+          defaultValue={query ?? ""}
+          placeholder="Search discussions..."
+          className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
+        />
+        <button
+          type="submit"
+          className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
+        >
+          Search
+        </button>
+      </form>
+
       <section className="mb-6">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Topic</p>
         <div className="filter-scroll">
@@ -103,26 +123,6 @@ export async function ForumDiscussionsSection({
           ))}
         </div>
       </section>
-
-      <form action={formAction} method="get" className="mb-6 flex flex-col gap-3 sm:flex-row">
-        {Object.entries(preservedParams).map(([key, value]) => (
-          <input key={key} type="hidden" name={key} value={value} />
-        ))}
-        {category && <input type="hidden" name="category" value={category} />}
-        <input
-          type="search"
-          name="q"
-          defaultValue={query ?? ""}
-          placeholder="Search discussions..."
-          className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
-        />
-        <button
-          type="submit"
-          className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
-        >
-          Search
-        </button>
-      </form>
 
       {posts.length === 0 ? (
         <Card>
