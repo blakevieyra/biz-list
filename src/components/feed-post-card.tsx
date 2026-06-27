@@ -127,7 +127,7 @@ export function FeedPostCard({
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <Link
                       href={`/listings/${post.businessId}`}
-                      className="text-xl font-bold text-accent hover:underline"
+                      className="text-base font-bold text-accent hover:underline sm:text-xl"
                     >
                       {post.businessName ?? "Local business"}
                     </Link>

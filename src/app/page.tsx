@@ -84,11 +84,11 @@ export default async function HomePage() {
           <div className="flex items-center bg-gradient-to-bl from-blue-50 via-background to-background px-4 py-20 sm:px-6 sm:py-24 lg:py-0 lg:pl-12 xl:pl-20">
             <div className="w-full max-w-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/bizlist-logo.png" alt="BizList" className="mb-4 h-36 w-auto" />
-              <h1 className="min-h-[2.4em] text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              <img src="/bizlist-logo.png" alt="BizList" className="mb-4 h-20 w-auto sm:h-36" />
+              <h1 className="min-h-[2.4em] text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 Your Business.<br /><HeroCyclingText />
               </h1>
-              <p className="mt-5 text-xl font-medium text-muted sm:text-2xl">
+              <p className="mt-5 text-base font-medium text-muted sm:text-xl">
                 Space for Listings, Events and B2B Collaboration.
               </p>
 
@@ -149,17 +149,17 @@ export default async function HomePage() {
       </section>
 
       {/* ── What you can do ── */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-24">
         <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl">What you can do on BizList</h2>
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
             <Link
               key={feature.title}
               href={feature.href}
-              className="group flex flex-col rounded-2xl border border-border bg-card p-10 transition hover:border-accent/40 hover:shadow-md"
+              className="group flex flex-col rounded-2xl border border-border bg-card p-5 transition hover:border-accent/40 hover:shadow-md sm:p-10"
             >
-              <h3 className="text-2xl font-bold group-hover:text-accent">{feature.title}</h3>
-              <p className="mt-4 flex-1 text-lg leading-relaxed text-muted">{feature.description}</p>
+              <h3 className="text-xl font-bold group-hover:text-accent sm:text-2xl">{feature.title}</h3>
+              <p className="mt-4 flex-1 text-sm leading-relaxed text-muted sm:text-lg">{feature.description}</p>
               <span className="mt-6 text-base font-medium text-accent">Explore →</span>
             </Link>
           ))}

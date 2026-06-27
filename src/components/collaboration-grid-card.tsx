@@ -96,11 +96,11 @@ export function CollaborationGridCard({
           {/* Business name + rating */}
           <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
             {listingHref ? (
-              <Link href={listingHref} className="text-xl font-bold text-accent hover:underline">
+              <Link href={listingHref} className="text-base font-bold text-accent hover:underline sm:text-xl">
                 {businessName}
               </Link>
             ) : (
-              <p className="text-xl font-bold text-accent">{businessName}</p>
+              <p className="text-base font-bold text-accent sm:text-xl">{businessName}</p>
             )}
             {(idea.businessRatingCount ?? 0) > 0 && (
               <StarRating

@@ -240,7 +240,7 @@ function PlanCard({
       ) : null}
       <h2 className="mt-3 text-2xl font-bold">{name}</h2>
       <p className="mt-2 text-sm text-muted">{description}</p>
-      <p className="mt-6 text-4xl font-bold">
+      <p className="mt-6 text-3xl font-bold sm:text-4xl">
         ${formatPlanPrice(price)}
         {!isFree && (
           <span className="text-base font-normal text-muted">

@@ -91,7 +91,7 @@ export function BusinessListingCard({
               </p>
               <div className="mt-0.5 flex flex-wrap items-center gap-2">
                 <Link href={`/listings/${business.id}`}>
-                  <h3 className="text-xl font-bold leading-snug group-hover:text-accent">
+                  <h3 className="text-base font-bold leading-snug group-hover:text-accent sm:text-xl">
                     {business.name}
                   </h3>
                 </Link>
@@ -118,12 +118,12 @@ export function BusinessListingCard({
 
             {/* Follow / Message — top right */}
             {!isOwner && (
-              <div className="flex shrink-0 gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex shrink-0 gap-1.5 sm:gap-2" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
                   disabled={pending}
                   onClick={handleFollow}
-                  className={`${actionButtonClass} ${
+                  className={`${actionButtonClass} px-3 text-xs sm:px-4 sm:text-sm ${
                     isFollowing
                       ? "border-accent bg-teal-50 text-accent"
                       : "border-border bg-card hover:border-accent/40"
@@ -135,9 +135,10 @@ export function BusinessListingCard({
                   type="button"
                   disabled={pending}
                   onClick={handleMessage}
-                  className={`${actionButtonClass} border-border bg-card hover:border-accent/40`}
+                  className={`${actionButtonClass} border-border bg-card px-3 text-xs hover:border-accent/40 sm:px-4 sm:text-sm`}
                 >
-                  Message
+                  <span className="hidden sm:inline">Message</span>
+                  <span className="sm:hidden" aria-label="Message">✉</span>
                 </button>
               </div>
             )}

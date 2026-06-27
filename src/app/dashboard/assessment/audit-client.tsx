@@ -149,7 +149,7 @@ function ScoreCard({ label, value, sub }: { label: string; value: number; sub?: 
   const c = scoreColor(value);
   return (
     <div className={`rounded-2xl border p-5 text-center ${c.ring}`}>
-      <p className={`text-4xl font-bold ${c.text}`}>{value}</p>
+      <p className={`text-3xl font-bold sm:text-4xl ${c.text}`}>{value}</p>
       <p className="mt-1 text-sm font-semibold text-foreground/80">{label}</p>
       {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
     </div>
