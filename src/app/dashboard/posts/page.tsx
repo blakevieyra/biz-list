@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BusinessPostComposer } from "@/components/business-post-composer";
-import { PostMediaGallery, PostTypeBadge } from "@/components/post-media";
+import { PostTypeBadge } from "@/components/post-media";
 import { Card, PageHeader, formatDate } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessPosts } from "@/lib/data/business";
@@ -113,28 +113,6 @@ export default async function DashboardPostsPage() {
         </div>
       )}
 
-      {posts.length > 0 && (
-        <Card className="mt-8">
-          <h2 className="font-semibold">Published content preview</h2>
-          <div className="mt-6 space-y-6">
-            {posts.slice(0, 3).map((post) => (
-              <article key={post.id} className="rounded-xl border border-border p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <PostTypeBadge type={post.postType} />
-                  <span className="text-xs text-muted">{formatDate(post.createdAt)}</span>
-                </div>
-                <h3 className="mt-2 text-lg font-semibold">{post.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed">{post.body}</p>
-                {post.mediaUrls.length > 0 && (
-                  <div className="mt-4">
-                    <PostMediaGallery urls={post.mediaUrls} />
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
-        </Card>
-      )}
     </>
   );
 }

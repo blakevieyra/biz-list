@@ -31,18 +31,40 @@ export function PostTypeBadge({ type }: { type: BusinessPostType }) {
 
 function DirectVideo({ url }: { url: string }) {
   const [errored, setErrored] = useState(false);
-  const filename = url.split("/").pop() ?? "video";
+  const filename = url.split("/").pop()?.split("?")[0] ?? "video";
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const mimeMap: Record<string, string> = {
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    webm: "video/webm",
+    m4v: "video/mp4",
+    ogv: "video/ogg",
+    avi: "video/x-msvideo",
+    mkv: "video/x-matroska",
+  };
+  const mimeType = mimeMap[ext] ?? "video/mp4";
 
   if (errored) {
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-slate-50 p-4 text-sm text-muted">
         <p className="font-medium text-foreground/80">Video can&apos;t play in this browser</p>
-        <p className="mt-1 text-xs">
-          This video may use H.265/HEVC encoding. Try opening it in Safari, or{" "}
-          <a href={url} download={filename} className="text-accent hover:underline">
-            download it
-          </a>{" "}
-          to watch locally.
+        <div className="mt-2 flex flex-wrap gap-3 text-xs">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-accent hover:underline"
+          >
+            Open in new tab →
+          </a>
+          <a href={url} download={filename} className="font-medium text-accent hover:underline">
+            Download video
+          </a>
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          If the link above shows a 403 error, the storage bucket needs to be made public in the
+          Supabase dashboard (Storage → business-media → Make public). If it opens but won&apos;t
+          play, re-encode as H.264 MP4 for broadest browser support.
         </p>
       </div>
     );
@@ -51,13 +73,14 @@ function DirectVideo({ url }: { url: string }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-black">
       <video
-        src={url}
         controls
         playsInline
         preload="metadata"
         className="aspect-video w-full"
         onError={() => setErrored(true)}
-      />
+      >
+        <source src={url} type={mimeType} />
+      </video>
     </div>
   );
 }
