@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { BusinessPostFeed } from "@/components/business-post-feed";
-import { CollaborationCard } from "@/components/collaboration-card";
+import { CollaborationGridCard } from "@/components/collaboration-grid-card";
 import { EventCard } from "@/components/event-card";
 import {
   getBusinesses,
@@ -60,13 +60,13 @@ export default async function HomePage() {
     <>
       {/* ── Hero ── */}
       <section className="border-b border-border">
-        <div className="lg:grid lg:min-h-[780px] lg:grid-cols-2 xl:min-h-[860px]">
-          <div className="flex items-center bg-gradient-to-br from-blue-50 via-background to-background px-4 py-28 sm:px-6 sm:py-36 lg:justify-end lg:py-48 lg:pr-12 xl:pr-20">
+        <div className="lg:grid lg:min-h-screen lg:grid-cols-2">
+          <div className="flex items-center bg-gradient-to-br from-blue-50 via-background to-background px-4 py-20 sm:px-6 sm:py-24 lg:justify-end lg:py-0 lg:pr-12 xl:pr-20">
             <div className="w-full max-w-lg">
               <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">
                 BizList
               </p>
-              <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
+              <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 Your Business.<br />More Customers.
               </h1>
               <p className="mt-5 text-xl font-medium text-muted sm:text-2xl">
@@ -127,7 +127,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative min-h-[480px] w-full sm:min-h-[600px] lg:min-h-full">
+          <div className="relative min-h-[360px] w-full sm:min-h-[480px] lg:min-h-full">
             <Image
               src="/hero-bizlist.jpg"
               alt="Local business interior"
@@ -201,7 +201,7 @@ export default async function HomePage() {
             </div>
             <div className="mt-6 space-y-4">
               {collaborations.slice(0, 2).map((idea) => (
-                <CollaborationCard key={idea.id} idea={idea} />
+                <CollaborationGridCard key={idea.id} idea={idea} currentUserId={null} />
               ))}
               {collaborations.length === 0 && (
                 <p className="text-sm text-muted">No collaboration ideas yet.</p>
