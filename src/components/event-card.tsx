@@ -1,6 +1,38 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Card, formatPostDateTime } from "@/components/ui";
 import type { BusinessEvent } from "@/lib/types";
+
+function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; businessMediaUrl?: string }) {
+  const [src, setSrc] = useState(imageUrl || businessMediaUrl);
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        className="h-44 w-full object-cover sm:h-48"
+        loading="lazy"
+        onError={() => {
+          if (src === imageUrl && businessMediaUrl && businessMediaUrl !== imageUrl) {
+            setSrc(businessMediaUrl);
+          } else {
+            setSrc(undefined);
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-44 items-center justify-center bg-blue-50 text-sm font-medium text-accent sm:h-48">
+      Local event
+    </div>
+  );
+}
 
 export function EventCard({ event }: { event: BusinessEvent }) {
   const when = formatPostDateTime(event.startsAt);
@@ -11,27 +43,7 @@ export function EventCard({ event }: { event: BusinessEvent }) {
   return (
     <Card className="overflow-hidden p-0">
       <Link href={`/events/${event.id}`} className="block">
-        {event.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={event.imageUrl}
-            alt=""
-            className="h-44 w-full object-cover sm:h-48"
-            loading="lazy"
-          />
-        ) : event.businessMediaUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={event.businessMediaUrl}
-            alt=""
-            className="h-44 w-full object-cover sm:h-48"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-44 items-center justify-center bg-blue-50 text-sm font-medium text-accent sm:h-48">
-            Local event
-          </div>
-        )}
+        <EventImage imageUrl={event.imageUrl} businessMediaUrl={event.businessMediaUrl} />
         <div className="p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-accent">
             {event.businessName ?? "Local business"}
