@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageHeader, Card } from "@/components/ui";
 import type { ComprehensiveAuditResult, ComprehensiveAuditSection } from "@/lib/ai/ai-services";
 
@@ -20,24 +20,31 @@ export type AuditProfileData = {
   services: { name: string; price?: string }[];
 };
 
+type ResearchValues = Record<string, string>;
+
 // ─── Progress steps ───────────────────────────────────────────────────────────
 
-const PROGRESS_STEPS = [
+const RESEARCH_STEPS = [
   { icon: "🔍", label: "Searching the web for your business" },
   { icon: "⭐", label: "Finding reviews and reputation signals" },
   { icon: "📊", label: "Identifying competitors in your area" },
   { icon: "📈", label: "Analyzing industry trends" },
+];
+
+const GENERATE_STEPS = [
   { icon: "👥", label: "Profiling your customer base" },
   { icon: "🧠", label: "Scoring all 8 audit sections" },
   { icon: "📝", label: "Writing your comprehensive report" },
 ];
 
+const ALL_STEPS = [...RESEARCH_STEPS, ...GENERATE_STEPS];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number) {
-  if (score >= 75) return { ring: "border-emerald-300 bg-emerald-50", text: "text-emerald-700", bar: "bg-emerald-500" };
-  if (score >= 55) return { ring: "border-amber-300 bg-amber-50", text: "text-amber-700", bar: "bg-amber-400" };
-  return { ring: "border-red-300 bg-red-50", text: "text-red-700", bar: "bg-red-400" };
+  if (score >= 75) return { ring: "border-emerald-300 bg-emerald-50", text: "text-emerald-700" };
+  if (score >= 55) return { ring: "border-amber-300 bg-amber-50", text: "text-amber-700" };
+  return { ring: "border-red-300 bg-red-50", text: "text-red-700" };
 }
 
 function ScoreCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
@@ -112,26 +119,37 @@ const PRIORITY_COLORS = {
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function AuditClient({ profile }: { profile: AuditProfileData }) {
-  // Editable fields (user can tweak before running)
   const [businessName, setBusinessName] = useState(profile.businessName);
   const [category, setCategory] = useState(profile.category);
   const [cityState, setCityState] = useState(profile.cityState);
   const [description, setDescription] = useState(profile.description);
 
-  // State
   const [running, setRunning] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
+  const [phase, setPhase] = useState<"research" | "generate">("research");
   const [result, setResult] = useState<ComprehensiveAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-advance progress steps while running
+  // Tick progress within the current phase while running
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function startProgressTick(startIdx: number, endIdx: number) {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setProgressStep(startIdx);
+    intervalRef.current = setInterval(() => {
+      setProgressStep((s) => {
+        if (s >= endIdx - 1) {
+          clearInterval(intervalRef.current!);
+          return endIdx - 1;
+        }
+        return s + 1;
+      });
+    }, 4500);
+  }
+
   useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => {
-      setProgressStep((s) => Math.min(s + 1, PROGRESS_STEPS.length - 1));
-    }, 5000);
-    return () => clearInterval(id);
-  }, [running]);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, []);
 
   async function handleRun() {
     if (!businessName.trim() || !category.trim()) {
@@ -140,78 +158,132 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
     }
     setError(null);
     setRunning(true);
-    setProgressStep(0);
+
+    // Phase 1: Web research (steps 0-3)
+    setPhase("research");
+    startProgressTick(0, RESEARCH_STEPS.length);
+
+    let research: ResearchValues = {};
     try {
-      const res = await fetch("/api/audit/auto", {
+      const r1 = await fetch("/api/audit/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessName: businessName.trim(),
           category: category.trim(),
           cityState: cityState.trim(),
-          description: description.trim(),
-          tagline: profile.tagline,
-          website: profile.website,
-          phone: profile.phone,
-          hours: profile.hours,
-          isHiring: profile.isHiring,
-          services: profile.services,
         }),
       });
-      const data = (await res.json()) as { result?: ComprehensiveAuditResult; error?: string };
-      if (!res.ok || data.error) {
-        setError(data.error ?? "Audit failed. Please try again.");
+      const d1 = (await r1.json()) as { values?: ResearchValues; error?: string };
+      if (r1.ok && d1.values) research = d1.values;
+      // Continue even if research failed — generate will use profile data only
+    } catch {
+      // Non-fatal — continue to generate phase
+    }
+
+    // Phase 2: Generate report (steps 4-6)
+    setPhase("generate");
+    startProgressTick(RESEARCH_STEPS.length, ALL_STEPS.length);
+
+    try {
+      const r2 = await fetch("/api/audit/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile: {
+            businessName: businessName.trim(),
+            category: category.trim(),
+            cityState: cityState.trim(),
+            description: description.trim(),
+            tagline: profile.tagline,
+            website: profile.website,
+            phone: profile.phone,
+            hours: profile.hours,
+            isHiring: profile.isHiring,
+            services: profile.services,
+          },
+          research,
+        }),
+      });
+      const d2 = (await r2.json()) as { result?: ComprehensiveAuditResult; error?: string };
+      if (!r2.ok || d2.error) {
+        setError(d2.error ?? "Report generation failed. Please try again.");
+        setRunning(false);
         return;
       }
-      if (data.result) setResult(data.result);
+      if (d2.result) {
+        setProgressStep(ALL_STEPS.length - 1);
+        await new Promise((res) => setTimeout(res, 800));
+        setResult(d2.result);
+      }
     } catch {
-      setError("Audit failed. Check your connection and try again.");
+      setError("Report generation failed. Check your connection and try again.");
     } finally {
       setRunning(false);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     }
   }
 
   // ── Progress view ────────────────────────────────────────────────────────────
   if (running) {
+    const phaseLabel = phase === "research" ? "Researching online…" : "Generating report…";
     return (
       <>
         <PageHeader
           title="AI Business Audit"
-          description={`Researching and analyzing ${businessName}…`}
+          description={`Analyzing ${businessName} — ${phaseLabel}`}
         />
         <Card>
           <div className="pb-6 pt-2 text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
             <h2 className="text-lg font-bold">Running full AI audit</h2>
             <p className="mt-1 text-sm text-muted">
-              Searching the web and analyzing all 8 audit sections — this takes about 30 seconds.
+              {phase === "research"
+                ? "Searching the web for reviews, competitors, industry trends, and your online presence…"
+                : "Analyzing all 8 audit sections and writing your report…"}
             </p>
           </div>
 
           <div className="space-y-2">
-            {PROGRESS_STEPS.map((step, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-500 ${
-                  i === progressStep
-                    ? "border border-accent/30 bg-accent/5"
-                    : i < progressStep
-                    ? "bg-emerald-50/60"
-                    : "opacity-30"
-                }`}
-              >
-                <span className="text-lg">{step.icon}</span>
-                <span className={`flex-1 text-sm font-medium ${i < progressStep ? "text-emerald-700" : i === progressStep ? "text-foreground" : "text-muted"}`}>
-                  {step.label}
-                </span>
-                {i === progressStep && (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-                )}
-                {i < progressStep && (
-                  <span className="text-sm text-emerald-600">✓</span>
-                )}
-              </div>
-            ))}
+            {ALL_STEPS.map((step, i) => {
+              const done = i < progressStep;
+              const active = i === progressStep;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-500 ${
+                    active
+                      ? "border border-accent/30 bg-accent/5"
+                      : done
+                      ? "bg-emerald-50/60"
+                      : "opacity-25"
+                  }`}
+                >
+                  <span className="text-lg">{step.icon}</span>
+                  <span
+                    className={`flex-1 text-sm font-medium ${
+                      done ? "text-emerald-700" : active ? "text-foreground" : "text-muted"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                  {active && (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                  )}
+                  {done && <span className="text-sm text-emerald-600">✓</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Phase indicator */}
+          <div className="mt-4 flex gap-2 border-t border-border pt-4">
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${phase === "research" ? "bg-accent text-white" : "bg-emerald-100 text-emerald-700"}`}>
+              {phase === "research" ? "● " : "✓ "}Web Research
+            </span>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${phase === "generate" ? "bg-accent text-white" : "bg-slate-100 text-muted"}`}>
+              {phase === "generate" ? "● " : ""}AI Analysis
+            </span>
           </div>
         </Card>
       </>
@@ -239,20 +311,17 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           }
         />
 
-        {/* Scores */}
         <div className="grid gap-4 sm:grid-cols-3">
           <ScoreCard label="Overall Score" value={result.overallScore} sub="Weighted average" />
           <ScoreCard label="Internal Health" value={result.internalScore} sub="Operations · Finance · Team · Products" />
           <ScoreCard label="External Positioning" value={result.externalScore} sub="Market · Customers · Brand · Growth" />
         </div>
 
-        {/* Executive summary */}
         <Card className="mt-6">
           <h2 className="font-semibold">Executive Summary</h2>
           <p className="mt-2 leading-relaxed text-muted">{result.executiveSummary}</p>
         </Card>
 
-        {/* Priority actions */}
         <Card className="mt-4">
           <h2 className="font-semibold">Priority Action Plan</h2>
           <p className="mt-1 text-sm text-muted">Ranked by impact — tackle high-priority items first.</p>
@@ -274,7 +343,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           </div>
         </Card>
 
-        {/* Internal breakdown */}
         <div className="mt-6">
           <h2 className="mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
           <div className="space-y-3">
@@ -282,7 +350,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           </div>
         </div>
 
-        {/* External breakdown */}
         <div className="mt-6">
           <h2 className="mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
           <div className="space-y-3">
@@ -297,12 +364,12 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
     );
   }
 
-  // ── Setup view ───────────────────────────────────────────────────────────────
+  // ── Setup view ────────────────────────────────────────────────────────────────
   return (
     <>
       <PageHeader
         title="AI Business Audit"
-        description="One click — the AI researches your business online and delivers a full internal + external audit report."
+        description="One click — the AI searches the web and delivers a full internal + external audit with scores and action plans."
       />
 
       <Card>
@@ -313,7 +380,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           <div>
             <p className="font-semibold">Fully automated audit</p>
             <p className="mt-0.5 text-sm text-muted">
-              The AI searches the web for reviews, competitors, industry trends, and your online presence — then scores and analyzes all 8 sections itself. No questionnaire to fill out.
+              The AI searches the web for your reviews, social profiles, competitors, and industry trends — then scores and analyzes all 8 sections itself. No questionnaire to fill out.
             </p>
           </div>
         </div>
@@ -324,7 +391,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           </p>
         )}
 
-        {/* Editable business basics */}
         <div className="mt-5 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
@@ -363,13 +429,12 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Briefly describe what you do, who you serve, and what makes you different…"
+              placeholder="Describe what you do, who you serve, and what makes you different…"
               className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
             />
           </label>
         </div>
 
-        {/* Services preview */}
         {profile.services.length > 0 && (
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Services from your profile</p>
@@ -383,12 +448,11 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           </div>
         )}
 
-        {/* What the AI will research */}
         <div className="mt-5 rounded-xl border border-border bg-slate-50/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">What the AI will research</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {[
-              { icon: "🔍", label: "Your online presence & social channels" },
+              { icon: "🔍", label: "Website, social profiles & channels" },
               { icon: "⭐", label: "Reviews on Google, Yelp & Facebook" },
               { icon: "📊", label: "Real local competitors in your area" },
               { icon: "📈", label: "Industry trends affecting your business" },
@@ -415,7 +479,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
             <span>Run Full AI Audit</span>
             <span>→</span>
           </button>
-          <p className="text-xs text-muted">~30 seconds · uses live web data</p>
+          <p className="text-xs text-muted">~45 seconds · uses live web data</p>
         </div>
       </Card>
 

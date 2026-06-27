@@ -17,34 +17,33 @@ export async function POST(req: Request) {
   const location = cityState || "local area";
   const websiteLine = website ? `\nWebsite: ${website}` : "";
 
-  const prompt = `You are a business research analyst. Research the following business online and return a comprehensive audit pre-fill based on what you find. Search for this business's reviews, competitors, online presence, industry trends, and any other publicly available information.
+  const prompt = `You are a business research analyst. Research the following business online and return comprehensive findings. Search thoroughly for reviews, competitors, online presence, social profiles, industry trends, and any other publicly available information.
 
 Business to research:
 - Name: ${businessName}
 - Industry/Category: ${category}
 - Location: ${location}${websiteLine}
 
-Search the web thoroughly for:
-1. Online reviews (Google, Yelp, Facebook) — ratings, volume, common praise and complaints
-2. Local competitors in the ${category} space near ${location}
-3. Their online channels (website, social media, Google Business Profile)
-4. Industry trends currently affecting ${category} businesses
+Search the web for:
+1. This exact business — find their website URL, Google Business Profile, Instagram, Facebook, LinkedIn, Yelp, and any other social/review presence
+2. Online reviews (Google, Yelp, Facebook) — ratings, volume, common praise and complaints
+3. Local competitors in the ${category} space near ${location}
+4. Industry trends currently affecting ${category} businesses in 2025
 5. Typical customer profile for this type of business
-6. Any news, mentions, or notable information about this specific business
 
 Return ONLY a valid JSON object with these exact keys (use empty string "" if you cannot find information for a field):
 
 {
-  "brandReviews": "Summary of online review presence — star ratings, volume, platform (Google/Yelp/Facebook), common themes in positive and negative reviews",
-  "brandChannels": "Online channels this business uses — website URL, Instagram, Facebook, Google Business, any others found",
-  "brandPercep": "How this business appears at first glance online — professional impression, brand tone, visual identity",
-  "mktCompetitors": "2-3 real local competitors in ${location} doing similar work in ${category} — name them and note their differentiators",
-  "mktTrend": "Most impactful current trend in the ${category} industry based on your research — be specific",
-  "mktOpportunity": "Market gap or opportunity in ${location} for a ${category} business based on your research",
-  "custTarget": "Typical customer profile for a ${category} business in ${location} — who they are, what they care about, how they buy",
-  "custAcquisition": "Primary ways customers find ${category} businesses like this — based on industry norms and any specific findings",
-  "custPain": "Core customer frustration or need that ${category} businesses in ${location} typically solve",
-  "growthPartner": "Complementary local businesses or organizations in ${location} that would make natural partners for a ${category} business"
+  "brandChannels": "Every online channel found for this business — include exact URLs where found (website, Instagram, Facebook, Google Business, Yelp, LinkedIn, Twitter/X, TikTok, YouTube, etc.)",
+  "brandReviews": "Online review summary — star ratings, review volume, platform(s) found, common themes in positive and negative reviews",
+  "brandPercep": "How this business appears at first glance online — professional impression, brand tone, visual consistency",
+  "mktCompetitors": "2-3 real named local competitors in ${location} in ${category} — include what they do well and where they fall short",
+  "mktTrend": "Most impactful current trend in the ${category} industry — be specific and cite what you found",
+  "mktOpportunity": "Specific market gap or opportunity in ${location} for a ${category} business based on research",
+  "custTarget": "Typical customer profile for a ${category} business in ${location} — demographics, motivations, buying behavior",
+  "custAcquisition": "Primary ways customers find ${category} businesses — channels, referral patterns, search behavior",
+  "custPain": "Core customer frustration or need that ${category} businesses in ${location} solve",
+  "growthPartner": "Complementary local businesses or organizations in ${location} that would make natural partners"
 }`;
 
   try {
