@@ -82,6 +82,8 @@ export async function POST(req: Request) {
     customerAcquisition: research?.custAcquisition || "",
     customerPainPoint: research?.custPain || "",
     partnershipOpportunities: research?.growthPartner || "",
+    contactEmail: research?.emailAddress || "",
+    contactDiscoverability: research?.contactDiscoverability || "",
   };
 
   try {

@@ -34,6 +34,7 @@ const STEPS: StepDef[] = [
   { icon: "⭐", label: "Finding reviews & reputation signals", phase: "research" },
   { icon: "📊", label: "Identifying local competitors", phase: "research" },
   { icon: "📈", label: "Analyzing industry trends & customers", phase: "research" },
+  { icon: "📧", label: "Finding public contact email address", phase: "research" },
   { icon: "👥", label: "Profiling customer base & opportunities", phase: "generate" },
   { icon: "🧠", label: "Scoring all 8 audit sections", phase: "generate" },
   { icon: "📝", label: "Writing comprehensive report", phase: "generate" },
@@ -302,11 +303,11 @@ export default function AuditClient({
       // Research failed — continue to generate with profile data only
     }
 
-    // ── Phase 2: Generate report (steps 4-6) ─────────────────────────────────
-    for (let i = 4; i <= 6; i++) {
+    // ── Phase 2: Generate report (steps 5-7) ─────────────────────────────────
+    for (let i = 5; i <= 7; i++) {
       setActiveStep(i);
       setStep(i, { state: "analyzing" });
-      if (i < 6) await new Promise((r) => setTimeout(r, 4000));
+      if (i < 7) await new Promise((r) => setTimeout(r, 4000));
     }
 
     try {
@@ -349,7 +350,7 @@ export default function AuditClient({
       }
 
       if (genData.result) {
-        setStep(6, { state: "found", finding: "Report complete" });
+        setStep(7, { state: "found", finding: "Report complete" });
         await new Promise((r) => setTimeout(r, 600));
         setResult(genData.result);
       }
@@ -386,7 +387,7 @@ export default function AuditClient({
 
   // ── Progress view ─────────────────────────────────────────────────────────────
   if (running) {
-    const researchDone = steps.slice(0, 4).every((s) => s.state === "found");
+    const researchDone = steps.slice(0, 5).every((s) => s.state === "found");
     return (
       <>
         <PageHeader title="AI Business Audit" description={`Analyzing ${businessName}…`} />
@@ -571,7 +572,7 @@ export default function AuditClient({
               { icon: "⭐", label: "Reviews on Google, Yelp & Facebook" },
               { icon: "📊", label: "Real named competitors in your area" },
               { icon: "📈", label: "Industry trends affecting your business" },
-              { icon: "👥", label: "Your typical customer profile" },
+              { icon: "📧", label: "Public contact email discoverability" },
               { icon: "🧠", label: "8 scored sections with action plans" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2 text-xs text-muted">

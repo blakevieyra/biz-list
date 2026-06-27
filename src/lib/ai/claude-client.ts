@@ -5,7 +5,7 @@ export function isClaudeConfigured(): boolean {
 }
 
 export function getClaudeModel(): string {
-  return process.env.CLAUDE_MODEL?.trim() || "claude-sonnet-4-20250514";
+  return process.env.CLAUDE_MODEL?.trim() || "claude-sonnet-4-6";
 }
 
 type ClaudeMessageResponse = {

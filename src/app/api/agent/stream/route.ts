@@ -107,6 +107,9 @@ Currently hiring: ${business.is_hiring ? "Yes" : "No"}`;
 
   const apiKey = process.env.CLAUDE_API_KEY!.trim();
 
+  const model = getClaudeModel();
+  const systemPrompt = `You are the virtual assistant for a local business on BizList. Reply warmly and helpfully in under 100 words. Use ONLY facts from the business profile below. If unsure, say you'll connect them with the team. Never invent prices, hours, or services not in the profile. Do not say you are an AI.${topicRulesBlock}${instructionsBlock}${automations.orderingServices?.enabled && automations.orderingServices.instructions ? `\n\nOrdering/booking instructions: ${automations.orderingServices.instructions}` : ""}`;
+
   const upstream = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -115,17 +118,39 @@ Currently hiring: ${business.is_hiring ? "Yes" : "No"}`;
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: getClaudeModel(),
+      model,
       max_tokens: 350,
       temperature: 0.6,
       stream: true,
-      system: `You are the virtual assistant for a local business on BizList. Reply warmly and helpfully in under 100 words. Use ONLY facts from the business profile below. If unsure, say you'll connect them with the team. Never invent prices, hours, or services not in the profile. Do not say you are an AI.${topicRulesBlock}${instructionsBlock}${automations.orderingServices?.enabled && automations.orderingServices.instructions ? `\n\nOrdering/booking instructions: ${automations.orderingServices.instructions}` : ""}`,
+      system: systemPrompt,
       messages: [{ role: "user", content: `${businessContext}\n\nCustomer question: ${message}` }],
     }),
-  }).catch(() => null);
+  }).catch((e) => { console.error("[agent/stream] fetch error:", e); return null; });
 
   if (!upstream?.ok || !upstream.body) {
-    return NextResponse.json({ error: "AI service unavailable." }, { status: 502 });
+    const errBody = upstream ? await upstream.json().catch(() => ({})) as { error?: { message?: string } } : {};
+    console.error("[agent/stream] API error:", upstream?.status, errBody?.error?.message ?? errBody);
+
+    // Graceful fallback: use template-based reply when Claude is unavailable
+    const ctx = {
+      business: {
+        name: business.name, category: business.category, subcategory: business.subcategory ?? "",
+        tagline: business.tagline ?? "", description: business.description ?? "",
+        city: business.city ?? "", state: business.state ?? "",
+        phone: business.phone ?? "", hours: business.hours ?? "",
+        website: business.website ?? "", isHiring: !!business.is_hiring,
+        services: Array.isArray(business.services)
+          ? (business.services as { name: string; description?: string }[]).map((s) => ({ name: s.name, description: s.description ?? "" }))
+          : [],
+      },
+      agentInstructions,
+      agentTopicRules,
+    };
+    const fallback = generateVirtualAgentReply(ctx, message);
+    return new Response(
+      `data: ${JSON.stringify({ type: "text", text: fallback })}\ndata: [DONE]\n\n`,
+      { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },
+    );
   }
 
   return new Response(upstream.body, {

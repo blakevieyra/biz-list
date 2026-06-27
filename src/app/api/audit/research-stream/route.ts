@@ -147,6 +147,16 @@ export async function POST(req: Request) {
       Object.assign(research, r3);
       emit({ step: 3, status: "found", finding: r3.finding });
 
+      // Step 4 — Email & contact discoverability
+      emit({ step: 4, status: "searching" });
+      const r4 = await searchStep(
+        apiKey,
+        `Find the public contact email address(es) for "${businessName}" (${category} business in ${location}). Search their website contact page, Google Business Profile, social media bios, and directory listings for any publicly listed email. Return JSON only: {"finding":"1-sentence summary of what contact info was found or not found","emailAddress":"the public email address(es) found, or 'Not publicly listed' if none found","contactDiscoverability":"how easy it is for customers to find contact info online — excellent/good/fair/poor with reason"}`,
+        `Based on your knowledge, how do ${category} businesses in ${location} typically present contact information online? Return JSON only: {"finding":"typical contact discoverability for ${category} businesses","emailAddress":"Not publicly listed — no web search access to check live contact info","contactDiscoverability":"Based on industry norms: ${category} businesses typically list contact via website form, phone, and social media. Email visibility varies — some post publicly, many use contact forms instead."}`,
+      );
+      Object.assign(research, r4);
+      emit({ step: 4, status: "found", finding: r4.finding });
+
       emit({ done: true, research });
       controller.close();
     },
