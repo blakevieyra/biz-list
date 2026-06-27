@@ -172,12 +172,7 @@ export default async function HomePage() {
           {/* Column 1 — Business updates */}
           <div>
             <div className="flex items-end justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold sm:text-2xl">Business updates</h2>
-                <p className="mt-1 text-sm text-muted">
-                  Updates, jobs, and deals from nearby businesses.
-                </p>
-              </div>
+              <h2 className="text-xl font-bold sm:text-2xl">Business updates</h2>
               <Link href="/feed" className="shrink-0 text-sm font-medium text-accent hover:underline">
                 View all
               </Link>
