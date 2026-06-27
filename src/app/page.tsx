@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { BusinessPostFeed } from "@/components/business-post-feed";
+import { FeedPostCard } from "@/components/feed-post-card";
 import { HeroCyclingText } from "@/components/hero-cycling-text";
 import { CollaborationGridCard } from "@/components/collaboration-grid-card";
 import { EventCard } from "@/components/event-card";
@@ -54,7 +54,7 @@ export default async function HomePage() {
     getBusinesses({ areaScope, viewer: null }),
     getCollaborations(),
     getTrendingBusinessPosts(3),
-    getBusinessEvents({ limit: 2, upcomingOnly: true }),
+    getBusinessEvents({ limit: 2, upcomingOnly: false }),
   ]);
 
   return (
@@ -180,9 +180,11 @@ export default async function HomePage() {
                 View all
               </Link>
             </div>
-            <div className="mt-6">
+            <div className="mt-6 space-y-4">
               {trendingPosts.length > 0 ? (
-                <BusinessPostFeed posts={trendingPosts} embedded />
+                trendingPosts.map((post) => (
+                  <FeedPostCard key={post.id} post={post} currentUserId={null} />
+                ))
               ) : (
                 <p className="text-sm text-muted">No business updates yet.</p>
               )}
