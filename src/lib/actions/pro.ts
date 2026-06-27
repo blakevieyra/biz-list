@@ -429,12 +429,13 @@ export async function virtualAgentReply(input: {
   try {
     await requireUserWithPlan("virtualAgent");
 
-    const services = input.serviceObjects?.length
-      ? input.serviceObjects
-      : input.services
-          .split(",")
-          .map((name) => ({ name: name.trim(), description: "" }))
-          .filter((s) => s.name);
+    const services: { name: string; description: string; price?: string }[] =
+      input.serviceObjects?.length
+        ? input.serviceObjects.map((s) => ({ ...s, description: s.description ?? "" }))
+        : input.services
+            .split(",")
+            .map((name) => ({ name: name.trim(), description: "" }))
+            .filter((s) => s.name);
 
     const reply = await generateVirtualAgentReplyAI(
       {

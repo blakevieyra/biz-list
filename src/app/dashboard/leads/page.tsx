@@ -73,7 +73,7 @@ export default async function DashboardLeadsPage() {
                     </p>
                   )}
                 </div>
-                <form action={contactLead.bind(null, lead.id)}>
+                <form action={async () => { "use server"; await contactLead(lead.id); }}>
                   <button
                     type="submit"
                     className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
