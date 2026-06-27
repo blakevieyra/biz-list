@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { toggleVirtualAgent, virtualAgentReply, saveAgentInstructions } from "@/lib/actions/pro";
+import type { AgentAutomations } from "@/lib/actions/pro";
 import { Card, PageHeader } from "@/components/ui";
 
 type Tab = "setup" | "preview" | "activity";
@@ -171,6 +172,7 @@ export default function VirtualAgentClient({
   agentEnabled = false,
   agentInstructions: initialInstructions = "",
   agentTopicRules: initialRules = [],
+  agentAutomations: initialAutomations = {},
   totalConversations = 0,
   recentQuestions = [],
 }: {
@@ -190,6 +192,7 @@ export default function VirtualAgentClient({
   agentEnabled?: boolean;
   agentInstructions?: string;
   agentTopicRules?: TopicRule[];
+  agentAutomations?: AgentAutomations;
   totalConversations?: number;
   recentQuestions?: { customerName: string; question: string; createdAt: string }[];
 }) {
@@ -215,6 +218,7 @@ export default function VirtualAgentClient({
   const [smokePending, setSmokePending] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateApplied, setTemplateApplied] = useState(false);
+  const [automations, setAutomations] = useState<AgentAutomations>(initialAutomations);
 
   const completeness = profileCompleteness({ businessName, tagline, description, city, hours, phone, services, website });
   const hasInstructions = instructions.trim().length > 0;
@@ -340,11 +344,15 @@ export default function VirtualAgentClient({
   function handleSave() {
     startSaveTransition(async () => {
       setSaveError(null); setSaveSuccess(false);
-      const result = await saveAgentInstructions({ instructions, topicRules });
+      const result = await saveAgentInstructions({ instructions, topicRules, automations });
       if (result.error) { setSaveError(result.error); return; }
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     });
+  }
+
+  function setAutomation<K extends keyof AgentAutomations>(key: K, value: AgentAutomations[K]) {
+    setAutomations((prev) => ({ ...prev, [key]: value }));
   }
 
   const tabs: { id: Tab; label: string }[] = [
@@ -601,6 +609,156 @@ export default function VirtualAgentClient({
                 className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
               >
                 {savePending ? "Saving…" : "Save instructions & rules"}
+              </button>
+              {saveSuccess && <p className="text-sm font-medium text-emerald-600">✓ Saved successfully</p>}
+              {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+            </div>
+          </Card>
+
+          {/* Automated Tasks */}
+          <Card>
+            <p className="mb-1 font-semibold">Automated tasks</p>
+            <p className="mb-4 text-xs text-muted">
+              Enable actions the agent performs automatically. Changes are saved with your instructions above.
+            </p>
+            <div className="space-y-3">
+
+              {/* Email me */}
+              <div className={`rounded-xl border p-4 transition ${automations.emailMe?.enabled ? "border-accent/40 bg-accent/5" : "border-border"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Email me</p>
+                    <p className="mt-0.5 text-xs text-muted">Get notified when new conversations start, new followers arrive, or job inquiries come in.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutomation("emailMe", { enabled: !automations.emailMe?.enabled, events: automations.emailMe?.events ?? ["new_conversation", "new_follower"] })}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${automations.emailMe?.enabled ? "bg-accent text-white" : "border border-border text-muted hover:border-accent/40"}`}
+                  >
+                    {automations.emailMe?.enabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {automations.emailMe?.enabled && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[
+                      { id: "new_conversation", label: "New conversation" },
+                      { id: "new_follower", label: "New follower" },
+                      { id: "job_inquiry", label: "Job inquiry" },
+                      { id: "partnership_request", label: "Partnership request" },
+                    ].map((ev) => {
+                      const active = automations.emailMe?.events?.includes(ev.id);
+                      return (
+                        <button
+                          key={ev.id}
+                          type="button"
+                          onClick={() => {
+                            const current = automations.emailMe?.events ?? [];
+                            const next = active ? current.filter((e) => e !== ev.id) : [...current, ev.id];
+                            setAutomation("emailMe", { enabled: true, events: next });
+                          }}
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${active ? "bg-accent/20 text-accent" : "border border-border text-muted hover:border-accent/40"}`}
+                        >
+                          {ev.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Marketing schedule */}
+              <div className={`rounded-xl border p-4 transition ${automations.marketingSchedule?.enabled ? "border-accent/40 bg-accent/5" : "border-border"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Marketing schedule</p>
+                    <p className="mt-0.5 text-xs text-muted">Auto-generate and queue marketing posts on a recurring schedule from your <Link href="/dashboard/marketing" className="text-accent hover:underline">marketing hub</Link>.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutomation("marketingSchedule", { enabled: !automations.marketingSchedule?.enabled, frequency: automations.marketingSchedule?.frequency ?? "weekly" })}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${automations.marketingSchedule?.enabled ? "bg-accent text-white" : "border border-border text-muted hover:border-accent/40"}`}
+                  >
+                    {automations.marketingSchedule?.enabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {automations.marketingSchedule?.enabled && (
+                  <div className="mt-3 flex gap-2">
+                    {(["daily", "weekly", "monthly"] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setAutomation("marketingSchedule", { enabled: true, frequency: f })}
+                        className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${automations.marketingSchedule?.frequency === f ? "bg-accent/20 text-accent" : "border border-border text-muted hover:border-accent/40"}`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Lead outreach */}
+              <div className={`rounded-xl border p-4 transition ${automations.leadOutreach?.enabled ? "border-accent/40 bg-accent/5" : "border-border"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Lead outreach</p>
+                    <p className="mt-0.5 text-xs text-muted">Automatically send a welcome message to people who follow or visit your listing.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutomation("leadOutreach", { enabled: !automations.leadOutreach?.enabled, message: automations.leadOutreach?.message ?? `Hi! Thanks for checking out ${businessName}. We'd love to help — feel free to ask any questions here or visit our listing for our full services and hours.` })}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${automations.leadOutreach?.enabled ? "bg-accent text-white" : "border border-border text-muted hover:border-accent/40"}`}
+                  >
+                    {automations.leadOutreach?.enabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {automations.leadOutreach?.enabled && (
+                  <textarea
+                    value={automations.leadOutreach?.message ?? ""}
+                    onChange={(e) => setAutomation("leadOutreach", { enabled: true, message: e.target.value })}
+                    rows={3}
+                    placeholder="Message sent to new followers and profile visitors…"
+                    className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-accent"
+                  />
+                )}
+              </div>
+
+              {/* Ordering services */}
+              <div className={`rounded-xl border p-4 transition ${automations.orderingServices?.enabled ? "border-accent/40 bg-accent/5" : "border-border"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Ordering services</p>
+                    <p className="mt-0.5 text-xs text-muted">Let customers request or order services through the chat agent. The agent collects details and confirms next steps.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutomation("orderingServices", { enabled: !automations.orderingServices?.enabled, instructions: automations.orderingServices?.instructions ?? "When a customer wants to order or book a service, collect their name, what they need, and preferred date/time. Confirm you'll follow up within 24 hours." })}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${automations.orderingServices?.enabled ? "bg-accent text-white" : "border border-border text-muted hover:border-accent/40"}`}
+                  >
+                    {automations.orderingServices?.enabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {automations.orderingServices?.enabled && (
+                  <textarea
+                    value={automations.orderingServices?.instructions ?? ""}
+                    onChange={(e) => setAutomation("orderingServices", { enabled: true, instructions: e.target.value })}
+                    rows={3}
+                    placeholder="How should the agent handle orders? What info should it collect?"
+                    className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-accent"
+                  />
+                )}
+              </div>
+
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={savePending}
+                onClick={handleSave}
+                className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              >
+                {savePending ? "Saving…" : "Save all settings"}
               </button>
               {saveSuccess && <p className="text-sm font-medium text-emerald-600">✓ Saved successfully</p>}
               {saveError && <p className="text-sm text-red-600">{saveError}</p>}

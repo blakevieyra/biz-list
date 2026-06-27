@@ -466,9 +466,17 @@ export async function virtualAgentReply(input: {
   }
 }
 
+export type AgentAutomations = {
+  emailMe?: { enabled: boolean; events: string[] };
+  marketingSchedule?: { enabled: boolean; frequency: "daily" | "weekly" | "monthly" };
+  leadOutreach?: { enabled: boolean; message: string };
+  orderingServices?: { enabled: boolean; instructions: string };
+};
+
 export async function saveAgentInstructions(input: {
   instructions: string;
   topicRules: { topic: string; response: string }[];
+  automations?: AgentAutomations;
 }) {
   try {
     const supabase = await createClient();
@@ -481,6 +489,7 @@ export async function saveAgentInstructions(input: {
       .update({
         agent_instructions: input.instructions.trim(),
         agent_topic_rules: input.topicRules,
+        ...(input.automations !== undefined ? { agent_automations: input.automations } : {}),
       })
       .eq("owner_id", user.id);
 

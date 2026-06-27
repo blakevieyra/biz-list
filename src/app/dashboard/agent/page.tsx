@@ -3,6 +3,7 @@ import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessById, getCurrentProfile } from "@/lib/data";
 import { canAccess } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
+import type { AgentAutomations } from "@/lib/actions/pro";
 import VirtualAgentClient from "./virtual-agent-client";
 
 export default async function VirtualAgentPage() {
@@ -29,6 +30,7 @@ export default async function VirtualAgentPage() {
   let agentEnabled = false;
   let agentInstructions = "";
   let agentTopicRules: { topic: string; response: string }[] = [];
+  let agentAutomations: AgentAutomations = {};
   let totalConversations = 0;
   let recentQuestions: { customerName: string; question: string; createdAt: string }[] = [];
 
@@ -36,7 +38,7 @@ export default async function VirtualAgentPage() {
     const { data: row } = await supabase
       .from("businesses")
       .select(
-        "id, name, category, services, tagline, description, city, state, phone, hours, website, important_info, is_hiring, virtual_agent_enabled, agent_instructions, agent_topic_rules",
+        "id, name, category, services, tagline, description, city, state, phone, hours, website, important_info, is_hiring, virtual_agent_enabled, agent_instructions, agent_topic_rules, agent_automations",
       )
       .eq("owner_id", userId)
       .limit(1)
@@ -64,6 +66,7 @@ export default async function VirtualAgentPage() {
       agentTopicRules = Array.isArray(row.agent_topic_rules)
         ? (row.agent_topic_rules as { topic: string; response: string }[])
         : [];
+      agentAutomations = (row.agent_automations as AgentAutomations) ?? {};
 
       // Pull stats from messages — count conversations where business auto-replied
       const { count } = await supabase
@@ -119,6 +122,7 @@ export default async function VirtualAgentPage() {
       agentEnabled={agentEnabled}
       agentInstructions={agentInstructions}
       agentTopicRules={agentTopicRules}
+      agentAutomations={agentAutomations}
       totalConversations={totalConversations}
       recentQuestions={recentQuestions}
     />

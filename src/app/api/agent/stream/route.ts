@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("id, name, category, subcategory, tagline, description, city, state, phone, hours, website, services, is_hiring, virtual_agent_enabled, agent_instructions, agent_topic_rules, owner_id")
+    .select("id, name, category, subcategory, tagline, description, city, state, phone, hours, website, services, is_hiring, virtual_agent_enabled, agent_instructions, agent_topic_rules, agent_automations, owner_id")
     .eq("id", businessId)
     .maybeSingle();
 
@@ -56,6 +56,9 @@ export async function POST(req: Request) {
   const agentTopicRules: { topic: string; response: string }[] = Array.isArray(business.agent_topic_rules)
     ? (business.agent_topic_rules as { topic: string; response: string }[])
     : [];
+  const automations = (business.agent_automations ?? {}) as {
+    orderingServices?: { enabled?: boolean; instructions?: string };
+  };
 
   const topicRulesBlock = agentTopicRules.length
     ? `\n\nTopic rules (apply when relevant):\n${agentTopicRules.map((r) => `- "${r.topic}": ${r.response}`).join("\n")}`
@@ -116,7 +119,7 @@ Currently hiring: ${business.is_hiring ? "Yes" : "No"}`;
       max_tokens: 350,
       temperature: 0.6,
       stream: true,
-      system: `You are the virtual assistant for a local business on BizList. Reply warmly and helpfully in under 100 words. Use ONLY facts from the business profile below. If unsure, say you'll connect them with the team. Never invent prices, hours, or services not in the profile. Do not say you are an AI.${topicRulesBlock}${instructionsBlock}`,
+      system: `You are the virtual assistant for a local business on BizList. Reply warmly and helpfully in under 100 words. Use ONLY facts from the business profile below. If unsure, say you'll connect them with the team. Never invent prices, hours, or services not in the profile. Do not say you are an AI.${topicRulesBlock}${instructionsBlock}${automations.orderingServices?.enabled && automations.orderingServices.instructions ? `\n\nOrdering/booking instructions: ${automations.orderingServices.instructions}` : ""}`,
       messages: [{ role: "user", content: `${businessContext}\n\nCustomer question: ${message}` }],
     }),
   }).catch(() => null);
