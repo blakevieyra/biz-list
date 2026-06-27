@@ -30,8 +30,8 @@ const platinumFeatures = [
   "One-click welcome messages for new followers",
 ];
 
-export function PricingPlans({ userRole }: { userRole: string | null }) {
-  const [interval, setInterval] = useState<BillingInterval>("monthly");
+export function PricingPlans({ userRole, currentPlan = "free" }: { userRole: string | null; currentPlan?: string }) {
+  const [interval, setInterval] = useState<BillingInterval>("annual");
   const isAnnual = interval === "annual";
 
   const showCustomer = userRole === "customer" || userRole === null;
@@ -75,6 +75,7 @@ export function PricingPlans({ userRole }: { userRole: string | null }) {
             description="Alerts, matches, early deals, and event notifications."
             features={[...BIZLIST_PLUS_FEATURES]}
             highlighted
+            isCurrent={currentPlan === "customer_pro"}
             cta={{
               label: isAnnual ? `${BIZLIST_PLUS_LABEL} — yearly` : `${BIZLIST_PLUS_LABEL} — monthly`,
               component: (
@@ -120,6 +121,7 @@ export function PricingPlans({ userRole }: { userRole: string | null }) {
               description="Alerts, matches, early deals, and event notifications."
               features={[...BIZLIST_PLUS_FEATURES]}
               highlighted
+              isCurrent={currentPlan === "customer_pro"}
               cta={{
                 label: isAnnual ? `${BIZLIST_PLUS_LABEL} — yearly` : `${BIZLIST_PLUS_LABEL} — monthly`,
                 component: (
@@ -155,6 +157,7 @@ export function PricingPlans({ userRole }: { userRole: string | null }) {
               interval={interval}
               description="Free for businesses building a local presence."
               features={communityFeatures}
+              isCurrent={currentPlan === "free"}
               cta={{ label: "Join free", href: "/auth/signup" }}
             />
             <PlanCard
@@ -164,7 +167,8 @@ export function PricingPlans({ userRole }: { userRole: string | null }) {
               savings={isAnnual ? annualSavings("pro") : undefined}
               description="Local leads and AI audits to grow faster."
               features={proFeatures}
-              highlighted
+              highlighted={currentPlan !== "pro"}
+              isCurrent={currentPlan === "pro"}
               cta={{
                 label: isAnnual ? "Pro — yearly" : "Pro — monthly",
                 component: <UpgradeButton tier="pro" interval={interval} label="Upgrade to Pro" />,
@@ -177,6 +181,7 @@ export function PricingPlans({ userRole }: { userRole: string | null }) {
               savings={isAnnual ? annualSavings("platinum") : undefined}
               description="Automated marketing and a virtual agent for your business."
               features={platinumFeatures}
+              isCurrent={currentPlan === "platinum"}
               cta={{
                 label: isAnnual ? "Platinum — yearly" : "Platinum — monthly",
                 component: <UpgradeButton tier="platinum" interval={interval} label="Go Platinum" />,
@@ -197,6 +202,7 @@ function PlanCard({
   description,
   features,
   highlighted,
+  isCurrent,
   cta,
 }: {
   name: string;
@@ -206,6 +212,7 @@ function PlanCard({
   description: string;
   features: string[];
   highlighted?: boolean;
+  isCurrent?: boolean;
   cta:
     | { label: string; href: string; component?: never }
     | { label: string; component: React.ReactNode; href?: never };
@@ -215,14 +222,22 @@ function PlanCard({
   return (
     <div
       className={`flex h-full flex-col rounded-2xl border p-5 sm:p-6 ${
-        highlighted ? "border-accent bg-blue-50/80 shadow-md ring-1 ring-accent/20" : "border-border bg-card"
+        isCurrent
+          ? "border-emerald-400 bg-emerald-50/60 shadow-md ring-1 ring-emerald-300"
+          : highlighted
+          ? "border-accent bg-blue-50/80 shadow-md ring-1 ring-accent/20"
+          : "border-border bg-card"
       }`}
     >
-      {highlighted && (
-        <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-white">
+      {isCurrent ? (
+        <span className="self-start rounded-full bg-emerald-600 px-3 py-1 text-xs font-medium text-white">
+          Your current plan
+        </span>
+      ) : highlighted ? (
+        <span className="self-start rounded-full bg-accent px-3 py-1 text-xs font-medium text-white">
           Most popular
         </span>
-      )}
+      ) : null}
       <h2 className="mt-3 text-2xl font-bold">{name}</h2>
       <p className="mt-2 text-sm text-muted">{description}</p>
       <p className="mt-6 text-4xl font-bold">
@@ -247,7 +262,11 @@ function PlanCard({
         ))}
       </ul>
       <div className="mt-6 pt-2">
-        {cta.href ? (
+        {isCurrent ? (
+          <div className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-emerald-300 bg-emerald-100 px-5 py-3 text-center text-sm font-medium text-emerald-700">
+            ✓ You&apos;re on this plan
+          </div>
+        ) : cta.href ? (
           <Link
             href={cta.href}
             className={`inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 py-3 text-center text-sm font-medium ${

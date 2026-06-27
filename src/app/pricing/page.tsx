@@ -6,6 +6,7 @@ import { getCurrentProfile } from "@/lib/data";
 export default async function PricingPage() {
   const profile = await getCurrentProfile();
   const userRole = profile?.role ?? null;
+  const currentPlan = profile?.planTier ?? "free";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -27,7 +28,7 @@ export default async function PricingPage() {
       />
 
       <Suspense fallback={<p className="text-center text-sm text-muted">Loading plans...</p>}>
-        <PricingPlans userRole={userRole} />
+        <PricingPlans userRole={userRole} currentPlan={currentPlan} />
       </Suspense>
 
       <p className="mt-8 text-center text-sm text-muted">
