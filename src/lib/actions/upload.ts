@@ -90,16 +90,21 @@ export async function uploadBusinessMedia(
 
   const rawExt = file.name.split(".").pop()?.toLowerCase() || "";
   const safeImageExts = ["jpg", "jpeg", "png", "webp", "gif"];
+  // Rename .mov → .mp4 so Supabase serves video/mp4 content-type,
+  // which Chrome accepts. Most iPhone .mov files contain H.264 and play fine.
   const ext = isVideo
-    ? (rawExt.match(/^[a-z0-9]{1,8}$/) ? rawExt : "mp4")
+    ? (rawExt === "mov" ? "mp4" : rawExt.match(/^[a-z0-9]{1,8}$/) ? rawExt : "mp4")
     : (safeImageExts.includes(rawExt) ? rawExt : "jpg");
+  const contentType = isVideo
+    ? (rawExt === "mov" ? "video/mp4" : file.type)
+    : file.type;
   const folder = isVideo ? "videos" : "images";
   const path = `${user.id}/${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const { error } = await supabase.storage.from("business-media").upload(path, file, {
     cacheControl: "3600",
     upsert: false,
-    contentType: file.type,
+    contentType,
   });
 
   if (error) {

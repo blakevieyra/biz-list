@@ -33,16 +33,16 @@ function DirectVideo({ url }: { url: string }) {
   const [errored, setErrored] = useState(false);
   const filename = url.split("/").pop()?.split("?")[0] ?? "video";
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  const mimeMap: Record<string, string> = {
+  // Only declare MIME for formats Chrome natively supports.
+  // For .mov / .avi / .mkv, omit type so the browser attempts playback
+  // from the actual bytes rather than rejecting on the declared MIME.
+  const safeMimeMap: Record<string, string> = {
     mp4: "video/mp4",
-    mov: "video/quicktime",
-    webm: "video/webm",
     m4v: "video/mp4",
+    webm: "video/webm",
     ogv: "video/ogg",
-    avi: "video/x-msvideo",
-    mkv: "video/x-matroska",
   };
-  const mimeType = mimeMap[ext] ?? "video/mp4";
+  const mimeType = safeMimeMap[ext];
 
   if (errored) {
     return (
@@ -62,9 +62,9 @@ function DirectVideo({ url }: { url: string }) {
           </a>
         </div>
         <p className="mt-2 text-xs text-muted">
-          If the link above shows a 403 error, the storage bucket needs to be made public in the
-          Supabase dashboard (Storage → business-media → Make public). If it opens but won&apos;t
-          play, re-encode as H.264 MP4 for broadest browser support.
+          If the link shows a 403 error, the storage bucket needs to be public (Storage →
+          business-media → Make public). If it opens but won&apos;t play, the video codec (e.g.
+          H.265/HEVC) isn&apos;t supported in Chrome — re-export or convert it to H.264 MP4.
         </p>
       </div>
     );
@@ -79,7 +79,12 @@ function DirectVideo({ url }: { url: string }) {
         className="aspect-video w-full"
         onError={() => setErrored(true)}
       >
-        <source src={url} type={mimeType} />
+        {mimeType ? (
+          <source src={url} type={mimeType} />
+        ) : (
+          /* No type declared — lets browser probe the actual codec */
+          <source src={url} />
+        )}
       </video>
     </div>
   );
