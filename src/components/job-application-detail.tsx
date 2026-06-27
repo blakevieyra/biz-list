@@ -116,9 +116,26 @@ export function JobApplicationDetail({
           {application.resumeAttached && (
             <div>
               <h2 className="text-sm font-semibold">Resume</h2>
-              <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-sm leading-relaxed text-muted">
-                {application.resumeSnapshot || "No resume saved on profile yet."}
-              </pre>
+              {application.resumeFileUrl ? (
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-slate-50 px-4 py-3">
+                  <span className="text-2xl">📄</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">Resume file attached</p>
+                    <a
+                      href={application.resumeFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-accent hover:underline"
+                    >
+                      Open / Download →
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-border bg-slate-50 p-3 text-sm leading-relaxed text-muted">
+                  {application.resumeSnapshot || "No resume saved on profile yet."}
+                </pre>
+              )}
             </div>
           )}
         </div>

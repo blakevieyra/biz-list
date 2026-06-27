@@ -148,6 +148,7 @@ export interface JobApplication {
   message: string;
   coverLetter: string;
   resumeSnapshot: string;
+  resumeFileUrl?: string;
   resumeAttached: boolean;
   formAnswers: Record<string, string>;
   status: "pending" | "reviewed" | "accepted" | "declined";

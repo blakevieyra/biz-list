@@ -620,6 +620,7 @@ type JobApplicationRow = {
   message: string;
   cover_letter?: string;
   resume_snapshot?: string;
+  resume_file_url?: string;
   form_answers?: unknown;
   resume_attached?: boolean;
   status: JobApplication["status"];
@@ -640,6 +641,7 @@ function mapJobApplicationRow(row: JobApplicationRow): JobApplication {
     message: row.message,
     coverLetter: row.cover_letter ?? "",
     resumeSnapshot: row.resume_snapshot ?? "",
+    resumeFileUrl: row.resume_file_url ?? undefined,
     resumeAttached: row.resume_attached ?? Boolean(row.resume_snapshot),
     formAnswers: parseFormAnswers(row.form_answers),
     status: row.status,

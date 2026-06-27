@@ -538,6 +538,7 @@ export async function submitJobApplication(input: {
   coverLetter: string;
   formAnswers: Record<string, string>;
   resumeAttached: boolean;
+  resumeFileUrl?: string;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to apply." };
 
@@ -558,9 +559,10 @@ export async function submitJobApplication(input: {
     }
 
     const profile = mapProfile(profileRow);
+    // Profile snapshot is optional when applicant uploaded a file resume
     const resumeSnapshot = buildResumeSnapshot(profile);
-    if (!resumeSnapshot.trim()) {
-      return { error: "Add a resume in My profile before attaching." };
+    if (!resumeSnapshot.trim() && !input.resumeFileUrl) {
+      return { error: "Attach a resume file or add resume text in My profile before submitting." };
     }
 
     const { data: business } = await supabase
@@ -616,7 +618,8 @@ export async function submitJobApplication(input: {
         applicant_id: user.id,
         message: coverLetter,
         cover_letter: coverLetter,
-        resume_snapshot: resumeSnapshot,
+        resume_snapshot: resumeSnapshot || null,
+        resume_file_url: input.resumeFileUrl ?? null,
         form_answers: sanitizedAnswers,
         resume_attached: true,
         status: "pending",
