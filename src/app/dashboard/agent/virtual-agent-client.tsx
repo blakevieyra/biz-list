@@ -133,6 +133,7 @@ function profileCompleteness(fields: Record<string, string | boolean>): number {
     !!fields.hours,
     !!fields.phone,
     !!fields.services && (fields.services as string) !== "our services",
+    !!fields.website,
   ];
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
@@ -215,7 +216,7 @@ export default function VirtualAgentClient({
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateApplied, setTemplateApplied] = useState(false);
 
-  const completeness = profileCompleteness({ businessName, tagline, description, city, hours, phone, services });
+  const completeness = profileCompleteness({ businessName, tagline, description, city, hours, phone, services, website });
   const hasInstructions = instructions.trim().length > 0;
   const hasRules = topicRules.length > 0;
   const profileComplete = completeness >= 60;
@@ -501,7 +502,7 @@ export default function VirtualAgentClient({
               <ProfileField label="Phone" value={phone} missing />
               <ProfileField label="Tagline" value={tagline} />
               <ProfileField label="About" value={description.slice(0, 120) + (description.length > 120 ? "…" : "")} />
-              <ProfileField label="Website" value={website ?? ""} />
+              <ProfileField label="Website" value={website ?? ""} missing />
               <ProfileField
                 label="Services"
                 value={
