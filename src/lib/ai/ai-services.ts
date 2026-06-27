@@ -203,6 +203,79 @@ export async function generateOnboardingWelcomeAI(
   return reply || fallback;
 }
 
+export type ComprehensiveAuditSection = {
+  id: string;
+  label: string;
+  phase: "internal" | "external";
+  score: number;
+  summary: string;
+  strengths: string[];
+  gaps: string[];
+  actions: string[];
+};
+
+export type ComprehensiveAuditResult = {
+  overallScore: number;
+  internalScore: number;
+  externalScore: number;
+  executiveSummary: string;
+  sections: ComprehensiveAuditSection[];
+  priorityActions: {
+    priority: "high" | "medium" | "low";
+    action: string;
+    category: string;
+    impact: string;
+  }[];
+};
+
+const FALLBACK_AUDIT: ComprehensiveAuditResult = {
+  overallScore: 62,
+  internalScore: 60,
+  externalScore: 64,
+  executiveSummary:
+    "Your business has a solid foundation with clear opportunities to strengthen operations, pricing, and online visibility. Addressing the identified gaps in a structured way will unlock meaningful growth over the next 12 months.",
+  sections: [
+    { id: "operations", label: "Operations", phase: "internal", score: 58, summary: "Core workflows exist but documentation gaps create inconsistency.", strengths: ["Day-to-day tasks are understood by the team", "Clear service delivery"], gaps: ["No documented SOPs — risk of inconsistency when scaling", "Manual steps that could be automated"], actions: ["Write a one-page SOP for your top 3 recurring tasks", "Identify one task to automate this quarter"] },
+    { id: "finance", label: "Financial Health", phase: "internal", score: 60, summary: "Revenue streams are established but pricing and cash visibility need work.", strengths: ["Established revenue model", "Repeat business present"], gaps: ["Pricing not benchmarked against market", "Limited cash-flow forecasting"], actions: ["Compare your pricing to 3 direct competitors", "Build a simple 3-month cash flow forecast"] },
+    { id: "team", label: "Team & Culture", phase: "internal", score: 63, summary: "Team strengths are clear but skill gaps could limit future growth.", strengths: ["Committed, reliable team", "Strong domain expertise"], gaps: ["Missing key skills for scale", "No formal onboarding process"], actions: ["Map your top skill gap and make a hire or training plan", "Create a one-page onboarding checklist"] },
+    { id: "products", label: "Products & Services", phase: "internal", score: 67, summary: "Core offering is differentiated but customer feedback reveals improvement areas.", strengths: ["Clear, differentiated offering", "Customers see real value"], gaps: ["Feedback loop is informal", "Upsell opportunities not developed"], actions: ["Survey your top 10 customers for structured feedback", "Define one new offering to pilot next quarter"] },
+    { id: "market", label: "Market & Competition", phase: "external", score: 61, summary: "Competitive landscape is understood but differentiation messaging needs sharpening.", strengths: ["Awareness of key competitors", "Niche positioning exists"], gaps: ["Differentiation not communicated clearly", "Trends not actively monitored"], actions: ["Sharpen one differentiating message across all channels", "Set up a monthly competitor review"] },
+    { id: "customers", label: "Customers & Audience", phase: "external", score: 68, summary: "Ideal customer is clear and referrals are working; acquisition needs more structure.", strengths: ["Well-defined ideal customer", "Word-of-mouth referrals"], gaps: ["Acquisition channels are limited", "No formal retention tracking"], actions: ["Launch a simple referral incentive program", "Set up a monthly repeat-customer check-in"] },
+    { id: "brand", label: "Brand & Presence", phase: "external", score: 64, summary: "Brand identity is recognized locally but online visibility and review volume lag.", strengths: ["Recognizable local brand", "Consistent voice"], gaps: ["Low online review count", "Inconsistent social cadence"], actions: ["Ask your next 20 happy customers for a Google review", "Commit to posting 3x/week on your main social channel"] },
+    { id: "growth", label: "Growth & Partnerships", phase: "external", score: 65, summary: "Growth vision is present but execution pathways and partnerships need structure.", strengths: ["Clear growth goal", "Openness to partnerships"], gaps: ["No formal partnership pipeline", "Growth barrier not actively addressed"], actions: ["Reach out to one complementary local business this month", "Break your annual growth goal into monthly milestones"] },
+  ],
+  priorityActions: [
+    { priority: "high", action: "Document your top 3 core operational processes as simple SOPs", category: "Operations", impact: "Enables delegation and creates consistent customer experience at scale" },
+    { priority: "high", action: "Review and validate your pricing against 3 direct competitors", category: "Financial Health", impact: "Quickly identifies if you're undercharging or missing margin" },
+    { priority: "high", action: "Ask your next 20 satisfied customers to leave a Google review", category: "Brand & Presence", impact: "Directly improves local search ranking and new customer trust" },
+    { priority: "medium", action: "Identify your #1 team skill gap and create a hire or training plan", category: "Team & Culture", impact: "Removes a key bottleneck blocking your growth goal" },
+    { priority: "medium", action: "Survey your best 10 customers for structured product/service feedback", category: "Products & Services", impact: "Reveals what to double down on and what to stop doing" },
+    { priority: "medium", action: "Reach out to one complementary local business about a cross-promotion", category: "Growth & Partnerships", impact: "Low-cost customer acquisition with warm audiences" },
+    { priority: "low", action: "Build a simple 3-month cash flow forecast", category: "Financial Health", impact: "Reduces financial surprises and improves decision-making" },
+    { priority: "low", action: "Set up a monthly competitor monitoring process (even 30 min/month)", category: "Market & Competition", impact: "Keeps your positioning sharp and flags threats early" },
+  ],
+};
+
+export async function generateComprehensiveBusinessAuditAI(
+  auditData: Record<string, string>,
+): Promise<ComprehensiveAuditResult> {
+  if (!isClaudeConfigured()) return FALLBACK_AUDIT;
+
+  const auditText = Object.entries(auditData)
+    .filter(([, v]) => v?.trim())
+    .map(([k, v]) => `${k}: ${v}`)
+    .join("\n");
+
+  const result = await claudeJSON<ComprehensiveAuditResult>({
+    system: `You are a senior business strategy consultant. Analyze this business owner's self-assessment and produce a comprehensive internal + external business audit. Score each of the 8 sections honestly (0-100). Be specific, direct, and actionable. Reference the owner's actual words in your findings. Identify real risks and real strengths, not generic advice.`,
+    user: `Business owner audit responses:\n\n${auditText}\n\nReturn JSON:\n{\n  "overallScore": number,\n  "internalScore": number,\n  "externalScore": number,\n  "executiveSummary": "3-4 sentence summary referencing specifics from their answers",\n  "sections": [\n    {\n      "id": "operations|finance|team|products|market|customers|brand|growth",\n      "label": "Operations|Financial Health|Team & Culture|Products & Services|Market & Competition|Customers & Audience|Brand & Presence|Growth & Partnerships",\n      "phase": "internal|external",\n      "score": number,\n      "summary": "1-2 sentences tied to their specific answers",\n      "strengths": ["2-3 specific strengths from their responses"],\n      "gaps": ["2-3 specific gaps or risks identified"],\n      "actions": ["2-3 concrete next steps specific to their situation"]\n    }\n  ],\n  "priorityActions": [\n    { "priority": "high|medium|low", "action": "specific action", "category": "section label", "impact": "why this matters for this specific business" }\n  ]\n}\n\nInclude all 8 sections in order: operations, finance, team, products (internal), then market, customers, brand, growth (external). Provide 6-8 priority actions ordered high to low.`,
+    maxTokens: 3500,
+    temperature: 0.3,
+  });
+
+  return result ?? FALLBACK_AUDIT;
+}
+
 export async function generateMarketingCampaignDraftAI(
   business: BusinessProfile,
   channel: "email" | "social" | "local",

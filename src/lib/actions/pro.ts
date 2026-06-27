@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { assessmentInputFromBusiness } from "@/lib/ai/assessment";
 import {
   generateBusinessAssessmentAI,
+  generateComprehensiveBusinessAuditAI,
   generateFreshAutomatedPostAI,
   generateMarketingCampaignDraftAI,
   generateOnboardingWelcomeAI,
   generateOutreachMessageFromLeadAI,
   generateVirtualAgentReplyAI,
+  type ComprehensiveAuditResult,
 } from "@/lib/ai/ai-services";
 import { emailAssessmentComplete } from "@/lib/email/actions";
 import { canAccess } from "@/lib/plans";
@@ -364,6 +366,20 @@ export async function runPlatinumOnboarding(): Promise<{ message?: string; error
     return { message: `Welcome messages sent to ${sent} new follower${sent === 1 ? "" : "s"}.` };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Onboarding failed." };
+  }
+}
+
+export async function runComprehensiveBusinessAudit(
+  auditData: Record<string, string>,
+): Promise<{ result?: ComprehensiveAuditResult; error?: string }> {
+  try {
+    if (isSupabaseConfigured()) {
+      await requireUserWithPlan("aiAudit");
+    }
+    const result = await generateComprehensiveBusinessAuditAI(auditData);
+    return { result };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Audit failed. Please try again." };
   }
 }
 
