@@ -61,13 +61,13 @@ export default async function HomePage() {
     <>
       {/* ── Hero ── */}
       <section className="border-b border-border">
-        <div className="lg:grid lg:min-h-screen lg:grid-cols-2">
+        <div className="lg:grid lg:min-h-screen lg:grid-cols-[3fr_2fr]">
           <div className="flex items-center bg-gradient-to-br from-blue-50 via-background to-background px-4 py-20 sm:px-6 sm:py-24 lg:justify-end lg:py-0 lg:pr-12 xl:pr-20">
-            <div className="w-full max-w-lg">
+            <div className="w-full max-w-xl">
               <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">
                 BizList
               </p>
-              <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="min-h-[2.4em] text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 Your Business.<br /><HeroCyclingText />
               </h1>
               <p className="mt-5 text-xl font-medium text-muted sm:text-2xl">
