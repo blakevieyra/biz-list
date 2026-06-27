@@ -169,7 +169,7 @@ export default async function BusinessDetailPage({
 
               )}
 
-              {/* Rating + all meta badges on one condensed line */}
+              {/* Rating + category + hiring */}
               <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
 
                 <ListingRatingHeader
@@ -200,12 +200,38 @@ export default async function BusinessDetailPage({
 
                 )}
 
-                <span className="text-xs text-muted">{business.likeCount} likes</span>
+              </div>
+
+            </div>
+
+            {/* Right column: actions + stats */}
+            <div className="flex shrink-0 flex-col items-end gap-2">
+
+              <BusinessActions
+
+                businessId={business.id}
+
+                ownerId={business.ownerId}
+
+                currentUserId={userId}
+
+                initialState={connectionState}
+
+                shareTitle={business.name}
+
+                shareUrl={shareUrl}
+
+              />
+
+              {/* Likes · Followers · Website · Social links */}
+              <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">
+
+                {business.likeCount > 0 && (
+                  <span>{business.likeCount} {business.likeCount === 1 ? "like" : "likes"}</span>
+                )}
 
                 {business.followerIds.length > 0 && (
-
-                  <span className="text-xs text-muted">{business.followerIds.length} followers</span>
-
+                  <span>{business.followerIds.length} {business.followerIds.length === 1 ? "follower" : "followers"}</span>
                 )}
 
                 {business.website && (
@@ -216,7 +242,7 @@ export default async function BusinessDetailPage({
 
                     label="Visit website"
 
-                    className="text-xs font-medium text-accent hover:underline"
+                    className="font-medium text-accent hover:underline"
 
                   />
 
@@ -232,7 +258,7 @@ export default async function BusinessDetailPage({
 
                     label={socialPlatformLabel(network)}
 
-                    className="text-xs text-muted hover:text-foreground hover:underline"
+                    className="hover:text-foreground hover:underline"
 
                   />
 
@@ -241,22 +267,6 @@ export default async function BusinessDetailPage({
               </div>
 
             </div>
-
-            <BusinessActions
-
-              businessId={business.id}
-
-              ownerId={business.ownerId}
-
-              currentUserId={userId}
-
-              initialState={connectionState}
-
-              shareTitle={business.name}
-
-              shareUrl={shareUrl}
-
-            />
 
           </div>
 
