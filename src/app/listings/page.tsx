@@ -204,7 +204,7 @@ export default async function ListingsPage({
           No businesses match your filters. Try expanding your distance or adjusting the filters above.
         </p>
       ) : (
-        <div className="grid auto-rows-fr grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           {businesses.map((business) => (
             <BusinessListingCard
               key={business.id}
