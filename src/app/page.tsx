@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { BusinessPostFeed } from "@/components/business-post-feed";
+import { HeroCyclingText } from "@/components/hero-cycling-text";
 import { CollaborationGridCard } from "@/components/collaboration-grid-card";
 import { EventCard } from "@/components/event-card";
 import {
@@ -67,7 +68,7 @@ export default async function HomePage() {
                 BizList
               </p>
               <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-                Your Business.<br />More Customers.
+                Your Business.<br /><HeroCyclingText />
               </h1>
               <p className="mt-5 text-xl font-medium text-muted sm:text-2xl">
                 Space for Listings, Events and B2B Collaboration.
