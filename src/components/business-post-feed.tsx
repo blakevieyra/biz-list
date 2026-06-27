@@ -6,6 +6,7 @@ import { isImageUrl } from "@/lib/media/post-media";
 
 function BusinessPostItem({ post, compact }: { post: BusinessPost; compact?: boolean }) {
   const hero = post.mediaUrls.find(isImageUrl);
+  const businessPhoto = post.businessMediaUrl;
 
   return (
     <Card className="overflow-hidden p-0">
@@ -15,50 +16,74 @@ function BusinessPostItem({ post, compact }: { post: BusinessPost; compact?: boo
           <img src={hero} alt="" className="h-full w-full object-cover" />
         </div>
       )}
-      <div className={compact ? "p-4" : "p-5"}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="mb-1">
-              <PostTypeBadge type={post.postType} />
-            </div>
-            <Link
-              href={`/listings/${post.businessId}`}
-              className="text-sm font-semibold text-accent hover:underline"
-            >
-              {post.businessName ?? "Local business"}
-            </Link>
-            {post.businessCategory && (
-              <p className="text-xs text-muted">{post.businessCategory}</p>
-            )}
-          </div>
-          <span className="shrink-0 text-xs text-muted">{formatDate(post.createdAt)}</span>
-        </div>
 
-        <h3 className={`mt-2 font-semibold ${compact ? "text-sm" : ""}`}>{post.title}</h3>
-        <p
-          className={`mt-1 leading-relaxed text-muted ${compact ? "line-clamp-2 text-xs" : "mt-2 line-clamp-3 text-sm"}`}
-        >
-          {post.body}
-        </p>
-
-        {post.mediaUrls.length > 0 && !compact && (
-          <div className="mt-4">
-            <PostMediaGallery urls={post.mediaUrls} />
-          </div>
-        )}
-
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+      <div className={`flex ${compact ? "" : ""}`}>
+        {/* Business photo strip — shown in compact/embedded mode */}
+        {compact && (
           <Link
             href={`/listings/${post.businessId}`}
-            className="text-xs font-medium text-accent hover:underline"
+            className="relative block w-20 shrink-0 self-stretch overflow-hidden bg-slate-100"
           >
-            View business →
+            {businessPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={businessPhoto}
+                alt={post.businessName ?? ""}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 text-2xl font-bold text-accent/20">
+                {(post.businessName ?? "B").charAt(0)}
+              </div>
+            )}
           </Link>
-          {post.isTrending && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-              Trending
-            </span>
+        )}
+
+        <div className={compact ? "min-w-0 flex-1 p-4" : "p-5"}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="mb-1">
+                <PostTypeBadge type={post.postType} />
+              </div>
+              <Link
+                href={`/listings/${post.businessId}`}
+                className="text-sm font-semibold text-accent hover:underline"
+              >
+                {post.businessName ?? "Local business"}
+              </Link>
+              {post.businessCategory && (
+                <p className="text-xs text-muted">{post.businessCategory}</p>
+              )}
+            </div>
+            <span className="shrink-0 text-xs text-muted">{formatDate(post.createdAt)}</span>
+          </div>
+
+          <h3 className={`mt-2 font-semibold ${compact ? "text-sm" : ""}`}>{post.title}</h3>
+          <p
+            className={`mt-1 leading-relaxed text-muted ${compact ? "line-clamp-2 text-xs" : "mt-2 line-clamp-3 text-sm"}`}
+          >
+            {post.body}
+          </p>
+
+          {post.mediaUrls.length > 0 && !compact && (
+            <div className="mt-4">
+              <PostMediaGallery urls={post.mediaUrls} />
+            </div>
           )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <Link
+              href={`/listings/${post.businessId}`}
+              className="text-xs font-medium text-accent hover:underline"
+            >
+              View business →
+            </Link>
+            {post.isTrending && (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                Trending
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Card>
