@@ -1,143 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader, Card } from "@/components/ui";
-import { runComprehensiveBusinessAudit } from "@/lib/actions/pro";
 import type { ComprehensiveAuditResult, ComprehensiveAuditSection } from "@/lib/ai/ai-services";
 
-// ─── Step definitions ────────────────────────────────────────────────────────
+// ─── Profile type ─────────────────────────────────────────────────────────────
 
-type Question = {
-  name: string;
-  label: string;
-  placeholder: string;
-  type: "input" | "textarea";
-  required?: boolean;
-};
-
-type Step = {
-  id: string;
-  phase: "intro" | "internal" | "external";
-  phaseLabel: string;
-  label: string;
+export type AuditProfileData = {
+  businessName: string;
+  category: string;
+  cityState: string;
+  description: string;
   tagline: string;
-  questions: Question[];
+  website: string;
+  phone: string;
+  hours: string;
+  isHiring: boolean;
+  services: { name: string; price?: string }[];
 };
 
-const STEPS: Step[] = [
-  {
-    id: "basics",
-    phase: "intro",
-    phaseLabel: "About Your Business",
-    label: "Business Overview",
-    tagline: "A quick snapshot so the AI can tailor every insight to your situation.",
-    questions: [
-      { name: "businessName", label: "Business name", placeholder: "Your business name", type: "input", required: true },
-      { name: "category", label: "Industry / category", placeholder: "e.g., Food & Beverage, Professional Services, Retail...", type: "input", required: true },
-      { name: "cityState", label: "City and state", placeholder: "e.g., Austin, TX", type: "input" },
-      { name: "description", label: "What does your business do? (in your own words)", placeholder: "Describe what you do, who you serve, and what makes you different...", type: "textarea", required: true },
-    ],
-  },
-  {
-    id: "operations",
-    phase: "internal",
-    phaseLabel: "Internal Audit",
-    label: "Operations & Processes",
-    tagline: "How your business runs day to day — consistency, bottlenecks, and efficiency.",
-    questions: [
-      { name: "opsProcesses", label: "Do you have documented processes or SOPs for key tasks?", placeholder: "e.g., Order handling, customer onboarding, quality checks. If not, describe how things get done day-to-day...", type: "textarea" },
-      { name: "opsBottleneck", label: "What is your biggest operational bottleneck right now?", placeholder: "What slows you down the most — scheduling, inventory, communication, staffing?", type: "textarea" },
-      { name: "opsStrength", label: "What part of your operations runs the most smoothly?", placeholder: "What would customers say you're most consistent and reliable about?", type: "textarea" },
-    ],
-  },
-  {
-    id: "finance",
-    phase: "internal",
-    phaseLabel: "Internal Audit",
-    label: "Financial Health",
-    tagline: "Revenue model, pricing strategy, and your biggest financial pressures.",
-    questions: [
-      { name: "finRevenue", label: "How do you generate revenue? Describe your main streams.", placeholder: "e.g., Product sales, service fees, recurring clients, events, commissions...", type: "textarea" },
-      { name: "finPricing", label: "How is your pricing set and are you confident it's competitive?", placeholder: "e.g., Market rate, cost-plus, value-based — and when you last reviewed it...", type: "textarea" },
-      { name: "finChallenge", label: "What is your biggest financial challenge right now?", placeholder: "e.g., Slow seasons, high overhead, late payments, underpriced services, scaling costs...", type: "textarea" },
-    ],
-  },
-  {
-    id: "team",
-    phase: "internal",
-    phaseLabel: "Internal Audit",
-    label: "Team & Culture",
-    tagline: "Your people — strengths, gaps, and the culture you're building.",
-    questions: [
-      { name: "teamSize", label: "How many people work in your business? Describe the structure.", placeholder: "e.g., Just me, 2 part-timers + 1 full-time, family-run with 5 staff...", type: "textarea" },
-      { name: "teamStrength", label: "What are your team's greatest strengths?", placeholder: "e.g., Deep expertise, customer relationships, creative output, reliability...", type: "textarea" },
-      { name: "teamGap", label: "What skills or roles are missing that would help you grow?", placeholder: "e.g., Marketing, sales, bookkeeping, project management, tech support...", type: "textarea" },
-    ],
-  },
-  {
-    id: "products",
-    phase: "internal",
-    phaseLabel: "Internal Audit",
-    label: "Products & Services",
-    tagline: "What you offer, what makes it different, and what customers tell you.",
-    questions: [
-      { name: "prodCore", label: "What is your core offering and what makes it different?", placeholder: "Your best product or service and why customers choose you over alternatives...", type: "textarea" },
-      { name: "prodFeedback", label: "What feedback do customers give you most often?", placeholder: "Positive and negative — what do they love and what do they wish was better?", type: "textarea" },
-      { name: "prodGap", label: "Is there a product or service you know you should offer but don't yet?", placeholder: "Describe the gap and what has stopped you from addressing it...", type: "textarea" },
-    ],
-  },
-  {
-    id: "market",
-    phase: "external",
-    phaseLabel: "External Audit",
-    label: "Market & Competition",
-    tagline: "Who you compete with, industry trends, and opportunities you haven't captured.",
-    questions: [
-      { name: "mktCompetitors", label: "Who are your 2-3 main competitors?", placeholder: "Name them and describe what they do well and where they fall short...", type: "textarea" },
-      { name: "mktTrend", label: "What trend in your industry affects your business most right now?", placeholder: "e.g., Rising input costs, shift to online, new tech, regulatory change...", type: "textarea" },
-      { name: "mktOpportunity", label: "What market opportunity are you not fully capturing yet?", placeholder: "e.g., An underserved customer segment, new geography, adjacent service...", type: "textarea" },
-    ],
-  },
-  {
-    id: "customers",
-    phase: "external",
-    phaseLabel: "External Audit",
-    label: "Customers & Audience",
-    tagline: "Who you serve, how they find you, and how well you keep them.",
-    questions: [
-      { name: "custTarget", label: "Describe your ideal customer in detail.", placeholder: "Who they are, what they care about, how they make buying decisions...", type: "textarea" },
-      { name: "custAcquisition", label: "How do most new customers find you and how do you keep them?", placeholder: "e.g., Referrals, Google, social — and your retention or repeat rate...", type: "textarea" },
-      { name: "custPain", label: "What problem do you solve better than anyone else?", placeholder: "In your customer's own words — what frustration or need do you address?", type: "textarea" },
-    ],
-  },
-  {
-    id: "brand",
-    phase: "external",
-    phaseLabel: "External Audit",
-    label: "Brand & Online Presence",
-    tagline: "How the world sees you — reputation, reviews, and digital footprint.",
-    questions: [
-      { name: "brandPercep", label: "How would a new customer describe your brand at first glance?", placeholder: "e.g., Professional, approachable, affordable, premium, local, tech-forward...", type: "textarea" },
-      { name: "brandReviews", label: "What are your online reviews like overall? Any common themes?", placeholder: "e.g., 4.5 stars on Google — customers praise speed but mention wait times...", type: "textarea" },
-      { name: "brandChannels", label: "Which online channels do you actively use for marketing?", placeholder: "e.g., Instagram daily, Google Business updated weekly, occasional email...", type: "textarea" },
-    ],
-  },
-  {
-    id: "growth",
-    phase: "external",
-    phaseLabel: "External Audit",
-    label: "Growth & Partnerships",
-    tagline: "Your 12-month goal, partnership opportunities, and what's in the way.",
-    questions: [
-      { name: "growthGoal", label: "What is your #1 growth goal for the next 12 months?", placeholder: "e.g., 50% revenue increase, open a second location, launch a product line...", type: "textarea" },
-      { name: "growthPartner", label: "Are there local businesses or organizations you'd like to partner with?", placeholder: "e.g., Complementary services, community groups, vendors, referral partners...", type: "textarea" },
-      { name: "growthBarrier", label: "What is the single biggest barrier to achieving that goal?", placeholder: "e.g., Capital, time, awareness, team capacity, technology, confidence...", type: "textarea" },
-    ],
-  },
+// ─── Progress steps ───────────────────────────────────────────────────────────
+
+const PROGRESS_STEPS = [
+  { icon: "🔍", label: "Searching the web for your business" },
+  { icon: "⭐", label: "Finding reviews and reputation signals" },
+  { icon: "📊", label: "Identifying competitors in your area" },
+  { icon: "📈", label: "Analyzing industry trends" },
+  { icon: "👥", label: "Profiling your customer base" },
+  { icon: "🧠", label: "Scoring all 8 audit sections" },
+  { icon: "📝", label: "Writing your comprehensive report" },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number) {
   if (score >= 75) return { ring: "border-emerald-300 bg-emerald-50", text: "text-emerald-700", bar: "bg-emerald-500" };
@@ -173,7 +68,7 @@ function SectionCard({ section }: { section: ComprehensiveAuditSection }) {
             <p className="text-xs text-muted">{section.summary}</p>
           </div>
         </div>
-        <span className="text-muted">{open ? "▲" : "▼"}</span>
+        <span className="shrink-0 text-muted">{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
@@ -214,87 +109,116 @@ const PRIORITY_COLORS = {
   low: "bg-slate-100 text-slate-600",
 };
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main component ────────────────────────────────────────────────────────────
 
-export default function AuditClient({ initialValues = {} }: { initialValues?: Record<string, string> }) {
-  const [step, setStep] = useState(0);
-  const [values, setValues] = useState<Record<string, string>>(initialValues);
+export default function AuditClient({ profile }: { profile: AuditProfileData }) {
+  // Editable fields (user can tweak before running)
+  const [businessName, setBusinessName] = useState(profile.businessName);
+  const [category, setCategory] = useState(profile.category);
+  const [cityState, setCityState] = useState(profile.cityState);
+  const [description, setDescription] = useState(profile.description);
+
+  // State
+  const [running, setRunning] = useState(false);
+  const [progressStep, setProgressStep] = useState(0);
   const [result, setResult] = useState<ComprehensiveAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  const [researching, setResearching] = useState(false);
-  const [researchDone, setResearchDone] = useState(false);
-  const [researchError, setResearchError] = useState<string | null>(null);
 
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-  const internalSteps = STEPS.filter((s) => s.phase === "internal");
-  const externalSteps = STEPS.filter((s) => s.phase === "external");
+  // Auto-advance progress steps while running
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      setProgressStep((s) => Math.min(s + 1, PROGRESS_STEPS.length - 1));
+    }, 5000);
+    return () => clearInterval(id);
+  }, [running]);
 
-  function handleChange(name: string, value: string) {
-    setValues((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function handleNext() {
-    const missing = current.questions.find((q) => q.required && !values[q.name]?.trim());
-    if (missing) {
-      setError(`"${missing.label}" is required.`);
+  async function handleRun() {
+    if (!businessName.trim() || !category.trim()) {
+      setError("Business name and category are required.");
       return;
     }
     setError(null);
-    if (isLast) {
-      generate();
-    } else {
-      setStep((s) => s + 1);
-    }
-  }
-
-  async function handleResearch() {
-    const name = values.businessName?.trim();
-    const cat = values.category?.trim();
-    if (!name || !cat) {
-      setError("Enter your business name and category first.");
-      return;
-    }
-    setResearchError(null);
-    setResearching(true);
+    setRunning(true);
+    setProgressStep(0);
     try {
-      const res = await fetch("/api/audit/research", {
+      const res = await fetch("/api/audit/auto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          businessName: name,
-          category: cat,
-          cityState: values.cityState ?? "",
-          website: values.brandChannels ?? "",
+          businessName: businessName.trim(),
+          category: category.trim(),
+          cityState: cityState.trim(),
+          description: description.trim(),
+          tagline: profile.tagline,
+          website: profile.website,
+          phone: profile.phone,
+          hours: profile.hours,
+          isHiring: profile.isHiring,
+          services: profile.services,
         }),
       });
-      const data = await res.json() as { values?: Record<string, string>; error?: string };
+      const data = (await res.json()) as { result?: ComprehensiveAuditResult; error?: string };
       if (!res.ok || data.error) {
-        setResearchError(data.error ?? "Research failed. Fill in the fields manually.");
+        setError(data.error ?? "Audit failed. Please try again.");
         return;
       }
-      if (data.values) {
-        setValues((prev) => ({ ...prev, ...data.values }));
-        setResearchDone(true);
-      }
+      if (data.result) setResult(data.result);
     } catch {
-      setResearchError("Research failed. Fill in the fields manually.");
+      setError("Audit failed. Check your connection and try again.");
     } finally {
-      setResearching(false);
+      setRunning(false);
     }
   }
 
-  function generate() {
-    startTransition(async () => {
-      setError(null);
-      const res = await runComprehensiveBusinessAudit(values);
-      if (res.error) { setError(res.error); return; }
-      if (res.result) setResult(res.result);
-    });
+  // ── Progress view ────────────────────────────────────────────────────────────
+  if (running) {
+    return (
+      <>
+        <PageHeader
+          title="AI Business Audit"
+          description={`Researching and analyzing ${businessName}…`}
+        />
+        <Card>
+          <div className="pb-6 pt-2 text-center">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+            <h2 className="text-lg font-bold">Running full AI audit</h2>
+            <p className="mt-1 text-sm text-muted">
+              Searching the web and analyzing all 8 audit sections — this takes about 30 seconds.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {PROGRESS_STEPS.map((step, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-500 ${
+                  i === progressStep
+                    ? "border border-accent/30 bg-accent/5"
+                    : i < progressStep
+                    ? "bg-emerald-50/60"
+                    : "opacity-30"
+                }`}
+              >
+                <span className="text-lg">{step.icon}</span>
+                <span className={`flex-1 text-sm font-medium ${i < progressStep ? "text-emerald-700" : i === progressStep ? "text-foreground" : "text-muted"}`}>
+                  {step.label}
+                </span>
+                {i === progressStep && (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                )}
+                {i < progressStep && (
+                  <span className="text-sm text-emerald-600">✓</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      </>
+    );
   }
 
-  // ── Report view ─────────────────────────────────────────────────────────────
+  // ── Report view ──────────────────────────────────────────────────────────────
   if (result) {
     const internalSections = result.sections.filter((s) => s.phase === "internal");
     const externalSections = result.sections.filter((s) => s.phase === "external");
@@ -303,14 +227,14 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
       <>
         <PageHeader
           title="Business Audit Report"
-          description={`${values.businessName ?? "Your business"} · Full internal & external audit`}
+          description={`${businessName} · Full internal & external AI audit`}
           action={
             <button
               type="button"
-              onClick={() => { setResult(null); setStep(0); setValues({}); }}
+              onClick={() => { setResult(null); setError(null); }}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
             >
-              Start new audit
+              Run new audit
             </button>
           }
         />
@@ -351,8 +275,8 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
         </Card>
 
         {/* Internal breakdown */}
-        <div className="mt-4">
-          <h2 className="mb-3 font-semibold text-foreground/70">Internal Audit — click any section to expand</h2>
+        <div className="mt-6">
+          <h2 className="mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
           <div className="space-y-3">
             {internalSections.map((s) => <SectionCard key={s.id} section={s} />)}
           </div>
@@ -360,7 +284,7 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
 
         {/* External breakdown */}
         <div className="mt-6">
-          <h2 className="mb-3 font-semibold text-foreground/70">External Audit — click any section to expand</h2>
+          <h2 className="mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
           <div className="space-y-3">
             {externalSections.map((s) => <SectionCard key={s.id} section={s} />)}
           </div>
@@ -373,214 +297,131 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
     );
   }
 
-  // ── Wizard view ──────────────────────────────────────────────────────────────
-  const phaseLabel =
-    current.phase === "intro"
-      ? null
-      : current.phase === "internal"
-      ? "Internal Audit"
-      : "External Audit";
-
-  const phaseSteps = current.phase === "internal" ? internalSteps : current.phase === "external" ? externalSteps : [];
-  const phaseIndex = phaseSteps.findIndex((s) => s.id === current.id);
-
+  // ── Setup view ───────────────────────────────────────────────────────────────
   return (
     <>
       <PageHeader
         title="AI Business Audit"
-        description="A structured internal + external audit that prepares you with a full analysis and priority action plan."
+        description="One click — the AI researches your business online and delivers a full internal + external audit report."
       />
 
-      {/* Phase + progress */}
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        {/* Phase pills */}
-        <div className="flex gap-2">
-          {(["intro", "internal", "external"] as const).map((ph) => {
-            const active = current.phase === ph;
-            const done =
-              ph === "intro"
-                ? step > 0
-                : ph === "internal"
-                ? step > 4
-                : false;
-            return (
-              <span
-                key={ph}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                  active
-                    ? "bg-accent text-white"
-                    : done
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-100 text-muted"
-                }`}
-              >
-                {ph === "intro" ? "Overview" : ph === "internal" ? "Internal Audit" : "External Audit"}
-              </span>
-            );
-          })}
+      <Card>
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">
+            🤖
+          </div>
+          <div>
+            <p className="font-semibold">Fully automated audit</p>
+            <p className="mt-0.5 text-sm text-muted">
+              The AI searches the web for reviews, competitors, industry trends, and your online presence — then scores and analyzes all 8 sections itself. No questionnaire to fill out.
+            </p>
+          </div>
         </div>
 
-        {/* Step dots within current phase */}
-        {phaseSteps.length > 0 && (
-          <div className="flex gap-1.5">
-            {phaseSteps.map((s, i) => (
-              <span
-                key={s.id}
-                className={`h-2 w-2 rounded-full ${
-                  i < phaseIndex ? "bg-accent/60" : i === phaseIndex ? "bg-accent" : "bg-slate-200"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        <span className="text-xs text-muted">
-          Step {step + 1} of {STEPS.length}
-        </span>
-      </div>
-
-      <Card>
-        {/* Step header */}
-        {phaseLabel && (
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-accent">{phaseLabel}</p>
-        )}
-        <h2 className="text-xl font-bold">{current.label}</h2>
-        <p className="mt-1 text-sm text-muted">{current.tagline}</p>
-        {step === 0 && Object.keys(initialValues).length > 0 && (
-          <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-accent">
-            Pre-filled from your business profile — review and edit anything that needs updating.
+        {profile.businessName && (
+          <p className="mt-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-accent">
+            Pre-filled from your BizList business profile — review and edit before running.
           </p>
         )}
-        {step === 0 && (
-          <div className="mt-4 rounded-xl border border-border bg-slate-50 p-4">
-            <p className="text-sm font-semibold">Research your business online</p>
-            <p className="mt-0.5 text-xs text-muted">
-              Fill in your business name and category above, then let AI search the web for your reviews, competitors, online presence, industry trends, and more — pre-filling every audit section automatically.
-            </p>
-            {researchDone && (
-              <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                ✓ Research complete — all sections pre-filled from live web data. Review and edit before generating your report.
-              </p>
-            )}
-            {researchError && (
-              <p className="mt-2 text-xs text-red-600">{researchError}</p>
-            )}
-            <button
-              type="button"
-              disabled={researching || !values.businessName?.trim() || !values.category?.trim()}
-              onClick={handleResearch}
-              className="mt-3 flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-            >
-              {researching ? (
-                <>
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Researching online…
-                </>
-              ) : researchDone ? (
-                "Re-research →"
-              ) : (
-                "Research this business online →"
-              )}
-            </button>
+
+        {/* Editable business basics */}
+        <div className="mt-5 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="font-medium">Business name <span className="text-accent">*</span></span>
+              <input
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Your business name"
+                className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">Industry / category <span className="text-accent">*</span></span>
+              <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g., Technology, Food & Beverage…"
+                className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
+              />
+            </label>
+          </div>
+
+          <label className="block text-sm">
+            <span className="font-medium">City and state</span>
+            <input
+              value={cityState}
+              onChange={(e) => setCityState(e.target.value)}
+              placeholder="e.g., Fresno, CA"
+              className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
+            />
+          </label>
+
+          <label className="block text-sm">
+            <span className="font-medium">What your business does</span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Briefly describe what you do, who you serve, and what makes you different…"
+              className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
+            />
+          </label>
+        </div>
+
+        {/* Services preview */}
+        {profile.services.length > 0 && (
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Services from your profile</p>
+            <div className="flex flex-wrap gap-2">
+              {profile.services.map((s) => (
+                <span key={s.name} className="rounded-full border border-border bg-slate-50 px-3 py-1 text-xs font-medium">
+                  {s.name}{s.price ? ` · ${s.price}` : ""}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Questions */}
-        <div className="mt-6 space-y-5">
-          {current.questions.map((q) =>
-            q.type === "textarea" ? (
-              <label key={q.name} className="block text-sm">
-                <span className="font-medium">
-                  {q.label}
-                  {q.required && <span className="ml-1 text-accent">*</span>}
-                </span>
-                <textarea
-                  name={q.name}
-                  rows={3}
-                  placeholder={q.placeholder}
-                  value={values[q.name] ?? ""}
-                  onChange={(e) => handleChange(q.name, e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
-                />
-              </label>
-            ) : (
-              <label key={q.name} className="block text-sm">
-                <span className="font-medium">
-                  {q.label}
-                  {q.required && <span className="ml-1 text-accent">*</span>}
-                </span>
-                <input
-                  name={q.name}
-                  placeholder={q.placeholder}
-                  value={values[q.name] ?? ""}
-                  onChange={(e) => handleChange(q.name, e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
-                />
-              </label>
-            ),
-          )}
+        {/* What the AI will research */}
+        <div className="mt-5 rounded-xl border border-border bg-slate-50/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">What the AI will research</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {[
+              { icon: "🔍", label: "Your online presence & social channels" },
+              { icon: "⭐", label: "Reviews on Google, Yelp & Facebook" },
+              { icon: "📊", label: "Real local competitors in your area" },
+              { icon: "📈", label: "Industry trends affecting your business" },
+              { icon: "👥", label: "Your typical customer profile" },
+              { icon: "🧠", label: "8 scored sections with action plans" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2 text-xs text-muted">
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-        {/* Navigation */}
-        <div className="mt-6 flex items-center justify-between gap-4">
-          {step > 0 ? (
-            <button
-              type="button"
-              onClick={() => { setError(null); setStep((s) => s - 1); }}
-              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-            >
-              ← Back
-            </button>
-          ) : (
-            <Link href="/dashboard" className="text-sm text-muted hover:text-foreground">
-              ← Dashboard
-            </Link>
-          )}
-
+        <div className="mt-6 flex items-center gap-4">
           <button
             type="button"
-            disabled={pending}
-            onClick={handleNext}
-            className="rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+            disabled={!businessName.trim() || !category.trim()}
+            onClick={handleRun}
+            className="flex items-center gap-2 rounded-full bg-accent px-7 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
           >
-            {pending
-              ? "Generating report…"
-              : isLast
-              ? "Generate Full Report →"
-              : "Next →"}
+            <span>Run Full AI Audit</span>
+            <span>→</span>
           </button>
+          <p className="text-xs text-muted">~30 seconds · uses live web data</p>
         </div>
       </Card>
 
-      {/* Section overview */}
-      <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {STEPS.filter((s) => s.phase !== "intro").map((s, i) => {
-          const globalIdx = i + 1;
-          const done = step > globalIdx;
-          const active = step === globalIdx;
-          return (
-            <div
-              key={s.id}
-              className={`rounded-xl border p-3 text-sm transition-colors ${
-                active
-                  ? "border-accent/40 bg-accent/5"
-                  : done
-                  ? "border-emerald-200 bg-emerald-50"
-                  : "border-border bg-background text-muted"
-              }`}
-            >
-              <p className={`text-xs font-semibold uppercase tracking-wide ${s.phase === "internal" ? "text-blue-600" : "text-violet-600"}`}>
-                {s.phase === "internal" ? "Internal" : "External"}
-              </p>
-              <p className={`mt-0.5 font-medium ${active ? "text-accent" : done ? "text-emerald-700" : ""}`}>
-                {s.label}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+      <Link href="/dashboard" className="mt-4 inline-block text-sm text-muted hover:text-foreground">
+        ← Back to dashboard
+      </Link>
     </>
   );
 }
