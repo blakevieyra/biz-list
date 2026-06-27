@@ -148,7 +148,7 @@ export default async function BusinessDetailPage({
 
 
 
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6">
 
           <Link href="/listings" className="text-sm text-accent hover:underline">
 
@@ -156,29 +156,88 @@ export default async function BusinessDetailPage({
 
           </Link>
 
-
-
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 
             <div className="min-w-0">
 
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{business.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{business.name}</h1>
 
               {business.tagline && (
 
-                <p className="mt-1 text-base text-muted">{business.tagline}</p>
+                <p className="mt-0.5 text-sm text-muted">{business.tagline}</p>
 
               )}
 
-              <ListingRatingHeader
+              {/* Rating + all meta badges on one condensed line */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
 
-                ratingAvg={business.ratingAvg}
+                <ListingRatingHeader
 
-                ratingCount={business.ratingCount}
+                  ratingAvg={business.ratingAvg}
 
-                showLeaveReview={Boolean(userId && !isOwner)}
+                  ratingCount={business.ratingCount}
 
-              />
+                  showLeaveReview={Boolean(userId && !isOwner)}
+
+                />
+
+                <span className="text-border/60 select-none">·</span>
+
+                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-accent">
+
+                  {displayCategoryLabel(business.category, business.subcategory)}
+
+                </span>
+
+                {business.isHiring && (
+
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+
+                    Now hiring
+
+                  </span>
+
+                )}
+
+                <span className="text-xs text-muted">{business.likeCount} likes</span>
+
+                {business.followerIds.length > 0 && (
+
+                  <span className="text-xs text-muted">{business.followerIds.length} followers</span>
+
+                )}
+
+                {business.website && (
+
+                  <SafeExternalLink
+
+                    url={business.website}
+
+                    label="Visit website"
+
+                    className="text-xs font-medium text-accent hover:underline"
+
+                  />
+
+                )}
+
+                {socialEntries.map(([network, url]) => (
+
+                  <SafeExternalLink
+
+                    key={network}
+
+                    url={url!}
+
+                    label={socialPlatformLabel(network)}
+
+                    className="text-xs text-muted hover:text-foreground hover:underline"
+
+                  />
+
+                ))}
+
+              </div>
 
             </div>
 
@@ -197,74 +256,6 @@ export default async function BusinessDetailPage({
               shareUrl={shareUrl}
 
             />
-
-          </div>
-
-
-
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-
-            <span className="rounded-full bg-blue-50 px-4 py-1.5 font-medium text-accent">
-
-              {displayCategoryLabel(business.category, business.subcategory)}
-
-            </span>
-
-            {business.isHiring && (
-
-              <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-800">
-
-                Now hiring
-
-              </span>
-
-            )}
-
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-muted">
-
-              {business.likeCount} likes
-
-            </span>
-
-            {business.followerIds.length > 0 && (
-
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-muted">
-
-                {business.followerIds.length} followers
-
-              </span>
-
-            )}
-
-            {business.website && (
-
-              <SafeExternalLink
-
-                url={business.website}
-
-                label="Visit website"
-
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-1.5 font-medium hover:border-accent/40 hover:text-accent"
-
-              />
-
-            )}
-
-            {socialEntries.map(([network, url]) => (
-
-              <SafeExternalLink
-
-                key={network}
-
-                url={url!}
-
-                label={socialPlatformLabel(network)}
-
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-muted hover:border-accent/40 hover:text-foreground"
-
-              />
-
-            ))}
 
           </div>
 
