@@ -15,6 +15,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
+      "media-src 'self' https://*.supabase.co",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.zippopotam.us",
       "frame-src https://js.stripe.com https://hooks.stripe.com https://maps.google.com https://www.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
       "frame-ancestors 'self'",
