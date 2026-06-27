@@ -54,6 +54,7 @@ const MIGRATIONS = [
   "supabase/migrations/20260625220000_business_media_video.sql",
   "supabase/migrations/20260626100000_collaboration_requirements_attachments.sql",
   "supabase/migrations/20260626200000_rls_delete_policies.sql",
+  "supabase/migrations/20260626300000_audit_topics_virtual_agent.sql",
 ];
 
 const POOLER_REGIONS = [

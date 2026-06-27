@@ -36,6 +36,11 @@ function scoreLeadMatch(
     is_hiring?: boolean;
   },
   isFollower: boolean,
+  interaction?: {
+    viewedListing?: boolean;
+    commentedOnPosts?: number;
+    likedContent?: number;
+  },
 ): { score: number; reasons: string[]; leadSource: LocalLead["leadSource"] } {
   const reasons: string[] = [];
   let score = 0;
@@ -122,6 +127,24 @@ function scoreLeadMatch(
     leadSource = "seeking";
   }
 
+  if (interaction?.viewedListing) {
+    score += 20;
+    reasons.push("Viewed your BizList listing");
+    if (leadSource === "local") leadSource = "interest";
+  }
+
+  if ((interaction?.commentedOnPosts ?? 0) > 0) {
+    score += 15;
+    reasons.push(`Commented on ${interaction?.commentedOnPosts} of your posts`);
+    if (leadSource === "local") leadSource = "interest";
+  }
+
+  if ((interaction?.likedContent ?? 0) > 0) {
+    score += 10;
+    reasons.push("Liked your listing or posts");
+    if (leadSource === "local") leadSource = "interest";
+  }
+
   return { score: Math.min(score, 100), reasons: [...new Set(reasons)], leadSource };
 }
 
@@ -161,6 +184,42 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
   const { data: customers } = await query.limit(80);
   if (!customers?.length) return getMockLeads();
 
+  const customerIds = customers.map((c) => c.id);
+
+  const [{ data: views }, { data: postRows }, { data: likes }] = await Promise.all([
+    supabase
+      .from("business_page_views")
+      .select("viewer_id")
+      .eq("business_id", business.id)
+      .in("viewer_id", customerIds),
+    supabase.from("business_posts").select("id").eq("business_id", business.id),
+    supabase
+      .from("business_content_likes")
+      .select("user_id")
+      .eq("business_id", business.id)
+      .in("user_id", customerIds),
+  ]);
+
+  const viewers = new Set((views ?? []).map((v) => v.viewer_id).filter(Boolean));
+  const postIds = (postRows ?? []).map((p) => p.id);
+  let commentCounts = new Map<string, number>();
+
+  if (postIds.length) {
+    const { data: comments } = await supabase
+      .from("business_post_comments")
+      .select("author_id")
+      .in("post_id", postIds)
+      .in("author_id", customerIds);
+    for (const comment of comments ?? []) {
+      commentCounts.set(comment.author_id, (commentCounts.get(comment.author_id) ?? 0) + 1);
+    }
+  }
+
+  const likeCounts = new Map<string, number>();
+  for (const like of likes ?? []) {
+    likeCounts.set(like.user_id, (likeCounts.get(like.user_id) ?? 0) + 1);
+  }
+
   const leads = customers
     .map((customer) => {
       const isFollower = followerIds.has(customer.id);
@@ -185,6 +244,11 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
           is_hiring: business.is_hiring,
         },
         isFollower,
+        {
+          viewedListing: viewers.has(customer.id),
+          commentedOnPosts: commentCounts.get(customer.id) ?? 0,
+          likedContent: likeCounts.get(customer.id) ?? 0,
+        },
       );
 
       return {
@@ -238,23 +302,32 @@ export async function getAiAssessments(userId: string): Promise<AiAssessment[]> 
     .order("created_at", { ascending: false })
     .limit(10);
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    userId: row.user_id,
-    businessId: row.business_id ?? undefined,
-    websiteUrl: row.website_url,
-    businessName: row.business_name,
-    category: row.category,
-    overallScore: row.overall_score,
-    seoScore: row.seo_score,
-    onlinePresenceScore: row.online_presence_score,
-    businessClarityScore: row.business_clarity_score,
-    websiteScore: row.seo_score,
-    profileScore: row.business_clarity_score,
-    summary: row.summary,
-    recommendations: (row.recommendations as string[]) ?? [],
-    createdAt: row.created_at,
-  }));
+  return (data ?? []).map((row) => {
+    const topics = (row.topic_breakdown as AiAssessment["topicBreakdown"]) ?? [];
+    const topicScore = (id: string) => topics.find((t) => t.id === id)?.score;
+
+    return {
+      id: row.id,
+      userId: row.user_id,
+      businessId: row.business_id ?? undefined,
+      websiteUrl: row.website_url,
+      businessName: row.business_name,
+      category: row.category,
+      overallScore: row.overall_score,
+      seoScore: row.seo_score,
+      onlinePresenceScore: row.online_presence_score,
+      businessClarityScore: row.business_clarity_score,
+      websiteScore: topicScore("website") ?? row.seo_score,
+      profileScore: topicScore("profile") ?? row.business_clarity_score,
+      contentInteractionScore: topicScore("content"),
+      industryMatchScore: topicScore("industry"),
+      locationScore: topicScore("location"),
+      summary: row.summary,
+      recommendations: (row.recommendations as string[]) ?? [],
+      topicBreakdown: topics,
+      createdAt: row.created_at,
+    };
+  });
 }
 
 export async function getLatestAiAssessment(userId: string): Promise<AiAssessment | null> {

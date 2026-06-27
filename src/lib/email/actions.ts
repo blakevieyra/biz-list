@@ -39,8 +39,30 @@ export async function emailProUpgrade(to: string, name: string, tier = "Pro") {
   await sendTemplateEmail(to, emailTemplates.proUpgrade(name, tier));
 }
 
-export async function emailAssessmentComplete(to: string, name: string, score: number) {
-  await sendTemplateEmail(to, emailTemplates.assessmentComplete(name, score));
+export async function emailAssessmentComplete(
+  to: string,
+  name: string,
+  assessment: {
+    businessName: string;
+    overallScore: number;
+    summary: string;
+    recommendations: string[];
+    topicBreakdown?: { label: string; score: number; summary?: string }[];
+  },
+) {
+  const topics =
+    assessment.topicBreakdown?.map((t) => ({ label: t.label, score: t.score })) ?? [];
+
+  await sendTemplateEmail(
+    to,
+    emailTemplates.assessmentComplete(name, {
+      businessName: assessment.businessName,
+      overallScore: assessment.overallScore,
+      summary: assessment.summary,
+      recommendations: assessment.recommendations,
+      topics,
+    }),
+  );
 }
 
 export async function emailForumPostPublished(

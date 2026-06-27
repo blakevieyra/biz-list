@@ -54,7 +54,7 @@ export function PlatinumGrowthPanel({ planTier }: { planTier: PlanTier }) {
     <Card>
       <h2 className="font-semibold">Platinum AI agent</h2>
       <p className="mt-1 text-sm text-muted">
-        Automate posts, outreach to matched leads, and welcome messages for new followers.
+        Auto-post fresh content, outreach matched leads with custom intros, welcome new followers, and reply when customers message back.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">

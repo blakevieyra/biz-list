@@ -51,6 +51,7 @@ import { buildResumeSnapshot } from "@/lib/resume";
 import { contentLikeKey, isContentLiked } from "@/lib/content-likes-types";
 
 import { displayCategoryLabel } from "@/lib/industries";
+import { ListingVirtualAgent } from "@/components/listing-virtual-agent";
 import { PageViewTracker } from "@/components/page-view-tracker";
 
 
@@ -594,10 +595,13 @@ export default async function BusinessDetailPage({
 
       </div>
 
+      {business.virtualAgentEnabled && (
+        <ListingVirtualAgent
+          businessId={business.id}
+          businessName={business.name}
+          isAuthenticated={Boolean(userId)}
+        />
+      )}
     </>
-
   );
-
 }
-
-

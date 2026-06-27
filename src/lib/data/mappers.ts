@@ -79,6 +79,7 @@ type BusinessRow = {
   rating_avg?: number;
   rating_count?: number;
   intents: BusinessIntent[];
+  virtual_agent_enabled?: boolean;
   created_at: string;
 };
 
@@ -262,6 +263,7 @@ export function mapBusiness(
     intents: row.intents ?? [],
     followerIds,
     followingIds,
+    virtualAgentEnabled: row.virtual_agent_enabled ?? false,
     createdAt: row.created_at,
   };
 }

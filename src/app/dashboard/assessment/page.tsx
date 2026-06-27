@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { AuditTopicBreakdown } from "@/components/audit-topic-breakdown";
 import { runAiAssessment } from "@/lib/actions/pro";
 import { Card, PageHeader } from "@/components/ui";
 
@@ -19,6 +20,14 @@ export default function DashboardAssessmentPage() {
     profileScore?: number;
     summary: string;
     recommendations: string[];
+    topicBreakdown?: {
+      id: string;
+      label: string;
+      score: number;
+      summary: string;
+      findings: string[];
+      actions: string[];
+    }[];
   } | null>(null);
 
   return (
@@ -96,14 +105,21 @@ export default function DashboardAssessmentPage() {
             </div>
           </Card>
           <Card>
-            <h3 className="font-semibold">Recommendations</h3>
-            <ul className="mt-3 space-y-2">
-              {result.recommendations.map((item) => (
-                <li key={item} className="text-sm text-muted">
-                  • {item}
-                </li>
-              ))}
-            </ul>
+            <h3 className="font-semibold">Topic breakdown</h3>
+            <p className="mt-1 text-sm text-muted">
+              Detailed scan across website, SEO, presence, content interaction, industry fit, and location.
+            </p>
+            {result.topicBreakdown && result.topicBreakdown.length > 0 ? (
+              <AuditTopicBreakdown topics={result.topicBreakdown} />
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {result.recommendations.map((item) => (
+                  <li key={item} className="text-sm text-muted">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </div>
       )}

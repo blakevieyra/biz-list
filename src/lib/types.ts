@@ -134,6 +134,7 @@ export interface BusinessProfile {
   intents: BusinessIntent[];
   followerIds: string[];
   followingIds: string[];
+  virtualAgentEnabled?: boolean;
   createdAt: string;
 }
 
@@ -381,8 +382,19 @@ export interface AiAssessment {
   businessClarityScore: number;
   websiteScore?: number;
   profileScore?: number;
+  contentInteractionScore?: number;
+  industryMatchScore?: number;
+  locationScore?: number;
   summary: string;
   recommendations: string[];
+  topicBreakdown?: {
+    id: string;
+    label: string;
+    score: number;
+    summary: string;
+    findings: string[];
+    actions: string[];
+  }[];
   createdAt: string;
 }
 

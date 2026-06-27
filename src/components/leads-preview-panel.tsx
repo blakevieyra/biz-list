@@ -46,7 +46,7 @@ export function LeadsPreviewPanel({
         <div>
           <h2 className="font-semibold">Lead generation</h2>
           <p className="mt-1 text-sm text-muted">
-            Potential customers matched from follows, interests, and local profiles.
+            Matched from follows, industry interests, location, listing views, and post engagement.
           </p>
         </div>
         <Link href="/dashboard/leads" className="text-sm font-medium text-accent hover:underline">

@@ -9,13 +9,9 @@ export function getAppUrl(): string {
 }
 
 export function getEmailFrom(): string {
-  return process.env.EMAIL_FROM ?? "BizList <hello@bizlist.app>";
+  return process.env.EMAIL_FROM ?? "BizList <info@operone2i.com>";
 }
 
 export function isEmailConfigured(): boolean {
-  return Boolean(process.env.SENDGRID_API_KEY);
-}
-
-export function getLogoUrl(): string {
-  return `${getAppUrl()}/bizlist-logo.png`;
+  return Boolean(process.env.SENDGRID_API_KEY || process.env.RESEND_API_KEY);
 }

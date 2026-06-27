@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { runBusinessProfileAudit } from "@/lib/actions/pro";
+import { AuditTopicBreakdown } from "@/components/audit-topic-breakdown";
 import { Card, formatDate } from "@/components/ui";
 import type { AiAssessment } from "@/lib/types";
 import { canAccess } from "@/lib/plans";
@@ -68,7 +69,7 @@ export function AiAuditPanel({
         <div>
           <h2 className="font-semibold">AI online presence audit</h2>
           <p className="mt-1 text-sm text-muted">
-            Scores your website, BizList profile, SEO, and local visibility.
+            Scans website, profile, SEO, content interaction, industry fit, and location signals.
           </p>
         </div>
         <button
@@ -97,13 +98,21 @@ export function AiAuditPanel({
             )}
           </div>
           <p className="mt-3 text-sm text-muted">{latest.summary}</p>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
             <ScoreRing label="Website" value={latest.websiteScore ?? latest.seoScore} />
             <ScoreRing label="SEO" value={latest.seoScore} />
             <ScoreRing label="Presence" value={latest.onlinePresenceScore} />
             <ScoreRing label="Clarity" value={latest.businessClarityScore} />
             <ScoreRing label="Profile" value={latest.profileScore ?? latest.businessClarityScore} />
+            <ScoreRing label="Content" value={latest.contentInteractionScore ?? 0} />
+            <ScoreRing label="Industry" value={latest.industryMatchScore ?? 0} />
+            <ScoreRing label="Location" value={latest.locationScore ?? 0} />
           </div>
+          {compact && (
+            <Link href="/dashboard/assessment" className="mt-3 inline-block text-sm font-medium text-accent hover:underline">
+              Full topic breakdown →
+            </Link>
+          )}
           {!compact && latest.recommendations.length > 0 && (
             <ul className="mt-4 space-y-1.5">
               {latest.recommendations.slice(0, 4).map((item) => (
@@ -112,6 +121,9 @@ export function AiAuditPanel({
                 </li>
               ))}
             </ul>
+          )}
+          {!compact && latest.topicBreakdown && latest.topicBreakdown.length > 0 && (
+            <AuditTopicBreakdown topics={latest.topicBreakdown} compact />
           )}
         </div>
       ) : (
