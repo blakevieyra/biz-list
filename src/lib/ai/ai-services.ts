@@ -267,14 +267,31 @@ export async function generateComprehensiveBusinessAuditAI(
     .map(([k, v]) => `${k}: ${v}`)
     .join("\n");
 
-  const result = await claudeJSON<ComprehensiveAuditResult>({
-    system: `You are a senior business strategy consultant. Analyze this business owner's self-assessment and produce a comprehensive internal + external business audit. Score each of the 8 sections honestly (0-100). Be specific, direct, and actionable. Reference the owner's actual words in your findings. Identify real risks and real strengths, not generic advice.`,
-    user: `Business owner audit responses:\n\n${auditText}\n\nReturn JSON:\n{\n  "overallScore": number,\n  "internalScore": number,\n  "externalScore": number,\n  "executiveSummary": "3-4 sentence summary referencing specifics from their answers",\n  "sections": [\n    {\n      "id": "operations|finance|team|products|market|customers|brand|growth",\n      "label": "Operations|Financial Health|Team & Culture|Products & Services|Market & Competition|Customers & Audience|Brand & Presence|Growth & Partnerships",\n      "phase": "internal|external",\n      "score": number,\n      "summary": "1-2 sentences tied to their specific answers",\n      "strengths": ["2-3 specific strengths from their responses"],\n      "gaps": ["2-3 specific gaps or risks identified"],\n      "actions": ["2-3 concrete next steps specific to their situation"]\n    }\n  ],\n  "priorityActions": [\n    { "priority": "high|medium|low", "action": "specific action", "category": "section label", "impact": "why this matters for this specific business" }\n  ]\n}\n\nInclude all 8 sections in order: operations, finance, team, products (internal), then market, customers, brand, growth (external). Provide 6-8 priority actions ordered high to low.`,
-    maxTokens: 3500,
+  // Use claudeComplete (not claudeJSON) so we can do robust indexOf extraction
+  // rather than relying on a clean JSON-only response.
+  const text = await claudeComplete({
+    system: `You are a senior business strategy consultant. Analyze the business data (which includes live web research findings) and produce a thorough internal + external audit. Score each of the 8 sections honestly (0–100). Reference specific data points — real competitors, actual review ratings, discovered URLs. Be direct, specific, and actionable. Return ONLY valid JSON, no preamble, no fences.`,
+    user: `Business data (includes web research):\n\n${auditText}\n\nReturn this JSON structure — fill every field with real, specific content:\n{"overallScore":0,"internalScore":0,"externalScore":0,"executiveSummary":"3-4 sentences citing specific findings","sections":[{"id":"operations","label":"Operations & Processes","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"finance","label":"Financial Health","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"team","label":"Team & Culture","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"products","label":"Products & Services","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"market","label":"Market & Competition","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"customers","label":"Customers & Audience","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"brand","label":"Brand & Presence","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"growth","label":"Growth & Partnerships","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]}],"priorityActions":[{"priority":"high","action":"","category":"","impact":""},{"priority":"high","action":"","category":"","impact":""},{"priority":"high","action":"","category":"","impact":""},{"priority":"medium","action":"","category":"","impact":""},{"priority":"medium","action":"","category":"","impact":""},{"priority":"low","action":"","category":"","impact":""}]}`,
+    maxTokens: 5000,
     temperature: 0.3,
   });
 
-  return result ?? FALLBACK_AUDIT;
+  if (!text) return FALLBACK_AUDIT;
+
+  try {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1) {
+      console.error("[audit] No JSON object found in response");
+      return FALLBACK_AUDIT;
+    }
+    const parsed = JSON.parse(text.slice(start, end + 1)) as ComprehensiveAuditResult;
+    if (!Array.isArray(parsed.sections) || parsed.sections.length === 0) return FALLBACK_AUDIT;
+    return parsed;
+  } catch (e) {
+    console.error("[audit] JSON parse failed:", e, text.slice(0, 300));
+    return FALLBACK_AUDIT;
+  }
 }
 
 export async function generateMarketingCampaignDraftAI(

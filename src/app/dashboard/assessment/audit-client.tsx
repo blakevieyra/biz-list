@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { PageHeader, Card } from "@/components/ui";
 import type { ComprehensiveAuditResult, ComprehensiveAuditSection } from "@/lib/ai/ai-services";
-
-// ─── Profile type ─────────────────────────────────────────────────────────────
 
 export type AuditProfileData = {
   businessName: string;
@@ -20,24 +18,21 @@ export type AuditProfileData = {
   services: { name: string; price?: string }[];
 };
 
-type ResearchValues = Record<string, string>;
+// ─── Step definitions ─────────────────────────────────────────────────────────
 
-// ─── Progress steps ───────────────────────────────────────────────────────────
-
-const RESEARCH_STEPS = [
-  { icon: "🔍", label: "Searching the web for your business" },
-  { icon: "⭐", label: "Finding reviews and reputation signals" },
-  { icon: "📊", label: "Identifying competitors in your area" },
-  { icon: "📈", label: "Analyzing industry trends" },
+type StepDef = { icon: string; label: string; phase: "research" | "generate" };
+const STEPS: StepDef[] = [
+  { icon: "🔍", label: "Searching for website & social profiles", phase: "research" },
+  { icon: "⭐", label: "Finding reviews & reputation signals", phase: "research" },
+  { icon: "📊", label: "Identifying local competitors", phase: "research" },
+  { icon: "📈", label: "Analyzing industry trends & customers", phase: "research" },
+  { icon: "👥", label: "Profiling customer base & opportunities", phase: "generate" },
+  { icon: "🧠", label: "Scoring all 8 audit sections", phase: "generate" },
+  { icon: "📝", label: "Writing comprehensive report", phase: "generate" },
 ];
 
-const GENERATE_STEPS = [
-  { icon: "👥", label: "Profiling your customer base" },
-  { icon: "🧠", label: "Scoring all 8 audit sections" },
-  { icon: "📝", label: "Writing your comprehensive report" },
-];
-
-const ALL_STEPS = [...RESEARCH_STEPS, ...GENERATE_STEPS];
+type StepState = "waiting" | "searching" | "found" | "analyzing";
+type StepInfo = { state: StepState; finding?: string };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -77,31 +72,24 @@ function SectionCard({ section }: { section: ComprehensiveAuditSection }) {
         </div>
         <span className="shrink-0 text-muted">{open ? "▲" : "▼"}</span>
       </button>
-
       {open && (
         <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
             <ul className="space-y-1">
-              {section.strengths.map((s) => (
-                <li key={s} className="text-sm text-muted">• {s}</li>
-              ))}
+              {section.strengths.map((s) => <li key={s} className="text-sm text-muted">• {s}</li>)}
             </ul>
           </div>
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-red-600">Gaps & Risks</p>
             <ul className="space-y-1">
-              {section.gaps.map((g) => (
-                <li key={g} className="text-sm text-muted">• {g}</li>
-              ))}
+              {section.gaps.map((g) => <li key={g} className="text-sm text-muted">• {g}</li>)}
             </ul>
           </div>
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-accent">Action Items</p>
             <ul className="space-y-1">
-              {section.actions.map((a) => (
-                <li key={a} className="text-sm text-muted">→ {a}</li>
-              ))}
+              {section.actions.map((a) => <li key={a} className="text-sm text-muted">→ {a}</li>)}
             </ul>
           </div>
         </div>
@@ -116,7 +104,7 @@ const PRIORITY_COLORS = {
   low: "bg-slate-100 text-slate-600",
 };
 
-// ─── Main component ────────────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function AuditClient({ profile }: { profile: AuditProfileData }) {
   const [businessName, setBusinessName] = useState(profile.businessName);
@@ -125,31 +113,18 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
   const [description, setDescription] = useState(profile.description);
 
   const [running, setRunning] = useState(false);
-  const [progressStep, setProgressStep] = useState(0);
-  const [phase, setPhase] = useState<"research" | "generate">("research");
+  const [steps, setSteps] = useState<StepInfo[]>(STEPS.map(() => ({ state: "waiting" })));
+  const [activeStep, setActiveStep] = useState(0);
   const [result, setResult] = useState<ComprehensiveAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Tick progress within the current phase while running
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  function startProgressTick(startIdx: number, endIdx: number) {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setProgressStep(startIdx);
-    intervalRef.current = setInterval(() => {
-      setProgressStep((s) => {
-        if (s >= endIdx - 1) {
-          clearInterval(intervalRef.current!);
-          return endIdx - 1;
-        }
-        return s + 1;
-      });
-    }, 4500);
+  function setStep(i: number, info: Partial<StepInfo>) {
+    setSteps((prev) => {
+      const next = [...prev];
+      next[i] = { ...next[i], ...info };
+      return next;
+    });
   }
-
-  useEffect(() => {
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, []);
 
   async function handleRun() {
     if (!businessName.trim() || !category.trim()) {
@@ -158,35 +133,71 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
     }
     setError(null);
     setRunning(true);
+    setSteps(STEPS.map(() => ({ state: "waiting" })));
+    setActiveStep(0);
 
-    // Phase 1: Web research (steps 0-3)
-    setPhase("research");
-    startProgressTick(0, RESEARCH_STEPS.length);
+    const research: Record<string, string> = {};
 
-    let research: ResearchValues = {};
+    // ── Phase 1: Streaming web research (steps 0-3) ────────────────────────
     try {
-      const r1 = await fetch("/api/audit/research", {
+      const streamRes = await fetch("/api/audit/research-stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          businessName: businessName.trim(),
-          category: category.trim(),
-          cityState: cityState.trim(),
-        }),
+        body: JSON.stringify({ businessName: businessName.trim(), category: category.trim(), cityState: cityState.trim() }),
       });
-      const d1 = (await r1.json()) as { values?: ResearchValues; error?: string };
-      if (r1.ok && d1.values) research = d1.values;
-      // Continue even if research failed — generate will use profile data only
+
+      if (streamRes.ok && streamRes.body) {
+        const reader = streamRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const raw = line.slice(6).trim();
+            if (!raw) continue;
+            try {
+              const ev = JSON.parse(raw) as {
+                step?: number;
+                status?: "searching" | "found";
+                finding?: string;
+                done?: boolean;
+                research?: Record<string, string>;
+              };
+
+              if (ev.done && ev.research) {
+                Object.assign(research, ev.research);
+              } else if (typeof ev.step === "number") {
+                if (ev.status === "searching") {
+                  setActiveStep(ev.step);
+                  setStep(ev.step, { state: "searching" });
+                } else if (ev.status === "found") {
+                  setStep(ev.step, { state: "found", finding: ev.finding });
+                }
+              }
+            } catch { /* skip malformed */ }
+          }
+        }
+      }
     } catch {
-      // Non-fatal — continue to generate phase
+      // Research failed — continue to generate with profile data only
     }
 
-    // Phase 2: Generate report (steps 4-6)
-    setPhase("generate");
-    startProgressTick(RESEARCH_STEPS.length, ALL_STEPS.length);
+    // ── Phase 2: Generate report (steps 4-6) ─────────────────────────────
+    for (let i = 4; i <= 6; i++) {
+      setActiveStep(i);
+      setStep(i, { state: "analyzing" });
+      if (i < 6) await new Promise((r) => setTimeout(r, 4000));
+    }
 
     try {
-      const r2 = await fetch("/api/audit/generate", {
+      const genRes = await fetch("/api/audit/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -205,84 +216,93 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           research,
         }),
       });
-      const d2 = (await r2.json()) as { result?: ComprehensiveAuditResult; error?: string };
-      if (!r2.ok || d2.error) {
-        setError(d2.error ?? "Report generation failed. Please try again.");
+
+      const genData = (await genRes.json()) as { result?: ComprehensiveAuditResult; error?: string };
+      if (!genRes.ok || genData.error) {
+        setError(genData.error ?? "Report generation failed. Please try again.");
         setRunning(false);
         return;
       }
-      if (d2.result) {
-        setProgressStep(ALL_STEPS.length - 1);
-        await new Promise((res) => setTimeout(res, 800));
-        setResult(d2.result);
+      if (genData.result) {
+        setStep(6, { state: "found", finding: "Report complete" });
+        await new Promise((r) => setTimeout(r, 600));
+        setResult(genData.result);
       }
     } catch {
       setError("Report generation failed. Check your connection and try again.");
     } finally {
       setRunning(false);
-      if (intervalRef.current) clearInterval(intervalRef.current);
     }
   }
 
   // ── Progress view ────────────────────────────────────────────────────────────
   if (running) {
-    const phaseLabel = phase === "research" ? "Researching online…" : "Generating report…";
+    const researchDone = steps.slice(0, 4).every((s) => s.state === "found");
     return (
       <>
-        <PageHeader
-          title="AI Business Audit"
-          description={`Analyzing ${businessName} — ${phaseLabel}`}
-        />
+        <PageHeader title="AI Business Audit" description={`Analyzing ${businessName}…`} />
         <Card>
           <div className="pb-6 pt-2 text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
             <h2 className="text-lg font-bold">Running full AI audit</h2>
             <p className="mt-1 text-sm text-muted">
-              {phase === "research"
-                ? "Searching the web for reviews, competitors, industry trends, and your online presence…"
-                : "Analyzing all 8 audit sections and writing your report…"}
+              {!researchDone
+                ? "Searching the web for live data about your business…"
+                : "Analyzing all 8 sections and writing your report…"}
             </p>
           </div>
 
           <div className="space-y-2">
-            {ALL_STEPS.map((step, i) => {
-              const done = i < progressStep;
-              const active = i === progressStep;
+            {STEPS.map((step, i) => {
+              const info = steps[i];
+              const isActive = i === activeStep && running;
+              const isDone = info.state === "found";
+              const isSearching = info.state === "searching" || info.state === "analyzing";
+              const isWaiting = info.state === "waiting";
+
               return (
                 <div
                   key={i}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-500 ${
-                    active
+                  className={`rounded-xl px-4 py-3 transition-all duration-500 ${
+                    isActive || isSearching
                       ? "border border-accent/30 bg-accent/5"
-                      : done
-                      ? "bg-emerald-50/60"
-                      : "opacity-25"
+                      : isDone
+                      ? "bg-emerald-50/70"
+                      : isWaiting
+                      ? "opacity-25"
+                      : ""
                   }`}
                 >
-                  <span className="text-lg">{step.icon}</span>
-                  <span
-                    className={`flex-1 text-sm font-medium ${
-                      done ? "text-emerald-700" : active ? "text-foreground" : "text-muted"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                  {active && (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{step.icon}</span>
+                    <span className={`flex-1 text-sm font-medium ${isDone ? "text-emerald-700" : isActive || isSearching ? "text-foreground" : "text-muted"}`}>
+                      {step.label}
+                    </span>
+                    {(isActive || isSearching) && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                    )}
+                    {isDone && <span className="text-sm font-medium text-emerald-600">✓</span>}
+                  </div>
+
+                  {/* Live finding shown under step */}
+                  {isDone && info.finding && info.finding !== "Report complete" && (
+                    <p className="mt-1.5 ml-8 rounded-lg bg-white/70 px-3 py-1.5 text-xs text-muted ring-1 ring-emerald-200">
+                      <span className="font-medium text-emerald-700">Found: </span>
+                      {info.finding}
+                    </p>
                   )}
-                  {done && <span className="text-sm text-emerald-600">✓</span>}
                 </div>
               );
             })}
           </div>
 
-          {/* Phase indicator */}
+          {/* Phase pills */}
           <div className="mt-4 flex gap-2 border-t border-border pt-4">
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${phase === "research" ? "bg-accent text-white" : "bg-emerald-100 text-emerald-700"}`}>
-              {phase === "research" ? "● " : "✓ "}Web Research
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${!researchDone ? "bg-accent text-white" : "bg-emerald-100 text-emerald-700"}`}>
+              {!researchDone ? "● " : "✓ "}Web Research
             </span>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${phase === "generate" ? "bg-accent text-white" : "bg-slate-100 text-muted"}`}>
-              {phase === "generate" ? "● " : ""}AI Analysis
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${researchDone ? "bg-accent text-white" : "bg-slate-100 text-muted"}`}>
+              {researchDone ? "● " : ""}AI Analysis
             </span>
           </div>
         </Card>
@@ -303,7 +323,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           action={
             <button
               type="button"
-              onClick={() => { setResult(null); setError(null); }}
+              onClick={() => { setResult(null); setError(null); setSteps(STEPS.map(() => ({ state: "waiting" }))); }}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
             >
               Run new audit
@@ -369,18 +389,16 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
     <>
       <PageHeader
         title="AI Business Audit"
-        description="One click — the AI searches the web and delivers a full internal + external audit with scores and action plans."
+        description="One click — the AI researches your business live and delivers a full scored audit with action plans."
       />
 
       <Card>
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">
-            🤖
-          </div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">🤖</div>
           <div>
             <p className="font-semibold">Fully automated audit</p>
             <p className="mt-0.5 text-sm text-muted">
-              The AI searches the web for your reviews, social profiles, competitors, and industry trends — then scores and analyzes all 8 sections itself. No questionnaire to fill out.
+              The AI searches the web step by step — finding your social profiles, reviews, competitors, and industry trends — then scores and analyzes all 8 sections. You watch it work in real time.
             </p>
           </div>
         </div>
@@ -412,7 +430,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
               />
             </label>
           </div>
-
           <label className="block text-sm">
             <span className="font-medium">City and state</span>
             <input
@@ -422,7 +439,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
               className="mt-1.5 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
             />
           </label>
-
           <label className="block text-sm">
             <span className="font-medium">What your business does</span>
             <textarea
@@ -449,12 +465,12 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
         )}
 
         <div className="mt-5 rounded-xl border border-border bg-slate-50/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">What the AI will research</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">What the AI will research live</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {[
-              { icon: "🔍", label: "Website, social profiles & channels" },
+              { icon: "🔍", label: "Website URL & social media profiles" },
               { icon: "⭐", label: "Reviews on Google, Yelp & Facebook" },
-              { icon: "📊", label: "Real local competitors in your area" },
+              { icon: "📊", label: "Real named competitors in your area" },
               { icon: "📈", label: "Industry trends affecting your business" },
               { icon: "👥", label: "Your typical customer profile" },
               { icon: "🧠", label: "8 scored sections with action plans" },
@@ -479,7 +495,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
             <span>Run Full AI Audit</span>
             <span>→</span>
           </button>
-          <p className="text-xs text-muted">~45 seconds · uses live web data</p>
+          <p className="text-xs text-muted">~45 seconds · live web data</p>
         </div>
       </Card>
 
