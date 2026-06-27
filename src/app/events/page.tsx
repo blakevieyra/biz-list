@@ -4,6 +4,7 @@ import { PageHeader, Card } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getCurrentProfile } from "@/lib/data";
 import { getBusinessEvents } from "@/lib/data/events";
+import { SEED_BUSINESS_EVENTS } from "@/lib/mock-data";
 import {
   DISCOVERY_FILTER_OPTIONS,
   DISCOVERY_RADIUS_LABELS,
@@ -46,7 +47,7 @@ export default async function EventsPage({
       }
     : null;
 
-  const events = await getBusinessEvents({
+  const dbEvents = await getBusinessEvents({
     viewer,
     discoveryRadius: discoveryFilter,
     query: query || undefined,
@@ -54,6 +55,7 @@ export default async function EventsPage({
     userId,
     limit: 60,
   });
+  const events = dbEvents.length > 0 ? dbEvents : SEED_BUSINESS_EVENTS;
 
   function buildHref(next: Record<string, string | undefined>) {
     const merged: Record<string, string | undefined> = {
