@@ -266,11 +266,12 @@ export function CollaborationDetailCard({
     <div className="space-y-6">
       {/* Main card */}
       <Card className="overflow-hidden p-0">
-        <div className="flex">
+        {/* Header row: photo + business meta side by side */}
+        <div className="flex border-b border-border">
           {listingHref ? (
             <Link
               href={listingHref}
-              className="relative block w-24 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-32"
+              className="relative block w-32 shrink-0 overflow-hidden bg-slate-100 sm:w-44"
             >
               {idea.businessMediaUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -319,83 +320,86 @@ export function CollaborationDetailCard({
             {idea.businessCategory && (
               <p className="text-sm font-medium text-muted">{idea.businessCategory}</p>
             )}
-
-        <h1 className="mt-4 text-2xl font-bold leading-snug">{idea.title}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">{idea.summary}</p>
-
-        {/* Requirements */}
-        {idea.requirements && (
-          <div className="mt-4 rounded-xl border border-border bg-slate-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Requirements</p>
-            <p className="mt-1.5 text-sm leading-relaxed">{idea.requirements}</p>
           </div>
-        )}
+        </div>
 
-        <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-slate-50/60 p-4 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Looking for</dt>
-            <dd className="mt-1 font-medium">{idea.lookingFor}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Location</dt>
-            <dd className="mt-1 font-medium">{idea.location}</dd>
-          </div>
-          {idea.deadline && (
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Deadline</dt>
-              <dd className="mt-1 font-medium">
-                {new Date(idea.deadline).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </dd>
+        {/* Body: full-width content below */}
+        <div className="p-5">
+          <h1 className="text-2xl font-bold leading-snug">{idea.title}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted">{idea.summary}</p>
+
+          {/* Requirements */}
+          {idea.requirements && (
+            <div className="mt-4 rounded-xl border border-border bg-slate-50/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Requirements</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{idea.requirements}</p>
             </div>
           )}
-        </dl>
 
-        {/* Attachments */}
-        {idea.attachmentUrls.length > 0 && (
-          <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Attachments</p>
-            <AttachmentList urls={idea.attachmentUrls} />
-          </div>
-        )}
+          <dl className="mt-4 grid gap-3 rounded-xl border border-border bg-slate-50/60 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Looking for</dt>
+              <dd className="mt-1 font-medium">{idea.lookingFor}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Location</dt>
+              <dd className="mt-1 font-medium">{idea.location}</dd>
+            </div>
+            {idea.deadline && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Deadline</dt>
+                <dd className="mt-1 font-medium">
+                  {new Date(idea.deadline).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </dd>
+              </div>
+            )}
+          </dl>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          {!isAuthor && (
-            currentUserId ? (
-              <CollaborationInterestedButton
-                collaborationId={idea.id}
-                initialInterested={Boolean(idea.userInterested)}
-              />
-            ) : (
-              <CollaborationInterestedButton
-                collaborationId={idea.id}
-                initialInterested={false}
-                requiresAuth
-              />
-            )
+          {/* Attachments */}
+          {idea.attachmentUrls.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Attachments</p>
+              <AttachmentList urls={idea.attachmentUrls} />
+            </div>
           )}
-          <span className="text-sm text-muted">
-            {interestCount} {interestCount === 1 ? "person" : "people"} interested
-          </span>
-          {isAuthor && (
-            <button
-              type="button"
-              disabled={deletePending}
-              onClick={handleDelete}
-              className="ml-auto text-xs text-muted hover:text-red-600 transition-colors disabled:opacity-50"
-            >
-              {deletePending ? "Deleting…" : "Delete"}
-            </button>
-          )}
-          {!isAuthor && currentUserId && (
-            <span className="ml-auto">
-              <ReportButton target={{ type: "collaboration", id: idea.id, title: idea.title }} />
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {!isAuthor && (
+              currentUserId ? (
+                <CollaborationInterestedButton
+                  collaborationId={idea.id}
+                  initialInterested={Boolean(idea.userInterested)}
+                />
+              ) : (
+                <CollaborationInterestedButton
+                  collaborationId={idea.id}
+                  initialInterested={false}
+                  requiresAuth
+                />
+              )
+            )}
+            <span className="text-sm text-muted">
+              {interestCount} {interestCount === 1 ? "person" : "people"} interested
             </span>
-          )}
-        </div>
+            {isAuthor && (
+              <button
+                type="button"
+                disabled={deletePending}
+                onClick={handleDelete}
+                className="ml-auto text-xs text-muted hover:text-red-600 transition-colors disabled:opacity-50"
+              >
+                {deletePending ? "Deleting…" : "Delete"}
+              </button>
+            )}
+            {!isAuthor && currentUserId && (
+              <span className="ml-auto">
+                <ReportButton target={{ type: "collaboration", id: idea.id, title: idea.title }} />
+              </span>
+            )}
           </div>
         </div>
       </Card>

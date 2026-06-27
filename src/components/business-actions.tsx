@@ -151,7 +151,6 @@ export function BusinessActions({
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       <p className="mt-3 text-sm text-muted">
         {state.followerCount} followers
-        {currentUserId ? ` · you follow ${state.followingCount} businesses` : ""}
       </p>
     </div>
   );
