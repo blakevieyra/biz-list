@@ -1,86 +1,121 @@
-import { isClaudeConfigured } from "@/lib/ai/claude-client";
+import { getClaudeModel, isClaudeConfigured } from "@/lib/ai/claude-client";
 
 export const maxDuration = 120;
 
-// Web search beta works on Claude 3.5 — fall back to knowledge-based research if unavailable
+// Web search beta only works on claude-3-5-sonnet-20241022
 const WEB_SEARCH_MODEL = "claude-3-5-sonnet-20241022";
 
 type StepResult = { finding: string } & Record<string, string>;
 
+function extractJSON(text: string): StepResult | null {
+  const clean = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  const start = clean.indexOf("{");
+  const end = clean.lastIndexOf("}");
+  if (start === -1 || end === -1) return null;
+  try {
+    const parsed = JSON.parse(clean.slice(start, end + 1)) as StepResult;
+    if (parsed.finding) return parsed;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function callClaude(
+  apiKey: string,
+  model: string,
+  prompt: string,
+  extraHeaders?: Record<string, string>,
+  extraBody?: Record<string, unknown>,
+): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+        ...extraHeaders,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 700,
+        temperature: 0.2,
+        messages: [{ role: "user", content: prompt }],
+        ...extraBody,
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({})) as { error?: { message?: string } };
+      console.error(`[research-stream] Claude ${model} error ${res.status}:`, errBody?.error?.message ?? errBody);
+      return null;
+    }
+
+    const data = (await res.json()) as { content: Array<{ type: string; text?: string }> };
+    const textBlock = data.content?.filter((b) => b.type === "text").pop();
+    const text = textBlock?.text?.trim() ?? "";
+    if (!text) {
+      console.error(`[research-stream] ${model} returned empty text`);
+      return null;
+    }
+    return text;
+  } catch (e) {
+    console.error(`[research-stream] ${model} fetch threw:`, e);
+    return null;
+  }
+}
+
 async function searchStep(
   apiKey: string,
+  stepName: string,
   webSearchPrompt: string,
   fallbackPrompt: string,
 ): Promise<StepResult> {
-  // Try live web search first
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta": "web-search-2025-03-05",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: WEB_SEARCH_MODEL,
-        max_tokens: 700,
-        temperature: 0.1,
-        tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
-        messages: [{ role: "user", content: webSearchPrompt }],
-      }),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as { content: Array<{ type: string; text?: string }> };
-      const textBlock = data.content?.filter((b) => b.type === "text").pop();
-      const raw = (textBlock?.text ?? "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-      const start = raw.indexOf("{");
-      const end = raw.lastIndexOf("}");
-      if (start !== -1 && end !== -1) {
-        const parsed = JSON.parse(raw.slice(start, end + 1)) as StepResult;
-        if (parsed.finding) return parsed;
-      }
-    } else {
-      const errBody = await res.json().catch(() => ({})) as { error?: { message?: string } };
-      console.error("[research-stream] web search failed:", res.status, errBody?.error?.message);
+  // 1. Try live web search on claude-3-5-sonnet-20241022
+  const webText = await callClaude(
+    apiKey,
+    WEB_SEARCH_MODEL,
+    webSearchPrompt,
+    { "anthropic-beta": "web-search-2025-03-05" },
+    { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }] },
+  );
+  if (webText) {
+    const parsed = extractJSON(webText);
+    if (parsed) {
+      console.log(`[research-stream] ${stepName}: web search OK`);
+      return parsed;
     }
-  } catch (e) {
-    console.error("[research-stream] web search error:", e);
+    console.error(`[research-stream] ${stepName}: web search returned non-JSON:`, webText.slice(0, 200));
   }
 
-  // Fallback: use Claude's training knowledge (no web search tool)
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: WEB_SEARCH_MODEL,
-        max_tokens: 600,
-        temperature: 0.3,
-        messages: [{ role: "user", content: fallbackPrompt }],
-      }),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as { content: Array<{ type: string; text?: string }> };
-      const textBlock = data.content?.filter((b) => b.type === "text").pop();
-      const raw = (textBlock?.text ?? "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-      const start = raw.indexOf("{");
-      const end = raw.lastIndexOf("}");
-      if (start !== -1 && end !== -1) {
-        return JSON.parse(raw.slice(start, end + 1)) as StepResult;
-      }
+  // 2. Fallback: knowledge-based research using the configured model (claude-sonnet-4-6)
+  const fallbackModel = getClaudeModel();
+  console.log(`[research-stream] ${stepName}: falling back to ${fallbackModel}`);
+  const fallbackText = await callClaude(apiKey, fallbackModel, fallbackPrompt);
+  if (fallbackText) {
+    const parsed = extractJSON(fallbackText);
+    if (parsed) {
+      console.log(`[research-stream] ${stepName}: fallback OK`);
+      return parsed;
     }
-  } catch (e) {
-    console.error("[research-stream] fallback error:", e);
+    console.error(`[research-stream] ${stepName}: fallback returned non-JSON:`, fallbackText.slice(0, 200));
+
+    // 3. Last resort: ask Claude to produce exactly one JSON object with no prose
+    const strictPrompt = `You are a JSON API. Respond with ONLY a valid JSON object — no prose, no markdown fences, no explanation. The object must have a "finding" key. Prompt: ${fallbackPrompt}`;
+    const strictText = await callClaude(apiKey, fallbackModel, strictPrompt);
+    if (strictText) {
+      const parsed2 = extractJSON(strictText);
+      if (parsed2) {
+        console.log(`[research-stream] ${stepName}: strict fallback OK`);
+        return parsed2;
+      }
+      console.error(`[research-stream] ${stepName}: strict fallback also non-JSON:`, strictText.slice(0, 200));
+    }
   }
 
-  return { finding: "Could not retrieve data" };
+  console.error(`[research-stream] ${stepName}: all attempts failed`);
+  return { finding: "Research unavailable — report will use profile data only" };
 }
 
 export async function POST(req: Request) {
@@ -111,8 +146,9 @@ export async function POST(req: Request) {
       emit({ step: 0, status: "searching" });
       const r0 = await searchStep(
         apiKey,
-        `Find all online channels for "${businessName}" (${category} in ${location}). Search for their website, Google Business Profile, Instagram, Facebook, LinkedIn, Yelp, TikTok, YouTube. Return JSON only: {"finding":"1-sentence summary listing all channels found with actual URLs","brandChannels":"complete list of all URLs and platforms found"}`,
-        `Based on your knowledge, what online channels would a ${category} business named "${businessName}" in ${location} likely have? Return JSON only: {"finding":"1-sentence summary of likely online presence for this type of business","brandChannels":"typical online channels for a ${category} business: website, Google Business Profile, social media platforms common in this industry"}`,
+        "step-0-online-presence",
+        `Search for all online channels for "${businessName}", a ${category} business in ${location}. Find their official website URL, Google Business Profile, Instagram, Facebook, LinkedIn, Yelp, TikTok, and YouTube. Return JSON only: {"finding":"one sentence listing every channel found with URLs","brandChannels":"full comma-separated list of platform names and URLs"}`,
+        `You are a business research assistant. For a ${category} business named "${businessName}" in ${location}, describe what their typical online presence looks like based on industry norms for this category and region. Return a JSON object: {"finding":"one sentence describing the expected online presence for this type of business","brandChannels":"list the platforms most ${category} businesses in ${location} use: website, Google Business Profile, and the 2-3 most common social platforms for this industry"}`,
       );
       Object.assign(research, r0);
       emit({ step: 0, status: "found", finding: r0.finding });
@@ -121,8 +157,9 @@ export async function POST(req: Request) {
       emit({ step: 1, status: "searching" });
       const r1 = await searchStep(
         apiKey,
-        `Find online reviews and reputation for "${businessName}" in ${location}. Check Google, Yelp, Facebook, BBB. Return JSON only: {"finding":"1-sentence with actual star rating and review count","brandReviews":"full review summary with ratings, count, platform, and themes","brandPercep":"overall perception based on reviews and online presence"}`,
-        `Based on your knowledge, what are typical review patterns and reputation signals for a ${category} business in ${location}? Return JSON only: {"finding":"1-sentence about typical review landscape for ${category} businesses","brandReviews":"typical review platforms and patterns for ${category} businesses — Google, Yelp, Facebook are the most common","brandPercep":"what customers typically say about ${category} businesses in ${location} — common praise and concerns"}`,
+        "step-1-reviews",
+        `Search for online reviews and reputation for "${businessName}" in ${location}. Check Google Maps, Yelp, Facebook, and the Better Business Bureau. Return JSON only: {"finding":"one sentence with the star rating, review count, and primary platform","brandReviews":"detailed summary: ratings on each platform, review count, most mentioned themes, most recent reviews","brandPercep":"overall brand perception — positive signals, recurring complaints, and how customers describe the business"}`,
+        `You are a business research assistant. For a ${category} business in ${location}, describe the typical review landscape for this industry. Return a JSON object: {"finding":"one sentence about typical review patterns for ${category} businesses in this market","brandReviews":"describe the typical review volume, star rating range (3.8–4.6 is common), and which platforms ${category} businesses get most reviews on in ${location}","brandPercep":"what customers typically praise and criticize about ${category} businesses in ${location} — be specific to the category"}`,
       );
       Object.assign(research, r1);
       emit({ step: 1, status: "found", finding: r1.finding });
@@ -131,8 +168,9 @@ export async function POST(req: Request) {
       emit({ step: 2, status: "searching" });
       const r2 = await searchStep(
         apiKey,
-        `Find 2-3 real named competitors to "${businessName}" (${category} business) in ${location}. Return JSON only: {"finding":"1-sentence naming the actual competitors found","mktCompetitors":"named competitor list with their differentiators and weaknesses"}`,
-        `Based on your knowledge, what types of competitors does a ${category} business in ${location} typically face? Return JSON only: {"finding":"1-sentence about the competitive landscape for ${category} in ${location}","mktCompetitors":"typical competitors in the ${category} space — national chains, regional players, and local independents — with their key differentiators and common weaknesses"}`,
+        "step-2-competitors",
+        `Search for the top 3 competitors to "${businessName}" (${category} business) in ${location}. Look for businesses in the same category within the same city. Return JSON only: {"finding":"one sentence naming the top 2-3 competitors found","mktCompetitors":"for each competitor: name, their key differentiator vs ${businessName}, and their main weakness or gap"}`,
+        `You are a business research assistant. Name and describe 3 typical competitors that a ${category} business in ${location} would face. Include a mix of local independents and any regional/national players in this space. Return a JSON object: {"finding":"one sentence describing the competitive landscape for ${category} businesses in ${location}","mktCompetitors":"list 3 competitor archetypes with their typical differentiators and weaknesses — be specific to the ${category} industry in ${location}"}`,
       );
       Object.assign(research, r2);
       emit({ step: 2, status: "found", finding: r2.finding });
@@ -141,8 +179,9 @@ export async function POST(req: Request) {
       emit({ step: 3, status: "searching" });
       const r3 = await searchStep(
         apiKey,
-        `Research ${category} industry in ${location} for 2025. Find: current trends, market opportunities, typical customer profile, acquisition channels, customer pain points, complementary local businesses for partnership. Return JSON only: {"finding":"1-sentence key trend","mktTrend":"most impactful 2025 trend","mktOpportunity":"specific local opportunity","custTarget":"customer profile","custAcquisition":"how customers find these businesses","custPain":"core pain point","growthPartner":"complementary local businesses"}`,
-        `Based on your knowledge, analyze the ${category} industry in ${location} for 2025. Return JSON only: {"finding":"most impactful trend currently affecting ${category} businesses","mktTrend":"key 2025 trend in the ${category} industry — technology, consumer behavior, or market shift","mktOpportunity":"specific market gap or growth opportunity for ${category} businesses in ${location}","custTarget":"typical customer profile for a ${category} business — demographics, motivations, and buying behavior","custAcquisition":"primary channels customers use to find ${category} businesses — search, referrals, social, etc.","custPain":"core problem or frustration that drives customers to ${category} businesses","growthPartner":"complementary local business types that partner well with ${category} businesses"}`,
+        "step-3-industry-trends",
+        `Research the ${category} industry in ${location} in 2025. Find: the biggest trend affecting this industry, a specific local market opportunity, who the typical customer is, how customers find these businesses, their core pain point, and what local business types make good partners. Return JSON only: {"finding":"one sentence on the most impactful 2025 trend","mktTrend":"explain the trend in 2 sentences","mktOpportunity":"specific untapped opportunity for ${category} businesses in ${location}","custTarget":"demographic and behavioral profile of the ideal customer","custAcquisition":"top 3 channels customers use to discover ${category} businesses","custPain":"the core frustration driving customers to seek out ${category} businesses","growthPartner":"2-3 complementary local business types that refer customers to ${category} businesses"}`,
+        `You are a business research assistant with deep knowledge of local business markets. Analyze the ${category} industry in ${location} for 2025. Return a JSON object: {"finding":"the single most important trend shaping the ${category} industry in 2025","mktTrend":"explain this trend in 2 sentences with specific relevance to ${location}","mktOpportunity":"the best specific growth opportunity for a ${category} business in ${location} right now — be concrete","custTarget":"describe the ideal customer for a ${category} business in ${location}: age range, income level, lifestyle, what they value","custAcquisition":"the top 3 ways customers discover and choose ${category} businesses — rank by effectiveness for ${location}","custPain":"the single biggest pain point that makes customers seek out a ${category} business","growthPartner":"name 2-3 specific types of local businesses that naturally refer customers to ${category} businesses and explain why"}`,
       );
       Object.assign(research, r3);
       emit({ step: 3, status: "found", finding: r3.finding });
@@ -151,8 +190,9 @@ export async function POST(req: Request) {
       emit({ step: 4, status: "searching" });
       const r4 = await searchStep(
         apiKey,
-        `Find the public contact email address(es) for "${businessName}" (${category} business in ${location}). Search their website contact page, Google Business Profile, social media bios, and directory listings for any publicly listed email. Return JSON only: {"finding":"1-sentence summary of what contact info was found or not found","emailAddress":"the public email address(es) found, or 'Not publicly listed' if none found","contactDiscoverability":"how easy it is for customers to find contact info online — excellent/good/fair/poor with reason"}`,
-        `Based on your knowledge, how do ${category} businesses in ${location} typically present contact information online? Return JSON only: {"finding":"typical contact discoverability for ${category} businesses","emailAddress":"Not publicly listed — no web search access to check live contact info","contactDiscoverability":"Based on industry norms: ${category} businesses typically list contact via website form, phone, and social media. Email visibility varies — some post publicly, many use contact forms instead."}`,
+        "step-4-email-contact",
+        `Find the public contact email address for "${businessName}" (${category} business in ${location}). Check their website contact page, Google Business Profile, social media bios, Yelp listing, and any directory listings. Return JSON only: {"finding":"one sentence stating whether a public email was found and where","emailAddress":"the actual email address found, or 'Not publicly listed' if none","contactDiscoverability":"rate how easy it is for customers to find contact info: excellent/good/fair/poor — and explain why"}`,
+        `You are a business research assistant. For a ${category} business in ${location}, describe typical contact information discoverability practices for this industry. Return a JSON object: {"finding":"one sentence about how easily customers can typically reach ${category} businesses in ${location}","emailAddress":"Not determinable without live web access — typical ${category} businesses use a contact form, phone number, or social DMs","contactDiscoverability":"Describe the typical contact discoverability for ${category} businesses in ${location}: what contact methods they usually provide (phone, email, form, DMs) and how discoverable they are"}`,
       );
       Object.assign(research, r4);
       emit({ step: 4, status: "found", finding: r4.finding });
