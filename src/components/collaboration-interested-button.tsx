@@ -21,8 +21,8 @@ export function CollaborationInterestedButton({
   const [error, setError] = useState<string | null>(null);
 
   const sizeClass = compact
-    ? "px-3 py-1.5 text-xs min-h-8"
-    : "px-4 py-2 text-sm min-h-10";
+    ? "px-3 py-1 text-xs min-h-7"
+    : "px-3 py-1.5 text-xs min-h-8";
 
   if (requiresAuth) {
     return (
