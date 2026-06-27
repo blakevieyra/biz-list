@@ -12,7 +12,6 @@ export const SITE_NAV_LINKS: {
   match: SiteNavMatch;
 }[] = [
   { href: "/home", label: "Home", authOnly: true, match: "home" },
-  { href: "/home?view=activity", label: "Feed", authOnly: true, match: "feed" },
   { href: "/listings", label: "Listings", match: "listings" },
   { href: "/partnerships", label: "Collaborations", match: "partnerships" },
   { href: "/events", label: "Events", match: "events" },

@@ -129,6 +129,27 @@ export default async function ListingsPage({
         </p>
       )}
 
+      <form action="/listings" method="get" className="mb-4 flex flex-col gap-3 sm:flex-row">
+        {discoveryFilterHrefValue(discoveryFilter) && (
+          <input type="hidden" name="near" value={discoveryFilterHrefValue(discoveryFilter)} />
+        )}
+        {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
+        {minRating !== null && <input type="hidden" name="rating" value={String(minRating)} />}
+        {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
+        <input
+          name="q"
+          defaultValue={params.q ?? ""}
+          placeholder="Search by name, type, city, or zip..."
+          className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
+        />
+        <button
+          type="submit"
+          className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
+        >
+          Search
+        </button>
+      </form>
+
       {/* Near */}
       <section className="mb-3">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -157,13 +178,11 @@ export default async function ListingsPage({
         </div>
       </section>
 
-      {/* Rating + Status on one row */}
-      <section className="mb-4">
+      {/* Rating + Status */}
+      <section className="mb-6">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Rating</span>
-          <Link href={buildHref({ rating: undefined })} className={filterChipClass(minRating === null)}>
-            All ratings
-          </Link>
+          <Link href={buildHref({ rating: undefined })} className={filterChipClass(minRating === null)}>All ratings</Link>
           {RATING_OPTIONS.map(({ value, label }) => (
             <Link key={value} href={buildHref({ rating: value })} className={filterChipClass(minRating === Number(value))}>
               {label}
@@ -171,9 +190,7 @@ export default async function ListingsPage({
           ))}
           <span className="mx-2 text-border">|</span>
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Status</span>
-          <Link href={buildHref({ status: undefined })} className={filterChipClass(!statusFilter)}>
-            All
-          </Link>
+          <Link href={buildHref({ status: undefined })} className={filterChipClass(!statusFilter)}>All</Link>
           {STATUS_OPTIONS.map(({ value, label }) => (
             <Link key={value} href={buildHref({ status: value })} className={filterChipClass(statusFilter === value)}>
               {label}
@@ -181,27 +198,6 @@ export default async function ListingsPage({
           ))}
         </div>
       </section>
-
-      <form action="/listings" method="get" className="mb-8 flex flex-col gap-3 sm:flex-row">
-        {discoveryFilterHrefValue(discoveryFilter) && (
-          <input type="hidden" name="near" value={discoveryFilterHrefValue(discoveryFilter)} />
-        )}
-        {categoryFilter && <input type="hidden" name="category" value={categoryFilter} />}
-        {minRating !== null && <input type="hidden" name="rating" value={String(minRating)} />}
-        {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
-        <input
-          name="q"
-          defaultValue={params.q ?? ""}
-          placeholder="Search by name, type, city, or zip..."
-          className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
-        />
-        <button
-          type="submit"
-          className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover"
-        >
-          Search
-        </button>
-      </form>
 
       {businesses.length === 0 ? (
         <p className="text-muted">

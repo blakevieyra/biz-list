@@ -97,59 +97,7 @@ export default async function EventsPage({
         }
       />
 
-      <section className="mb-4">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Near
-          </span>
-          {DISCOVERY_FILTER_OPTIONS.map((option) => (
-            <Link
-              key={option}
-              href={buildHref({ near: discoveryFilterHrefValue(option) })}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
-                discoveryFilter === option
-                  ? "bg-accent text-white"
-                  : "border border-border bg-card text-muted hover:text-foreground"
-              }`}
-            >
-              {DISCOVERY_RADIUS_LABELS[option]}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-4">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Industry
-          </span>
-          <Link
-            href={buildHref({ category: undefined })}
-            className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
-              !categoryFilter
-                ? "bg-accent text-white"
-                : "border border-border bg-card text-muted hover:text-foreground"
-            }`}
-          >
-            All industries
-          </Link>
-          {INDUSTRY_OPTIONS.map((category) => (
-            <Link
-              key={category}
-              href={buildHref({ category })}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
-                categoryFilter === category
-                  ? "bg-accent text-white"
-                  : "border border-border bg-card text-muted hover:text-foreground"
-              }`}
-            >
-              {category}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <form action="/events" method="get" className="mb-8 flex flex-col gap-3 sm:flex-row">
+      <form action="/events" method="get" className="mb-4 flex flex-col gap-3 sm:flex-row">
         {discoveryFilterHrefValue(discoveryFilter) && (
           <input type="hidden" name="near" value={discoveryFilterHrefValue(discoveryFilter)} />
         )}
@@ -168,6 +116,34 @@ export default async function EventsPage({
           Search
         </button>
       </form>
+
+      <section className="mb-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Near</span>
+          {DISCOVERY_FILTER_OPTIONS.map((option) => (
+            <Link key={option} href={buildHref({ near: discoveryFilterHrefValue(option) })}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${discoveryFilter === option ? "bg-accent text-white" : "border border-border bg-card text-muted hover:text-foreground"}`}>
+              {DISCOVERY_RADIUS_LABELS[option]}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-6">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Industry</span>
+          <Link href={buildHref({ category: undefined })}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${!categoryFilter ? "bg-accent text-white" : "border border-border bg-card text-muted hover:text-foreground"}`}>
+            All industries
+          </Link>
+          {INDUSTRY_OPTIONS.map((category) => (
+            <Link key={category} href={buildHref({ category })}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${categoryFilter === category ? "bg-accent text-white" : "border border-border bg-card text-muted hover:text-foreground"}`}>
+              {category}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {events.length === 0 ? (
         <Card>
