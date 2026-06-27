@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { getClaudeModel, isClaudeConfigured } from "@/lib/ai/claude-client";
+import { isClaudeConfigured } from "@/lib/ai/claude-client";
+
+// Web search beta only works on Claude 3.5 models
+const WEB_SEARCH_MODEL = "claude-3-5-sonnet-20241022";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -56,7 +59,7 @@ Return ONLY a valid JSON object with these exact keys (use empty string "" if yo
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: getClaudeModel(),
+        model: WEB_SEARCH_MODEL,
         max_tokens: 3000,
         temperature: 0.2,
         tools: [

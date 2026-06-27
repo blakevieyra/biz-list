@@ -1,7 +1,8 @@
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessById } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
-import AuditClient, { type AuditProfileData } from "./audit-client";
+import type { ComprehensiveAuditResult } from "@/lib/ai/ai-services";
+import AuditClient, { type AuditProfileData, type PastAudit } from "./audit-client";
 
 export default async function DashboardAssessmentPage() {
   const userId = await getAuthUserId();
@@ -18,6 +19,9 @@ export default async function DashboardAssessmentPage() {
     isHiring: false,
     services: [],
   };
+
+  let pastAudits: PastAudit[] = [];
+  let auditsThisMonth = 0;
 
   if (userId) {
     const supabase = await createClient();
@@ -52,8 +56,38 @@ export default async function DashboardAssessmentPage() {
           price: s.price ?? undefined,
         }));
       }
+
+      // Load audit history
+      const { data: auditRows } = await supabase
+        .from("business_audits")
+        .select("id, business_name, result, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      pastAudits = (auditRows ?? []).map((r) => ({
+        id: r.id as string,
+        businessName: r.business_name as string,
+        overallScore: ((r.result as ComprehensiveAuditResult)?.overallScore) ?? 0,
+        createdAt: r.created_at as string,
+        result: r.result as ComprehensiveAuditResult,
+      }));
+
+      auditsThisMonth = pastAudits.filter(
+        (a) => new Date(a.createdAt) >= startOfMonth,
+      ).length;
     }
   }
 
-  return <AuditClient profile={profile} />;
+  return (
+    <AuditClient
+      profile={profile}
+      pastAudits={pastAudits}
+      auditsThisMonth={auditsThisMonth}
+    />
+  );
 }

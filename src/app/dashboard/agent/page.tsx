@@ -33,6 +33,7 @@ export default async function VirtualAgentPage() {
   let agentAutomations: AgentAutomations = {};
   let totalConversations = 0;
   let recentQuestions: { customerName: string; question: string; createdAt: string }[] = [];
+  let suggestedFromProfile = false;
 
   if (supabase) {
     const { data: row } = await supabase
@@ -67,6 +68,76 @@ export default async function VirtualAgentPage() {
         ? (row.agent_topic_rules as { topic: string; response: string }[])
         : [];
       agentAutomations = (row.agent_automations as AgentAutomations) ?? {};
+
+      // ── Auto-generate instructions from profile if not yet set ──────────────
+      const hasProfile = businessName && businessName !== profile.displayName;
+
+      if (!agentInstructions && hasProfile) {
+        const topSvcs = serviceObjects.slice(0, 5).map((s) => s.name);
+        const svcStr = topSvcs.length > 0 ? topSvcs.join(", ") : "";
+        const loc = [city, state].filter(Boolean).join(", ");
+
+        agentInstructions = [
+          `You are the virtual assistant for ${businessName}, a ${category} business${loc ? ` in ${loc}` : ""}.`,
+          `Be friendly, professional, and helpful — keep every reply under 3 sentences.`,
+          svcStr ? `We specialize in: ${svcStr}.` : "",
+          phone
+            ? `For bookings or detailed questions, direct customers to call us at ${phone}.`
+            : "For detailed questions, invite them to message us directly.",
+          website ? `Our website is ${website}.` : "",
+          `Never make up pricing, hours, or availability not listed here — if unsure, invite them to call or message us.`,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        suggestedFromProfile = true;
+      }
+
+      // ── Auto-generate topic rules from profile if not yet set ───────────────
+      if (agentTopicRules.length === 0 && hasProfile) {
+        const topSvcs = serviceObjects.slice(0, 3).map((s) => s.name).join(", ");
+
+        agentTopicRules = [
+          {
+            topic: "services",
+            response: topSvcs
+              ? `At ${businessName}, we offer ${topSvcs}${serviceObjects.length > 3 ? " and more" : ""}. Message us or check our listing for the full list and pricing.`
+              : `We offer a range of ${category} services. Message us and we'll find the right fit for you.`,
+          },
+          {
+            topic: "hours",
+            response: hours
+              ? `We're open ${hours}. Feel free to call or message ahead to confirm.`
+              : `Our hours can vary — message us or check our BizList listing for current availability.`,
+          },
+          {
+            topic: "pricing",
+            response: `Pricing depends on the specific service and your needs. ${
+              phone ? `Call us at ${phone}` : "Message us here"
+            } for a personalized quote — we're happy to walk you through your options.`,
+          },
+          {
+            topic: "location",
+            response: city
+              ? `We're based in ${city}, ${state}.${phone ? ` Call ${phone}` : " Message us"} for directions or to confirm our current service area.`
+              : `Message us for our location and service area details.`,
+          },
+          {
+            topic: "booking",
+            response: `To book or get started, ${
+              phone ? `give us a call at ${phone}` : "send us a message here"
+            } and we'll take care of the rest.${website ? ` You can also visit ${website}.` : ""}`,
+          },
+          {
+            topic: "hiring",
+            response: isHiring
+              ? `Yes, ${businessName} is currently hiring! Send us a message here with your background and we'll share details about open positions.`
+              : `We're not actively hiring right now, but feel free to send your background — we love connecting with great people.`,
+          },
+        ];
+
+        suggestedFromProfile = true;
+      }
 
       // Pull stats from messages — count conversations where business auto-replied
       const { count } = await supabase
@@ -125,6 +196,7 @@ export default async function VirtualAgentPage() {
       agentAutomations={agentAutomations}
       totalConversations={totalConversations}
       recentQuestions={recentQuestions}
+      suggestedFromProfile={suggestedFromProfile}
     />
   );
 }

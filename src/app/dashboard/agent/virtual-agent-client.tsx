@@ -175,6 +175,7 @@ export default function VirtualAgentClient({
   agentAutomations: initialAutomations = {},
   totalConversations = 0,
   recentQuestions = [],
+  suggestedFromProfile = false,
 }: {
   businessName?: string;
   category?: string;
@@ -195,6 +196,7 @@ export default function VirtualAgentClient({
   agentAutomations?: AgentAutomations;
   totalConversations?: number;
   recentQuestions?: { customerName: string; question: string; createdAt: string }[];
+  suggestedFromProfile?: boolean;
 }) {
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -219,6 +221,7 @@ export default function VirtualAgentClient({
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateApplied, setTemplateApplied] = useState(false);
   const [automations, setAutomations] = useState<AgentAutomations>(initialAutomations);
+  const [suggestBanner, setSuggestBanner] = useState(suggestedFromProfile);
 
   const completeness = profileCompleteness({ businessName, tagline, description, city, hours, phone, services, website });
   const hasInstructions = instructions.trim().length > 0;
@@ -347,6 +350,7 @@ export default function VirtualAgentClient({
       const result = await saveAgentInstructions({ instructions, topicRules, automations });
       if (result.error) { setSaveError(result.error); return; }
       setSaveSuccess(true);
+      setSuggestBanner(false);
       setTimeout(() => setSaveSuccess(false), 3000);
     });
   }
@@ -455,6 +459,26 @@ export default function VirtualAgentClient({
       {/* ── Training & Setup ── */}
       {tab === "setup" && (
         <div className="space-y-4">
+
+          {/* Profile pre-fill banner */}
+          {suggestBanner && (
+            <div className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-emerald-800">Agent pre-filled from your business profile</p>
+                <p className="mt-0.5 text-xs text-emerald-700">
+                  Instructions and topic rules have been auto-generated with your real business data — hours, services, phone, and location. Review below and click <strong>Save</strong> to apply them.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSuggestBanner(false)}
+                className="shrink-0 text-emerald-600 hover:text-emerald-800"
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Quick Start Templates */}
           <Card>

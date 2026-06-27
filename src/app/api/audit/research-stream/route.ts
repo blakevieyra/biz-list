@@ -1,12 +1,14 @@
-import { getClaudeModel, isClaudeConfigured } from "@/lib/ai/claude-client";
+import { isClaudeConfigured } from "@/lib/ai/claude-client";
 
 export const maxDuration = 120;
+
+// Web search beta only works on Claude 3.5 models — do not use claude-4-* here
+const WEB_SEARCH_MODEL = "claude-3-5-sonnet-20241022";
 
 type StepResult = { finding: string } & Record<string, string>;
 
 async function searchStep(
   apiKey: string,
-  model: string,
   prompt: string,
 ): Promise<StepResult> {
   try {
@@ -19,7 +21,7 @@ async function searchStep(
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: WEB_SEARCH_MODEL,
         max_tokens: 700,
         temperature: 0.1,
         tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
@@ -27,7 +29,11 @@ async function searchStep(
       }),
     });
 
-    if (!res.ok) return { finding: "Search unavailable" };
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({})) as { error?: { message?: string } };
+      console.error("[research-stream] search failed:", res.status, errBody?.error?.message ?? errBody);
+      return { finding: "Search unavailable" };
+    }
 
     const data = (await res.json()) as {
       content: Array<{ type: string; text?: string }>;
@@ -59,7 +65,6 @@ export async function POST(req: Request) {
   }
 
   const apiKey = process.env.CLAUDE_API_KEY!.trim();
-  const model = getClaudeModel();
   const location = cityState || "local area";
   const enc = new TextEncoder();
 
@@ -73,7 +78,7 @@ export async function POST(req: Request) {
 
       // Step 0 — Online presence & social profiles
       emit({ step: 0, status: "searching" });
-      const r0 = await searchStep(apiKey, model,
+      const r0 = await searchStep(apiKey,
         `Find all online channels for "${businessName}" (${category} in ${location}). Search for their website, Google Business Profile, Instagram, Facebook, LinkedIn, Yelp, TikTok, YouTube. Return JSON only: {"finding":"1-sentence summary listing all channels found with actual URLs","brandChannels":"complete list of all URLs and platforms found"}`
       );
       Object.assign(research, r0);
@@ -81,7 +86,7 @@ export async function POST(req: Request) {
 
       // Step 1 — Reviews & reputation
       emit({ step: 1, status: "searching" });
-      const r1 = await searchStep(apiKey, model,
+      const r1 = await searchStep(apiKey,
         `Find online reviews and reputation for "${businessName}" in ${location}. Check Google, Yelp, Facebook, BBB. Return JSON only: {"finding":"1-sentence with actual star rating and review count","brandReviews":"full review summary with ratings, count, platform, and themes","brandPercep":"overall perception based on reviews and online presence"}`
       );
       Object.assign(research, r1);
@@ -89,7 +94,7 @@ export async function POST(req: Request) {
 
       // Step 2 — Local competitors
       emit({ step: 2, status: "searching" });
-      const r2 = await searchStep(apiKey, model,
+      const r2 = await searchStep(apiKey,
         `Find 2-3 real named competitors to "${businessName}" (${category} business) in ${location}. Return JSON only: {"finding":"1-sentence naming the actual competitors found","mktCompetitors":"named competitor list with their differentiators and weaknesses"}`
       );
       Object.assign(research, r2);
@@ -97,7 +102,7 @@ export async function POST(req: Request) {
 
       // Step 3 — Industry trends, customers, opportunities
       emit({ step: 3, status: "searching" });
-      const r3 = await searchStep(apiKey, model,
+      const r3 = await searchStep(apiKey,
         `Research ${category} industry in ${location} for 2025. Find: current trends, market opportunities, typical customer profile, acquisition channels, customer pain points, complementary local businesses for partnership. Return JSON only: {"finding":"1-sentence key trend","mktTrend":"most impactful 2025 trend","mktOpportunity":"specific local opportunity","custTarget":"customer profile","custAcquisition":"how customers find these businesses","custPain":"core pain point","growthPartner":"complementary local businesses"}`
       );
       Object.assign(research, r3);

@@ -18,6 +18,14 @@ export type AuditProfileData = {
   services: { name: string; price?: string }[];
 };
 
+export type PastAudit = {
+  id: string;
+  businessName: string;
+  overallScore: number;
+  createdAt: string;
+  result: ComprehensiveAuditResult;
+};
+
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
 type StepDef = { icon: string; label: string; phase: "research" | "generate" };
@@ -34,12 +42,18 @@ const STEPS: StepDef[] = [
 type StepState = "waiting" | "searching" | "found" | "analyzing";
 type StepInfo = { state: StepState; finding?: string };
 
+const MONTHLY_LIMIT = 5;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number) {
   if (score >= 75) return { ring: "border-emerald-300 bg-emerald-50", text: "text-emerald-700" };
   if (score >= 55) return { ring: "border-amber-300 bg-amber-50", text: "text-amber-700" };
   return { ring: "border-red-300 bg-red-50", text: "text-red-700" };
+}
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function ScoreCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
@@ -104,9 +118,102 @@ const PRIORITY_COLORS = {
   low: "bg-slate-100 text-slate-600",
 };
 
+// ─── Report view (shared between new result + historical) ─────────────────────
+
+function ReportView({
+  result,
+  businessName,
+  onBack,
+  backLabel,
+}: {
+  result: ComprehensiveAuditResult;
+  businessName: string;
+  onBack: () => void;
+  backLabel: string;
+}) {
+  const internalSections = result.sections.filter((s) => s.phase === "internal");
+  const externalSections = result.sections.filter((s) => s.phase === "external");
+
+  return (
+    <>
+      <PageHeader
+        title="Business Audit Report"
+        description={`${businessName} · Full internal & external AI audit`}
+        action={
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+          >
+            {backLabel}
+          </button>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <ScoreCard label="Overall Score" value={result.overallScore} sub="Weighted average" />
+        <ScoreCard label="Internal Health" value={result.internalScore} sub="Operations · Finance · Team · Products" />
+        <ScoreCard label="External Positioning" value={result.externalScore} sub="Market · Customers · Brand · Growth" />
+      </div>
+
+      <Card className="mt-6">
+        <h2 className="font-semibold">Executive Summary</h2>
+        <p className="mt-2 leading-relaxed text-muted">{result.executiveSummary}</p>
+      </Card>
+
+      <Card className="mt-4">
+        <h2 className="font-semibold">Priority Action Plan</h2>
+        <p className="mt-1 text-sm text-muted">Ranked by impact — tackle high-priority items first.</p>
+        <div className="mt-4 space-y-3">
+          {result.priorityActions.map((a, i) => (
+            <div key={i} className="flex flex-col gap-1 rounded-xl border border-border p-4 sm:flex-row sm:items-start sm:gap-4">
+              <div className="flex shrink-0 items-center gap-2">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${PRIORITY_COLORS[a.priority]}`}>
+                  {a.priority}
+                </span>
+                <span className="text-xs text-muted">{a.category}</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">{a.action}</p>
+                <p className="mt-0.5 text-sm text-muted">{a.impact}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="mt-6">
+        <h2 className="mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
+        <div className="space-y-3">
+          {internalSections.map((s) => <SectionCard key={s.id} section={s} />)}
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <h2 className="mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
+        <div className="space-y-3">
+          {externalSections.map((s) => <SectionCard key={s.id} section={s} />)}
+        </div>
+      </div>
+
+      <Link href="/dashboard" className="mt-8 inline-block text-sm text-accent hover:underline">
+        ← Back to dashboard
+      </Link>
+    </>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function AuditClient({ profile }: { profile: AuditProfileData }) {
+export default function AuditClient({
+  profile,
+  pastAudits = [],
+  auditsThisMonth: initialUsed = 0,
+}: {
+  profile: AuditProfileData;
+  pastAudits?: PastAudit[];
+  auditsThisMonth?: number;
+}) {
   const [businessName, setBusinessName] = useState(profile.businessName);
   const [category, setCategory] = useState(profile.category);
   const [cityState, setCityState] = useState(profile.cityState);
@@ -116,7 +223,9 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
   const [steps, setSteps] = useState<StepInfo[]>(STEPS.map(() => ({ state: "waiting" })));
   const [activeStep, setActiveStep] = useState(0);
   const [result, setResult] = useState<ComprehensiveAuditResult | null>(null);
+  const [viewingAudit, setViewingAudit] = useState<PastAudit | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [usedThisMonth, setUsedThisMonth] = useState(initialUsed);
 
   function setStep(i: number, info: Partial<StepInfo>) {
     setSteps((prev) => {
@@ -131,6 +240,10 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
       setError("Business name and category are required.");
       return;
     }
+    if (usedThisMonth >= MONTHLY_LIMIT) {
+      setError(`You've used all ${MONTHLY_LIMIT} audits for this month. Your limit resets on the 1st.`);
+      return;
+    }
     setError(null);
     setRunning(true);
     setSteps(STEPS.map(() => ({ state: "waiting" })));
@@ -138,7 +251,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
 
     const research: Record<string, string> = {};
 
-    // ── Phase 1: Streaming web research (steps 0-3) ────────────────────────
+    // ── Phase 1: Streaming web research (steps 0-3) ──────────────────────────
     try {
       const streamRes = await fetch("/api/audit/research-stream", {
         method: "POST",
@@ -189,7 +302,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
       // Research failed — continue to generate with profile data only
     }
 
-    // ── Phase 2: Generate report (steps 4-6) ─────────────────────────────
+    // ── Phase 2: Generate report (steps 4-6) ─────────────────────────────────
     for (let i = 4; i <= 6; i++) {
       setActiveStep(i);
       setStep(i, { state: "analyzing" });
@@ -217,12 +330,24 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
         }),
       });
 
-      const genData = (await genRes.json()) as { result?: ComprehensiveAuditResult; error?: string };
+      const genData = (await genRes.json()) as {
+        result?: ComprehensiveAuditResult;
+        error?: string;
+        limitReached?: boolean;
+        auditsThisMonth?: number;
+        monthlyLimit?: number;
+      };
+
+      if (genData.auditsThisMonth !== undefined) {
+        setUsedThisMonth(genData.auditsThisMonth);
+      }
+
       if (!genRes.ok || genData.error) {
         setError(genData.error ?? "Report generation failed. Please try again.");
         setRunning(false);
         return;
       }
+
       if (genData.result) {
         setStep(6, { state: "found", finding: "Report complete" });
         await new Promise((r) => setTimeout(r, 600));
@@ -235,7 +360,31 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
     }
   }
 
-  // ── Progress view ────────────────────────────────────────────────────────────
+  // ── Viewing a past report ─────────────────────────────────────────────────────
+  if (viewingAudit) {
+    return (
+      <ReportView
+        result={viewingAudit.result}
+        businessName={viewingAudit.businessName}
+        onBack={() => setViewingAudit(null)}
+        backLabel="← Audit history"
+      />
+    );
+  }
+
+  // ── Viewing a just-completed report ──────────────────────────────────────────
+  if (result) {
+    return (
+      <ReportView
+        result={result}
+        businessName={businessName}
+        onBack={() => { setResult(null); setError(null); setSteps(STEPS.map(() => ({ state: "waiting" }))); }}
+        backLabel="Run new audit"
+      />
+    );
+  }
+
+  // ── Progress view ─────────────────────────────────────────────────────────────
   if (running) {
     const researchDone = steps.slice(0, 4).every((s) => s.state === "found");
     return (
@@ -284,7 +433,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
                     {isDone && <span className="text-sm font-medium text-emerald-600">✓</span>}
                   </div>
 
-                  {/* Live finding shown under step */}
                   {isDone && info.finding && info.finding !== "Report complete" && (
                     <p className="mt-1.5 ml-8 rounded-lg bg-white/70 px-3 py-1.5 text-xs text-muted ring-1 ring-emerald-200">
                       <span className="font-medium text-emerald-700">Found: </span>
@@ -296,7 +444,6 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
             })}
           </div>
 
-          {/* Phase pills */}
           <div className="mt-4 flex gap-2 border-t border-border pt-4">
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${!researchDone ? "bg-accent text-white" : "bg-emerald-100 text-emerald-700"}`}>
               {!researchDone ? "● " : "✓ "}Web Research
@@ -310,87 +457,39 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
     );
   }
 
-  // ── Report view ──────────────────────────────────────────────────────────────
-  if (result) {
-    const internalSections = result.sections.filter((s) => s.phase === "internal");
-    const externalSections = result.sections.filter((s) => s.phase === "external");
+  // ── Setup / landing view ──────────────────────────────────────────────────────
+  const remaining = MONTHLY_LIMIT - usedThisMonth;
+  const atLimit = remaining <= 0;
 
-    return (
-      <>
-        <PageHeader
-          title="Business Audit Report"
-          description={`${businessName} · Full internal & external AI audit`}
-          action={
-            <button
-              type="button"
-              onClick={() => { setResult(null); setError(null); setSteps(STEPS.map(() => ({ state: "waiting" }))); }}
-              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-            >
-              Run new audit
-            </button>
-          }
-        />
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <ScoreCard label="Overall Score" value={result.overallScore} sub="Weighted average" />
-          <ScoreCard label="Internal Health" value={result.internalScore} sub="Operations · Finance · Team · Products" />
-          <ScoreCard label="External Positioning" value={result.externalScore} sub="Market · Customers · Brand · Growth" />
-        </div>
-
-        <Card className="mt-6">
-          <h2 className="font-semibold">Executive Summary</h2>
-          <p className="mt-2 leading-relaxed text-muted">{result.executiveSummary}</p>
-        </Card>
-
-        <Card className="mt-4">
-          <h2 className="font-semibold">Priority Action Plan</h2>
-          <p className="mt-1 text-sm text-muted">Ranked by impact — tackle high-priority items first.</p>
-          <div className="mt-4 space-y-3">
-            {result.priorityActions.map((a, i) => (
-              <div key={i} className="flex flex-col gap-1 rounded-xl border border-border p-4 sm:flex-row sm:items-start sm:gap-4">
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${PRIORITY_COLORS[a.priority]}`}>
-                    {a.priority}
-                  </span>
-                  <span className="text-xs text-muted">{a.category}</span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">{a.action}</p>
-                  <p className="mt-0.5 text-sm text-muted">{a.impact}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <div className="mt-6">
-          <h2 className="mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
-          <div className="space-y-3">
-            {internalSections.map((s) => <SectionCard key={s.id} section={s} />)}
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <h2 className="mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
-          <div className="space-y-3">
-            {externalSections.map((s) => <SectionCard key={s.id} section={s} />)}
-          </div>
-        </div>
-
-        <Link href="/dashboard" className="mt-8 inline-block text-sm text-accent hover:underline">
-          ← Back to dashboard
-        </Link>
-      </>
-    );
-  }
-
-  // ── Setup view ────────────────────────────────────────────────────────────────
   return (
     <>
       <PageHeader
         title="AI Business Audit"
         description="One click — the AI researches your business live and delivers a full scored audit with action plans."
       />
+
+      {/* Monthly usage meter */}
+      <div className={`mb-4 flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${
+        atLimit
+          ? "border-red-200 bg-red-50"
+          : remaining <= 1
+          ? "border-amber-200 bg-amber-50"
+          : "border-border bg-card"
+      }`}>
+        <span className={atLimit ? "font-medium text-red-700" : remaining <= 1 ? "font-medium text-amber-700" : "text-muted"}>
+          {atLimit
+            ? "Monthly audit limit reached — resets on the 1st"
+            : `${remaining} of ${MONTHLY_LIMIT} audits remaining this month`}
+        </span>
+        <div className="flex gap-1">
+          {Array.from({ length: MONTHLY_LIMIT }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-2.5 w-2.5 rounded-full ${i < usedThisMonth ? "bg-accent" : "bg-slate-200"}`}
+            />
+          ))}
+        </div>
+      </div>
 
       <Card>
         <div className="flex items-start gap-3">
@@ -488,7 +587,7 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
         <div className="mt-6 flex items-center gap-4">
           <button
             type="button"
-            disabled={!businessName.trim() || !category.trim()}
+            disabled={!businessName.trim() || !category.trim() || atLimit}
             onClick={handleRun}
             className="flex items-center gap-2 rounded-full bg-accent px-7 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
           >
@@ -498,6 +597,36 @@ export default function AuditClient({ profile }: { profile: AuditProfileData }) 
           <p className="text-xs text-muted">~45 seconds · live web data</p>
         </div>
       </Card>
+
+      {/* Past reports */}
+      {pastAudits.length > 0 && (
+        <Card className="mt-6">
+          <h2 className="mb-1 font-semibold">Past Reports</h2>
+          <p className="mb-4 text-xs text-muted">Click any report to view the full audit.</p>
+          <div className="space-y-2">
+            {pastAudits.map((audit) => {
+              const c = scoreColor(audit.overallScore);
+              return (
+                <button
+                  key={audit.id}
+                  type="button"
+                  onClick={() => setViewingAudit(audit)}
+                  className="flex w-full items-center gap-4 rounded-xl border border-border p-3 text-left transition hover:border-accent/40 hover:bg-accent/5"
+                >
+                  <span className={`shrink-0 rounded-lg border px-3 py-1.5 text-lg font-bold ${c.ring} ${c.text}`}>
+                    {audit.overallScore}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-sm">{audit.businessName}</p>
+                    <p className="text-xs text-muted">{fmtDate(audit.createdAt)}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-accent">View →</span>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Link href="/dashboard" className="mt-4 inline-block text-sm text-muted hover:text-foreground">
         ← Back to dashboard
