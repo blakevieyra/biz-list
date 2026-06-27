@@ -10,7 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { Logo } from "@/components/logo";
 import { MobileNav } from "@/components/mobile-nav";
 import { SiteNavLinks } from "@/components/site-nav-links";
-import { isBusinessPlan, PLAN_LABELS } from "@/lib/plans";
+import { isBusinessPlan, isCustomerPro, PLAN_LABELS } from "@/lib/plans";
 
 export async function SiteHeader() {
   const userId = await getAuthUserId();
@@ -55,14 +55,23 @@ export async function SiteHeader() {
 
           {userId && profile ? (
             <>
-              {profile.role !== "customer" && (
+              {profile.role !== "customer" ? (
                 <Link
                   href="/dashboard"
-                  className="hidden rounded-full bg-blue-50 px-3 py-2 text-sm font-medium text-accent sm:inline-flex"
+                  className="hidden flex-col items-center rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-accent sm:inline-flex"
                 >
-                  {isBusinessPlan(profile.planTier) ? PLAN_LABELS[profile.planTier] : "Dashboard"}
+                  <span>Dashboard</span>
+                  {isBusinessPlan(profile.planTier) && (
+                    <span className="text-[10px] font-normal leading-none text-accent/70">
+                      {PLAN_LABELS[profile.planTier]} plan
+                    </span>
+                  )}
                 </Link>
-              )}
+              ) : isCustomerPro(profile.planTier) ? (
+                <span className="hidden rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-accent sm:inline-flex">
+                  Pro
+                </span>
+              ) : null}
 
               <Link
                 href="/messages"

@@ -314,7 +314,7 @@ export async function automatePlatinumOutreach(): Promise<{ message?: string; er
     let sent = 0;
 
     for (const lead of leads) {
-      const convo = await getOrCreateConversation(lead.id);
+      const convo = await getOrCreateConversation(lead.id, undefined, { skipAutomations: true });
       if (convo.error || !convo.conversationId) continue;
       const body = await generateOutreachMessageFromLeadAI(business, lead);
       const result = await sendMessage(convo.conversationId, body);
@@ -355,7 +355,7 @@ export async function runPlatinumOnboarding(): Promise<{ message?: string; error
     for (const follow of follows) {
       const profile = Array.isArray(follow.profiles) ? follow.profiles[0] : follow.profiles;
       const name = profile?.display_name ?? "there";
-      const convo = await getOrCreateConversation(follow.follower_id);
+      const convo = await getOrCreateConversation(follow.follower_id, undefined, { skipAutomations: true });
       if (convo.error || !convo.conversationId) continue;
       const body = await generateOnboardingWelcomeAI(business, name);
       const result = await sendMessage(convo.conversationId, body);

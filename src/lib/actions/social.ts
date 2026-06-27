@@ -461,15 +461,22 @@ export async function toggleFollowBusiness(businessId: string) {
           .eq("id", user.id)
           .single();
 
+        const followerName = follower?.display_name ?? "Someone";
+
         await createNotification(supabase, {
           userId: business.owner_id,
           type: "follow",
           title: "New follower",
-          body: `${follower?.display_name ?? "Someone"} followed ${business.name}`,
+          body: `${followerName} followed ${business.name}`,
           link: `/listings/${businessId}`,
-          actorName: follower?.display_name ?? "Someone",
+          actorName: followerName,
           businessName: business.name,
         });
+
+        // Fire emailMe + leadOutreach automations (non-blocking)
+        import("@/lib/actions/automations").then(({ triggerFollowAutomations }) =>
+          triggerFollowAutomations(businessId, business.name as string, user.id, followerName)
+        ).catch(() => {});
       }
     }
 
@@ -953,6 +960,7 @@ function orderedParticipants(a: string, b: string): [string, string] {
 export async function getOrCreateConversation(
   otherUserId: string,
   businessId?: string,
+  options?: { skipAutomations?: boolean },
 ) {
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to send messages." };
@@ -982,6 +990,26 @@ export async function getOrCreateConversation(
       .single();
 
     if (error) return { error: error.message };
+
+    // Trigger emailMe automation when a NEW business conversation starts
+    if (businessId && !options?.skipAutomations) {
+      const { data: senderProfile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const { data: biz } = await supabase
+        .from("businesses")
+        .select("name")
+        .eq("id", businessId)
+        .maybeSingle();
+      const senderName = (senderProfile as { display_name?: string } | null)?.display_name ?? "Someone";
+      const bizName = (biz as { name?: string } | null)?.name ?? "your listing";
+      import("@/lib/actions/automations").then(({ triggerNewConversationEmail }) =>
+        triggerNewConversationEmail(businessId, bizName, senderName)
+      ).catch(() => {});
+    }
+
     return { conversationId: data.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to start conversation." };
