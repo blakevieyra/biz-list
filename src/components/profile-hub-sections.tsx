@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Card, formatDate, formatPostDateTime } from "@/components/ui";
+import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/social";
+import { getSafeAppLink } from "@/lib/security/safe-link";
 import type {
   FollowedBusiness,
   JobApplication,
@@ -197,9 +199,6 @@ export function MessagesPreview({ conversations }: { conversations: Conversation
           </Card>
         </Link>
       ))}
-      <Link href="/messages" className="inline-block text-sm text-accent hover:underline">
-        View all messages
-      </Link>
     </div>
   );
 }
@@ -222,45 +221,178 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
           <p className="mt-2 text-xs text-muted">{formatDate(notification.createdAt)}</p>
         </Card>
       ))}
-      <Link href="/notifications" className="inline-block text-sm text-accent hover:underline">
+      <Link href="/messages" className="inline-block text-sm text-accent hover:underline">
         View all alerts
       </Link>
     </div>
   );
 }
 
-/** Messages + alerts in one hub section (home dashboard). */
+function alertIsOrder(n: Notification) {
+  const t = (n.title ?? "").toLowerCase();
+  return t.includes("order") || t.includes("purchase") || t.includes("booked");
+}
+
+function alertIsMessage(n: Notification) {
+  const t = (n.title ?? "").toLowerCase();
+  return t.includes("message") || t.includes("replied") || t.includes("conversation");
+}
+
+/** Unified inbox: alerts on top, conversations below. */
 export function MessagesHubSection({
   conversations,
   notifications,
+  isBusinessUser = false,
 }: {
   conversations: ConversationPreview[];
   notifications: Notification[];
+  isBusinessUser?: boolean;
 }) {
   const unreadMessages = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
   const unreadAlerts = notifications.filter((n) => !n.read).length;
+  const hasAnyUnread = unreadAlerts > 0;
+
+  // Sort: unread orders first (business users), then unread messages, then other unread, then read
+  const sorted = [...notifications].sort((a, b) => {
+    const aOrder = isBusinessUser && alertIsOrder(a);
+    const bOrder = isBusinessUser && alertIsOrder(b);
+    if (aOrder && !bOrder) return -1;
+    if (!aOrder && bOrder) return 1;
+    const aMsg = alertIsMessage(a);
+    const bMsg = alertIsMessage(b);
+    if (!a.read && b.read) return -1;
+    if (a.read && !b.read) return 1;
+    if (aMsg && !bMsg) return -1;
+    if (!aMsg && bMsg) return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold">Conversations</h3>
-          <Link href="/messages" className="text-xs text-accent hover:underline">
-            Open inbox{unreadMessages > 0 ? ` (${unreadMessages})` : ""}
-          </Link>
-        </div>
-        <MessagesPreview conversations={conversations} />
-      </div>
+    <div className="space-y-8">
 
-      <div>
+      {/* ── Alerts — TOP ── */}
+      <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold">Alerts</h3>
-          <Link href="/notifications" className="text-xs text-accent hover:underline">
-            All alerts{unreadAlerts > 0 ? ` (${unreadAlerts})` : ""}
-          </Link>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">Alerts</h2>
+            {unreadAlerts > 0 && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
+                {unreadAlerts}
+              </span>
+            )}
+          </div>
+          {hasAnyUnread && (
+            <form action={markAllNotificationsRead}>
+              <button
+                type="submit"
+                className="text-xs text-accent hover:underline"
+              >
+                Mark all read
+              </button>
+            </form>
+          )}
         </div>
-        <AlertsPreview notifications={notifications} />
-      </div>
+
+        {sorted.length === 0 ? (
+          <Card>
+            <p className="text-sm text-muted">No alerts yet.</p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {sorted.map((n) => {
+              const safeLink = getSafeAppLink(n.link);
+              const isOrder = isBusinessUser && alertIsOrder(n);
+              return (
+                <Card
+                  key={n.id}
+                  className={`${n.read ? "opacity-70" : isOrder ? "border-emerald-300 bg-emerald-50/40" : "border-accent/30"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isOrder && !n.read && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                            Order
+                          </span>
+                        )}
+                        <p className="font-medium text-sm">{n.title}</p>
+                      </div>
+                      <p className="mt-0.5 text-sm text-muted">{n.body}</p>
+                      <p className="mt-1 text-xs text-muted">{formatDate(n.createdAt)}</p>
+                      {safeLink && (
+                        <Link href={safeLink} className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline">
+                          View →
+                        </Link>
+                      )}
+                    </div>
+                    {!n.read && (
+                      <form action={markNotificationRead.bind(null, n.id)}>
+                        <button type="submit" className="shrink-0 text-xs text-muted hover:text-accent">
+                          Mark read
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── Conversations — BELOW ── */}
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">Messages</h2>
+            {unreadMessages > 0 && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
+                {unreadMessages}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {conversations.length === 0 ? (
+          <Card>
+            <p className="text-sm text-muted">No conversations yet.</p>
+            <p className="mt-1 text-xs text-muted">
+              Follow businesses and message them from their listing page, or reply to leads from your dashboard.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {conversations.map((c) => (
+              <Link key={c.id} href={`/messages/${c.id}`}>
+                <Card className="group transition hover:border-accent/40 hover:shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium group-hover:text-accent">{c.otherUserName}</p>
+                      <p className="mt-0.5 line-clamp-1 text-sm text-muted">
+                        {c.lastMessage ?? "Start the conversation"}
+                      </p>
+                      {c.lastMessageAt && (
+                        <p className="mt-0.5 text-xs text-muted">{formatDate(c.lastMessageAt)}</p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {c.unreadCount > 0 && (
+                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
+                          {c.unreadCount}
+                        </span>
+                      )}
+                      <span className="text-xs font-medium text-accent opacity-0 transition group-hover:opacity-100">
+                        Reply →
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
     </div>
   );
 }

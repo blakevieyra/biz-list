@@ -8,7 +8,6 @@ import type { UserRole } from "@/lib/types";
 
 const authLinks = [
   { href: "/messages", label: "Messages" },
-  { href: "/notifications", label: "Notifications" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 
