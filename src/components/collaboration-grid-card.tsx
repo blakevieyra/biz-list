@@ -37,8 +37,8 @@ export function CollaborationGridCard({
   const listingHref = idea.businessId ? `/listings/${idea.businessId}` : undefined;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md">
-      <div className="flex min-h-[220px]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md">
+      <div className="flex flex-1">
         {listingHref ? (
           <Link
             href={listingHref}
@@ -63,7 +63,7 @@ export function CollaborationGridCard({
           </div>
         )}
 
-        <div className="flex min-w-0 flex-1 flex-col p-4">
+        <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
               {typeLabels[idea.collaborationType] ?? idea.collaborationType}

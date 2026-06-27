@@ -75,20 +75,19 @@ export function BusinessListingCard({
   return (
     <>
     <Card className="flex h-full flex-col overflow-hidden p-0 transition hover:border-accent/40 hover:shadow-md">
-      <div className="flex flex-1 min-h-[260px]">
-        <Link
-          href={`/listings/${business.id}`}
-          className="relative block w-1/3 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100"
-        >
+      {/* Full-width top image — no margin, no padding */}
+      <Link href={`/listings/${business.id}`} className="block shrink-0">
+        <div className="h-44 w-full overflow-hidden bg-slate-100 sm:h-52">
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={cover} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-50">
-              <span className="text-4xl font-bold text-accent/30">{business.name.charAt(0)}</span>
+              <span className="text-5xl font-bold text-accent/20">{business.name.charAt(0)}</span>
             </div>
           )}
-        </Link>
+        </div>
+      </Link>
 
       <div className="flex min-w-0 flex-1 flex-col p-3">
         <Link href={`/listings/${business.id}`} className="block">
@@ -214,7 +213,6 @@ export function BusinessListingCard({
             <span className="ml-1 text-accent">· View listing →</span>
           </Link>
         </div>
-      </div>
       </div>
     </Card>
 
