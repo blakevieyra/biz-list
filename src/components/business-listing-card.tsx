@@ -83,39 +83,63 @@ export function BusinessListingCard({
 
         {/* Right: content */}
         <div className="flex min-w-0 flex-1 flex-col p-4">
-          {/* Header: name, category, tagline, rating */}
+          {/* Header: name/rating left, Follow/Message right */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 {displayCategoryLabel(business.category, business.subcategory)}
               </p>
-              <Link href={`/listings/${business.id}`}>
-                <h3 className="mt-0.5 text-xl font-bold leading-snug group-hover:text-accent">
-                  {business.name}
-                </h3>
-              </Link>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                <Link href={`/listings/${business.id}`}>
+                  <h3 className="text-xl font-bold leading-snug group-hover:text-accent">
+                    {business.name}
+                  </h3>
+                </Link>
+                {business.ratingCount > 0 && (
+                  <StarRating rating={business.ratingAvg} count={business.ratingCount} size="md" />
+                )}
+              </div>
               {business.tagline && (
                 <p className="mt-0.5 line-clamp-1 text-sm text-muted">{business.tagline}</p>
               )}
-            </div>
-            {business.ratingCount > 0 && (
-              <div className="shrink-0">
-                <StarRating rating={business.ratingAvg} count={business.ratingCount} size="md" />
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                {business.likeCount > 0 && (
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold">
+                    {business.likeCount} likes
+                  </span>
+                )}
+                {business.followerIds.length > 0 && (
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-accent">
+                    {business.followerIds.length} followers
+                  </span>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Likes + followers */}
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {business.likeCount > 0 && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold">
-                {business.likeCount} likes
-              </span>
-            )}
-            {business.followerIds.length > 0 && (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-accent">
-                {business.followerIds.length} followers
-              </span>
+            {/* Follow / Message — top right */}
+            {!isOwner && (
+              <div className="flex shrink-0 gap-2" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={handleFollow}
+                  className={`${actionButtonClass} ${
+                    isFollowing
+                      ? "border-accent bg-teal-50 text-accent"
+                      : "border-border bg-card hover:border-accent/40"
+                  }`}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={handleMessage}
+                  className={`${actionButtonClass} border-border bg-card hover:border-accent/40`}
+                >
+                  Message
+                </button>
+              </div>
             )}
           </div>
 
@@ -181,8 +205,8 @@ export function BusinessListingCard({
             </div>
           </div>
 
-          {/* Footer: Follow/Message + location */}
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 mt-3">
+          {/* Footer: location */}
+          <div className="mt-auto border-t border-border pt-3 mt-3">
             <Link
               href={`/listings/${business.id}`}
               className="text-xs text-muted hover:text-accent"
@@ -190,33 +214,7 @@ export function BusinessListingCard({
               {formatLocation(business)}
               <span className="ml-1 text-accent">· View listing →</span>
             </Link>
-
-            {!isOwner && (
-              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={handleFollow}
-                  className={`${actionButtonClass} ${
-                    isFollowing
-                      ? "border-accent bg-teal-50 text-accent"
-                      : "border-border bg-card hover:border-accent/40"
-                  }`}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={handleMessage}
-                  className={`${actionButtonClass} border-border bg-card hover:border-accent/40`}
-                >
-                  Message
-                </button>
-              </div>
-            )}
-
-            {error && <p className="w-full text-xs text-red-600">{error}</p>}
+            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
           </div>
         </div>
       </Card>
