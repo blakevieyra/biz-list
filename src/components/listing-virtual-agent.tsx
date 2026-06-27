@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui";
@@ -8,8 +9,8 @@ type Message = { role: "user" | "agent"; text: string; streaming?: boolean };
 
 function BotAvatar() {
   return (
-    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-accent to-teal-400 text-lg shadow-sm">
-      🤖
+    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-accent to-teal-400 p-1.5 shadow-sm">
+      <Image src="/bizlist-logo.png" alt="BizList" width={28} height={28} className="object-contain" />
     </div>
   );
 }
@@ -58,7 +59,7 @@ export function ListingVirtualAgent({
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-accent px-5 py-3 text-sm font-medium text-white shadow-lg transition hover:opacity-90"
       >
-        <span className="text-base">🤖</span>
+        <Image src="/bizlist-logo.png" alt="BizList" width={18} height={18} className="object-contain brightness-0 invert" />
         Chat with {businessName}
       </button>
     );

@@ -222,6 +222,9 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
   const [result, setResult] = useState<ComprehensiveAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [researching, setResearching] = useState(false);
+  const [researchDone, setResearchDone] = useState(false);
+  const [researchError, setResearchError] = useState<string | null>(null);
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
@@ -243,6 +246,42 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
       generate();
     } else {
       setStep((s) => s + 1);
+    }
+  }
+
+  async function handleResearch() {
+    const name = values.businessName?.trim();
+    const cat = values.category?.trim();
+    if (!name || !cat) {
+      setError("Enter your business name and category first.");
+      return;
+    }
+    setResearchError(null);
+    setResearching(true);
+    try {
+      const res = await fetch("/api/audit/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: name,
+          category: cat,
+          cityState: values.cityState ?? "",
+          website: values.brandChannels ?? "",
+        }),
+      });
+      const data = await res.json() as { values?: Record<string, string>; error?: string };
+      if (!res.ok || data.error) {
+        setResearchError(data.error ?? "Research failed. Fill in the fields manually.");
+        return;
+      }
+      if (data.values) {
+        setValues((prev) => ({ ...prev, ...data.values }));
+        setResearchDone(true);
+      }
+    } catch {
+      setResearchError("Research failed. Fill in the fields manually.");
+    } finally {
+      setResearching(false);
     }
   }
 
@@ -411,6 +450,39 @@ export default function AuditClient({ initialValues = {} }: { initialValues?: Re
           <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-accent">
             Pre-filled from your business profile — review and edit anything that needs updating.
           </p>
+        )}
+        {step === 0 && (
+          <div className="mt-4 rounded-xl border border-border bg-slate-50 p-4">
+            <p className="text-sm font-semibold">Research your business online</p>
+            <p className="mt-0.5 text-xs text-muted">
+              Fill in your business name and category above, then let AI search the web for your reviews, competitors, online presence, industry trends, and more — pre-filling every audit section automatically.
+            </p>
+            {researchDone && (
+              <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                ✓ Research complete — all sections pre-filled from live web data. Review and edit before generating your report.
+              </p>
+            )}
+            {researchError && (
+              <p className="mt-2 text-xs text-red-600">{researchError}</p>
+            )}
+            <button
+              type="button"
+              disabled={researching || !values.businessName?.trim() || !values.category?.trim()}
+              onClick={handleResearch}
+              className="mt-3 flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+            >
+              {researching ? (
+                <>
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Researching online…
+                </>
+              ) : researchDone ? (
+                "Re-research →"
+              ) : (
+                "Research this business online →"
+              )}
+            </button>
+          </div>
         )}
 
         {/* Questions */}
