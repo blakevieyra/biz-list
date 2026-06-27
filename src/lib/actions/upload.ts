@@ -181,6 +181,60 @@ export async function uploadCollaborationAttachment(
   return { url: publicUrl };
 }
 
+const RESUME_MAX_BYTES = 10 * 1024 * 1024;
+const RESUME_DOC_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+]);
+
+/** Upload a resume file (PDF, DOC, DOCX, or TXT) for a user profile (max 10 MB). */
+export async function uploadResumeFile(
+  formData: FormData,
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient();
+  if (!supabase) return { error: "Storage is not configured." };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in to upload a resume." };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choose a file to upload." };
+  }
+
+  if (!RESUME_DOC_TYPES.has(file.type)) {
+    return { error: "Upload a PDF, Word (.docx), or plain text file." };
+  }
+
+  if (file.size > RESUME_MAX_BYTES) {
+    return { error: "Resume must be 10 MB or smaller." };
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "pdf";
+  const path = `${user.id}/resumes/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+
+  const { error } = await supabase.storage.from("business-media").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type,
+  });
+
+  if (error) {
+    console.error("[upload-resume]", error.message);
+    return { error: "Upload failed. Please try again." };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("business-media").getPublicUrl(path);
+
+  return { url: publicUrl };
+}
+
 /** Upload a small image attachment for a post comment (max 512 KB). */
 export async function uploadCommentAttachment(
   formData: FormData,

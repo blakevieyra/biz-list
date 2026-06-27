@@ -142,6 +142,19 @@ export function FeedPostCard({
                   {post.businessCategory && (
                     <p className="text-sm font-medium text-muted">{post.businessCategory}</p>
                   )}
+                  {((post.businessLikeCount ?? 0) > 0 || (post.businessFollowerCount ?? 0) > 0) && (
+                    <p className="text-xs text-muted">
+                      {(post.businessLikeCount ?? 0) > 0 && (
+                        <span>{post.businessLikeCount} {post.businessLikeCount === 1 ? "like" : "likes"}</span>
+                      )}
+                      {(post.businessLikeCount ?? 0) > 0 && (post.businessFollowerCount ?? 0) > 0 && (
+                        <span> · </span>
+                      )}
+                      {(post.businessFollowerCount ?? 0) > 0 && (
+                        <span>{post.businessFollowerCount} {post.businessFollowerCount === 1 ? "follower" : "followers"}</span>
+                      )}
+                    </p>
+                  )}
                 </div>
                 <span className="shrink-0 text-right text-xs leading-snug text-muted">
                   {formatPostDateTime(post.createdAt)}

@@ -81,6 +81,7 @@ export interface UserProfile {
   isSeekingWork: boolean;
   experienceText: string;
   resumeText: string;
+  resumeUrl?: string;
   targetJobTitles: string[];
   jobAlertOptIn: boolean;
   followDigestFrequency: FollowDigestFrequency;
@@ -216,6 +217,7 @@ export interface BusinessPost {
   businessRatingAvg?: number;
   businessRatingCount?: number;
   businessLikeCount?: number;
+  businessFollowerCount?: number;
   authorId: string;
   authorName: string;
   postType: BusinessPostType;

@@ -39,6 +39,7 @@ type ProfileRow = {
   is_seeking_work?: boolean;
   experience_text?: string;
   resume_text?: string;
+  resume_url?: string | null;
   target_job_titles?: string[];
   job_alert_opt_in?: boolean;
   follow_digest_frequency?: "none" | "daily" | "weekly" | "monthly";
@@ -201,6 +202,7 @@ export function mapProfile(row: ProfileRow): UserProfile {
     isSeekingWork: row.is_seeking_work ?? false,
     experienceText: row.experience_text ?? "",
     resumeText: row.resume_text ?? "",
+    resumeUrl: row.resume_url ?? undefined,
     targetJobTitles: row.target_job_titles ?? [],
     jobAlertOptIn: row.job_alert_opt_in ?? false,
     followDigestFrequency: row.follow_digest_frequency ?? "none",

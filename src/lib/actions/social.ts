@@ -341,6 +341,7 @@ export async function updateProfilePreferences(input: {
   isSeekingWork?: boolean;
   experienceText?: string;
   resumeText?: string;
+  resumeUrl?: string;
   targetJobTitles?: string[];
   industryInterests?: string[];
   headline?: string;
@@ -378,6 +379,7 @@ export async function updateProfilePreferences(input: {
         is_seeking_work: input.isSeekingWork ?? false,
         experience_text: input.experienceText?.trim().slice(0, 4000) ?? "",
         resume_text: input.resumeText?.trim().slice(0, 4000) ?? "",
+        ...(input.resumeUrl !== undefined ? { resume_url: input.resumeUrl } : {}),
         target_job_titles: titles,
         industry_interests: industries.values,
         headline: input.headline?.trim().slice(0, 200) ?? "",

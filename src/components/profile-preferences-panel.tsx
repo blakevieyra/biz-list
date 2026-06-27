@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateProfilePreferences } from "@/lib/actions/social";
+import { uploadResumeFile } from "@/lib/actions/upload";
 import { IndustryPicker } from "@/components/industry-picker";
 import { JobTitlePicker } from "@/components/job-title-picker";
 import { Card } from "@/components/ui";
@@ -28,6 +29,8 @@ export function ProfilePreferencesPanel({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
@@ -40,6 +43,7 @@ export function ProfilePreferencesPanel({
     industryInterests: profile.industryInterests,
     headline: profile.headline,
     skills: profile.skills.join(", "),
+    resumeUrl: profile.resumeUrl ?? "",
   });
 
   const previewResume = buildResumeSnapshot({
@@ -63,6 +67,7 @@ export function ProfilePreferencesPanel({
         isSeekingWork: form.isSeekingWork,
         experienceText: form.experienceText,
         resumeText: form.resumeText,
+        resumeUrl: form.resumeUrl || undefined,
         targetJobTitles: form.targetJobTitles,
         industryInterests: form.industryInterests,
         headline: form.headline,
@@ -202,6 +207,54 @@ export function ProfilePreferencesPanel({
                   placeholder="Leave blank to auto-build from the fields above."
                 />
               </label>
+              <div className="text-sm">
+                <span className="font-medium">Attach resume file</span>
+                <p className="mt-0.5 text-xs text-muted">PDF, Word (.docx), or plain text · max 10 MB</p>
+                {form.resumeUrl && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <a
+                      href={form.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-accent hover:underline"
+                    >
+                      View attached resume →
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, resumeUrl: "" })}
+                      className="text-xs text-muted hover:text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-medium hover:border-accent/40">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    className="sr-only"
+                    disabled={resumeUploading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setResumeError(null);
+                      setResumeUploading(true);
+                      const fd = new FormData();
+                      fd.append("file", file);
+                      const result = await uploadResumeFile(fd);
+                      setResumeUploading(false);
+                      if (result.error) {
+                        setResumeError(result.error);
+                      } else if (result.url) {
+                        setForm((f) => ({ ...f, resumeUrl: result.url! }));
+                      }
+                    }}
+                  />
+                  {resumeUploading ? "Uploading…" : form.resumeUrl ? "Replace file" : "Choose file"}
+                </label>
+                {resumeError && <p className="mt-1 text-xs text-red-600">{resumeError}</p>}
+              </div>
             </>
           )}
           <JobTitlePicker

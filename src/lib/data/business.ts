@@ -407,6 +407,7 @@ export async function getFeedBusinessPosts(options: {
         businessRatingAvg: business.ratingAvg,
         businessRatingCount: business.ratingCount,
         businessLikeCount: business.likeCount,
+        businessFollowerCount: business.followerIds.length,
         isFollowed,
         recentComments: getBusinessPostCommentsForPost(post.id, business.ownerId),
         commentCount:
@@ -510,10 +511,21 @@ export async function getFeedBusinessPosts(options: {
   const likeCounts = await getPostLikeCounts(postIds);
   const likedPosts = await getPostLikedByViewer(postIds, options.userId ?? null);
 
+  const uniqueBusinessIds = [...new Set(filteredRows.slice(0, limit).map((r) => r.business_id))];
+  const { data: followRows } = await supabase
+    .from("business_follows")
+    .select("business_id")
+    .in("business_id", uniqueBusinessIds);
+  const followerCountMap = new Map<string, number>();
+  for (const f of followRows ?? []) {
+    followerCountMap.set(f.business_id, (followerCountMap.get(f.business_id) ?? 0) + 1);
+  }
+
   const posts = filteredRows.slice(0, limit).map((row) => {
     const meta = businessMetaFromRow(row.businesses);
     const isFollowed = followedIds.has(row.business_id);
     const businessLikeCount = meta?.like_count ?? 0;
+    const businessFollowerCount = followerCountMap.get(row.business_id) ?? 0;
     const businessRatingAvg = Number(meta?.rating_avg ?? 0);
     const businessRatingCount = meta?.rating_count ?? 0;
     const base = mapPostRow(row, {
@@ -523,6 +535,7 @@ export async function getFeedBusinessPosts(options: {
       businessRatingAvg,
       businessRatingCount,
       businessLikeCount,
+      businessFollowerCount,
       commentCount: countMap.get(row.id) ?? 0,
       likeCount: likeCounts.get(row.id) ?? 0,
       likedByViewer: likedPosts.has(row.id),
