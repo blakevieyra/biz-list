@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionState } from "react";
 import Link from "next/link";
 import { contactLead } from "@/lib/actions/pro";
 import { Card } from "@/components/ui";
@@ -12,6 +13,28 @@ const sourceLabels: Record<NonNullable<LocalLead["leadSource"]>, string> = {
   seeking: "Job seeker",
   local: "Local match",
 };
+
+function MessageLeadButton({ leadId }: { leadId: string }) {
+  const [error, dispatch, isPending] = useActionState(
+    (_prev: string | null, _fd: FormData) => contactLead(leadId),
+    null,
+  );
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <form action={dispatch}>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-accent/40 disabled:opacity-50"
+        >
+          {isPending ? "Opening…" : "Message"}
+        </button>
+      </form>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
 
 export function LeadsPreviewPanel({
   planTier,
@@ -82,14 +105,7 @@ export function LeadsPreviewPanel({
                     <p className="mt-1 text-sm text-muted">{lead.matchReasons[0]}</p>
                   )}
                 </div>
-                <form action={contactLead.bind(null, lead.id)}>
-                  <button
-                    type="submit"
-                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-accent/40"
-                  >
-                    Message
-                  </button>
-                </form>
+                <MessageLeadButton leadId={lead.id} />
               </div>
             </li>
           ))}

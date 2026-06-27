@@ -367,38 +367,29 @@ export async function runPlatinumOnboarding(): Promise<{ message?: string; error
   }
 }
 
-export async function contactLead(leadUserId: string): Promise<void> {
+export async function contactLead(leadUserId: string): Promise<string | null> {
   if (!isSupabaseConfigured()) {
-    throw new Error("Connect Supabase to message leads.");
+    return "Connect Supabase to message leads.";
   }
 
-  const { supabase, user } = await requireUserWithPlan("localLeads");
+  try {
+    const { user } = await requireUserWithPlan("localLeads");
 
-  if (leadUserId === user.id) {
-    throw new Error("You cannot message yourself.");
+    if (leadUserId === user.id) {
+      return "You cannot message yourself.";
+    }
+
+    const { getOrCreateConversation } = await import("@/lib/actions/social");
+    const result = await getOrCreateConversation(leadUserId);
+    if (result.error || !result.conversationId) {
+      return result.error ?? "Could not start conversation.";
+    }
+    redirect(`/messages/${result.conversationId}`);
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("NEXT_REDIRECT")) throw e;
+    return e instanceof Error ? e.message : "Could not open conversation.";
   }
-
-  const { isEligibleLead } = await import("@/lib/data/pro");
-  const eligible = await isEligibleLead(user.id, leadUserId);
-  if (!eligible) {
-    throw new Error("This person is not an eligible lead for your business.");
-  }
-
-  const { data: target } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", leadUserId)
-    .single();
-
-  if (target?.role !== "customer") {
-    throw new Error("You can only contact customer leads.");
-  }
-
-  const { getOrCreateConversation } = await import("@/lib/actions/social");
-  const result = await getOrCreateConversation(leadUserId);
-  if (result.error) throw new Error(result.error);
-  if (!result.conversationId) throw new Error("Could not start conversation.");
-  redirect(`/messages/${result.conversationId}`);
+  return null;
 }
 
 export async function virtualAgentReply(input: {
