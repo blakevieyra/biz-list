@@ -108,7 +108,7 @@ export function FeedPostCard({
           <div className="flex border-b border-border">
             <Link
               href={`/listings/${post.businessId}`}
-              className="relative block w-24 shrink-0 self-stretch overflow-hidden border-r border-border bg-slate-100 sm:w-32"
+              className="relative block w-24 shrink-0 self-stretch overflow-hidden bg-slate-100 sm:w-32"
             >
               <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
             </Link>
