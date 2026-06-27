@@ -18,8 +18,10 @@ const collaborationTabs: { id: CollaborationType; label: string }[] = [
   { id: "b2b_sale", label: "B2B Sales" },
 ];
 
-const chipClass = (active: boolean) =>
-  `rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${
+const chipClass = (active: boolean, large = false) =>
+  `rounded-full font-medium leading-none ${
+    large ? "px-5 py-2 text-sm" : "px-2.5 py-1 text-[11px]"
+  } ${
     active
       ? "bg-accent text-white"
       : "border border-border bg-card text-muted hover:text-foreground"
@@ -152,9 +154,9 @@ export default async function CollaboratePage({
       </form>
 
       {/* Type tabs */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-5 flex flex-wrap gap-2">
         {collaborationTabs.map(({ id, label }) => (
-          <Link key={id} href={tabHref(id)} className={chipClass(tab === id)}>
+          <Link key={id} href={tabHref(id)} className={chipClass(tab === id, true)}>
             {label}
           </Link>
         ))}

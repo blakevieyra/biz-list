@@ -39,6 +39,7 @@ export function CollaborationGridCard({
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md">
       <div className="flex flex-1">
+        {/* Left image */}
         {listingHref ? (
           <Link
             href={listingHref}
@@ -63,31 +64,49 @@ export function CollaborationGridCard({
           </div>
         )}
 
-        <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
-              {typeLabels[idea.collaborationType] ?? idea.collaborationType}
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}
-            >
-              {idea.status.replace("_", " ")}
-            </span>
+        {/* Right content */}
+        <div className="flex min-w-0 flex-1 flex-col p-4">
+          {/* Top row: badges left, Interested button right */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
+                {typeLabels[idea.collaborationType] ?? idea.collaborationType}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusStyles[idea.status]}`}
+              >
+                {idea.status.replace("_", " ")}
+              </span>
+            </div>
+
+            {!isAuthor ? (
+              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                <CollaborationInterestedButton
+                  collaborationId={idea.id}
+                  initialInterested={Boolean(idea.userInterested)}
+                  requiresAuth={!currentUserId}
+                  compact
+                />
+              </div>
+            ) : (
+              <span className="shrink-0 text-xs text-muted">Your post</span>
+            )}
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {/* Business name + rating */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
             {listingHref ? (
-              <Link href={listingHref} className="text-lg font-bold text-accent hover:underline">
+              <Link href={listingHref} className="text-xl font-bold text-accent hover:underline">
                 {businessName}
               </Link>
             ) : (
-              <p className="text-lg font-bold text-accent">{businessName}</p>
+              <p className="text-xl font-bold text-accent">{businessName}</p>
             )}
             {(idea.businessRatingCount ?? 0) > 0 && (
               <StarRating
                 rating={idea.businessRatingAvg ?? 0}
                 count={idea.businessRatingCount}
-                size="sm"
+                size="md"
               />
             )}
           </div>
@@ -102,7 +121,7 @@ export function CollaborationGridCard({
             </h3>
           </Link>
 
-          <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted">{idea.summary}</p>
+          <p className="mt-1.5 line-clamp-2 text-sm text-muted">{idea.summary}</p>
 
           <div className="mt-3 text-xs text-muted">
             <p>
@@ -111,18 +130,9 @@ export function CollaborationGridCard({
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3">
-            {!isAuthor ? (
-              <div onClick={(e) => e.stopPropagation()}>
-                <CollaborationInterestedButton
-                  collaborationId={idea.id}
-                  initialInterested={Boolean(idea.userInterested)}
-                  requiresAuth={!currentUserId}
-                  compact
-                />
-              </div>
-            ) : (
-              <span className="text-xs text-muted">Your post</span>
-            )}
+            <p className="text-xs text-muted">
+              {interestCount} interested · {formatPostDateTime(idea.createdAt)}
+            </p>
             <Link
               href={`/partnerships/${idea.id}`}
               className="shrink-0 text-xs font-medium text-accent hover:underline"
@@ -131,10 +141,6 @@ export function CollaborationGridCard({
               {viewLabel[idea.collaborationType] ?? "View →"}
             </Link>
           </div>
-
-          <p className="mt-2 text-xs text-muted">
-            {interestCount} interested · {formatPostDateTime(idea.createdAt)}
-          </p>
         </div>
       </div>
     </div>
