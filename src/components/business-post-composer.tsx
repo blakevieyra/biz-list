@@ -12,6 +12,7 @@ import type { BusinessPostType } from "@/lib/types";
 
 const postTypes: BusinessPostType[] = [
   "update",
+  "discussion",
   "job",
   "deal",
   "video",

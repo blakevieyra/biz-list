@@ -187,7 +187,7 @@ export interface ServiceOrder {
   createdAt: string;
 }
 
-export type BusinessPostType = "update" | "job" | "deal" | "video" | "help_needed" | "free";
+export type BusinessPostType = "update" | "job" | "deal" | "video" | "help_needed" | "free" | "discussion";
 
 export type FeedPostBadge = "following" | "trending" | "top-rated" | "popular";
 

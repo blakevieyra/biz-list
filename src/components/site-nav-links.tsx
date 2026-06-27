@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-export type SiteNavMatch = "home" | "listings" | "feed" | "partnerships" | "events" | "forum";
+export type SiteNavMatch = "home" | "listings" | "feed" | "partnerships" | "events";
 
 export const SITE_NAV_LINKS: {
   href: string;
@@ -15,7 +15,6 @@ export const SITE_NAV_LINKS: {
   { href: "/listings", label: "Listings", match: "listings" },
   { href: "/partnerships", label: "Collaborations", match: "partnerships" },
   { href: "/events", label: "Events", match: "events" },
-  { href: "/forum", label: "Forum", match: "forum" },
 ];
 
 function isNavLinkActive(match: SiteNavMatch, pathname: string, view: string | null): boolean {
@@ -30,8 +29,6 @@ function isNavLinkActive(match: SiteNavMatch, pathname: string, view: string | n
       return pathname === "/partnerships" || pathname.startsWith("/partnerships/");
     case "events":
       return pathname === "/events" || pathname.startsWith("/events/");
-    case "forum":
-      return pathname === "/forum" || pathname.startsWith("/forum/");
     default:
       return false;
   }

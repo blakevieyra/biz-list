@@ -9,6 +9,7 @@ export const BUSINESS_POST_TYPE_LABELS: Record<BusinessPostType, string> = {
   video: "Video",
   help_needed: "Help needed",
   free: "Free",
+  discussion: "Discussion",
 };
 
 export const BUSINESS_POST_TYPE_HINTS: Record<BusinessPostType, string> = {
@@ -18,6 +19,7 @@ export const BUSINESS_POST_TYPE_HINTS: Record<BusinessPostType, string> = {
   video: "Share a product demo, behind-the-scenes clip, or promo video.",
   help_needed: "Ask the community for volunteers, referrals, supplies, or other support.",
   free: "Offer something free — samples, consultations, events, or community giveaways.",
+  discussion: "Start a community discussion — ask questions, share insights, or spark a local conversation.",
 };
 
 export function youtubeEmbedUrl(url: string): string | null {
@@ -72,6 +74,7 @@ export function parsePostType(value: string | undefined): BusinessPostType {
     "video",
     "help_needed",
     "free",
+    "discussion",
   ];
   return allowed.includes(value as BusinessPostType) ? (value as BusinessPostType) : "update";
 }

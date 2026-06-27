@@ -19,6 +19,7 @@ export function PostTypeBadge({ type }: { type: BusinessPostType }) {
     video: "bg-violet-100 text-violet-800",
     help_needed: "bg-rose-100 text-rose-800",
     free: "bg-sky-100 text-sky-800",
+    discussion: "bg-indigo-100 text-indigo-800",
   };
 
   return (

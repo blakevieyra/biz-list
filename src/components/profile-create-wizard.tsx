@@ -126,11 +126,11 @@ export function ProfileCreateWizard({
         ? [
             { title: "Listings listing", body: "Your business appears in search with photos, services, and goals." },
             { title: "Post updates", body: "Share news on your profile and in the directory feed for others to follow." },
-            { title: "Connect locally", body: "Follow businesses, message owners, join forums, and propose collaborations." },
+            { title: "Connect locally", body: "Follow businesses, message owners, start discussions, and propose collaborations." },
           ]
         : [
             { title: "Discover businesses", body: "Browse the directory, follow organizations, and message them directly." },
-            { title: "Join the community", body: "Post in forums, comment on local topics, and explore joint ventures." },
+            { title: "Join the community", body: "Join discussions, comment on local topics, and explore joint ventures." },
             { title: "Get discovered", body: "Businesses with Pro plans can find you as a lead when your interests match." },
           ],
     [isBusiness],
@@ -281,10 +281,10 @@ export function ProfileCreateWizard({
               {isBusiness ? "Open dashboard" : "Browse directory"}
             </Link>
             <Link
-              href="/forum"
+              href="/home"
               className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:border-accent/40"
             >
-              Explore forum
+              Explore feed
             </Link>
           </div>
         </Card>
@@ -299,7 +299,7 @@ export function ProfileCreateWizard({
         description={
           isBusiness
             ? "Build your business listing with products, photos, and your first local post."
-            : "Tell the community who you are — discover businesses, join forums, and connect locally."
+            : "Tell the community who you are — discover businesses, join discussions, and connect locally."
         }
       />
 
@@ -338,7 +338,7 @@ export function ProfileCreateWizard({
                   <p className="font-semibold">{ROLE_LABELS[role]}</p>
                   <p className="mt-2 text-xs leading-relaxed text-muted">
                     {role === "customer"
-                      ? "Discover local businesses, follow updates, join forums, and connect as a customer or job seeker."
+                      ? "Discover local businesses, follow updates, join discussions, and connect as a customer or job seeker."
                       : role === "marketer"
                         ? "Offer marketing services, promote local brands, manage campaigns, and grow your client base."
                         : "List products & services, upload photos, post updates, and grow in the local directory."}

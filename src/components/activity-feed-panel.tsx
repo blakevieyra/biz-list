@@ -21,6 +21,7 @@ import type {
 export const ACTIVITY_TABS = [
   { id: "all", label: "All" },
   { id: "updates", label: "Updates" },
+  { id: "discussions", label: "Discussions" },
   { id: "jobs", label: "Jobs" },
   { id: "sales", label: "Sales & deals" },
   { id: "help", label: "Help needed" },
@@ -31,6 +32,7 @@ export type ActivityTab = (typeof ACTIVITY_TABS)[number]["id"];
 
 export const ACTIVITY_TAB_POST_TYPES: Partial<Record<ActivityTab, BusinessPostType[]>> = {
   updates: ["update", "video"],
+  discussions: ["discussion"],
   jobs: ["job"],
   sales: ["deal"],
   help: ["help_needed"],
