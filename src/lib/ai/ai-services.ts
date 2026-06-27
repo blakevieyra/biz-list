@@ -263,7 +263,7 @@ export async function generateComprehensiveBusinessAuditAI(
   if (!isClaudeConfigured()) return FALLBACK_AUDIT;
 
   const auditText = Object.entries(auditData)
-    .filter(([, v]) => v?.trim())
+    .filter(([, v]) => typeof v === "string" && v.trim())
     .map(([k, v]) => `${k}: ${v}`)
     .join("\n");
 

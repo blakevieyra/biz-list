@@ -3,9 +3,17 @@ import { isClaudeConfigured } from "@/lib/ai/claude-client";
 import { generateComprehensiveBusinessAuditAI } from "@/lib/ai/ai-services";
 import { createClient } from "@/lib/supabase/server";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const MONTHLY_LIMIT = 5;
+
+function toStr(v: unknown): string {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v.map(String).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -72,18 +80,18 @@ export async function POST(req: Request) {
     phone: profile.phone || "",
     hours: profile.hours || "",
     isHiring: profile.isHiring ? "Yes" : "No",
-    onlineChannels: research?.brandChannels || "",
-    onlineReviews: research?.brandReviews || "",
-    brandPerception: research?.brandPercep || "",
-    competitors: research?.mktCompetitors || "",
-    industryTrend: research?.mktTrend || "",
-    marketOpportunity: research?.mktOpportunity || "",
-    customerProfile: research?.custTarget || "",
-    customerAcquisition: research?.custAcquisition || "",
-    customerPainPoint: research?.custPain || "",
-    partnershipOpportunities: research?.growthPartner || "",
-    contactEmail: research?.emailAddress || "",
-    contactDiscoverability: research?.contactDiscoverability || "",
+    onlineChannels: toStr(research?.brandChannels),
+    onlineReviews: toStr(research?.brandReviews),
+    brandPerception: toStr(research?.brandPercep),
+    competitors: toStr(research?.mktCompetitors),
+    industryTrend: toStr(research?.mktTrend),
+    marketOpportunity: toStr(research?.mktOpportunity),
+    customerProfile: toStr(research?.custTarget),
+    customerAcquisition: toStr(research?.custAcquisition),
+    customerPainPoint: toStr(research?.custPain),
+    partnershipOpportunities: toStr(research?.growthPartner),
+    contactEmail: toStr(research?.emailAddress),
+    contactDiscoverability: toStr(research?.contactDiscoverability),
   };
 
   try {
