@@ -591,6 +591,7 @@ export default async function BusinessDetailPage({
           businessId={business.id}
           businessName={business.name}
           isAuthenticated={Boolean(userId)}
+          autoOpen={canAccess(owner?.planTier ?? "free", "virtualAgent")}
         />
       )}
     </>
