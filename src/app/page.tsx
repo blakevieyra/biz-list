@@ -84,7 +84,7 @@ export default async function HomePage() {
           <div className="flex items-center bg-gradient-to-bl from-blue-50 via-background to-background px-4 py-20 sm:px-6 sm:py-24 lg:py-0 lg:pl-12 xl:pl-20">
             <div className="w-full max-w-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/bizlist-logo.png" alt="BizList" className="mb-3 h-8 w-auto" />
+              <img src="/bizlist-logo.png" alt="BizList" className="mb-3 h-24 w-auto" />
               <h1 className="min-h-[2.4em] text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 Your Business.<br /><HeroCyclingText />
               </h1>
