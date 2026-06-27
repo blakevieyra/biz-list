@@ -7,6 +7,18 @@ import { Card } from "@/components/ui";
 
 type Message = { role: "user" | "agent"; text: string; streaming?: boolean };
 
+function markdownToHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>")
+    .replace(/^#{1,3} (.+)$/gm, "<strong>$1</strong>")
+    .replace(/^[-•] (.+)$/gm, "• $1")
+    .replace(/\n/g, "<br/>");
+}
+
 function BusinessAvatar({ imageUrl, name, size = "md" }: { imageUrl?: string | null; name: string; size?: "sm" | "md" }) {
   const dim = size === "sm" ? "h-8 w-8 text-sm" : "h-10 w-10 text-base";
   if (imageUrl) {
@@ -290,9 +302,20 @@ export function ListingVirtualAgent({
               entry.role === "user" ? "ml-6 bg-accent text-white" : "mr-6 bg-slate-100 text-foreground"
             }`}
           >
-            {entry.text}
-            {entry.streaming && (
-              <span className="ml-0.5 inline-block h-3 w-0.5 animate-pulse bg-current opacity-70" />
+            {entry.role === "agent" ? (
+              <>
+                <span dangerouslySetInnerHTML={{ __html: markdownToHtml(entry.text) }} />
+                {entry.streaming && (
+                  <span className="ml-0.5 inline-block h-3 w-0.5 animate-pulse bg-current opacity-70" />
+                )}
+              </>
+            ) : (
+              <>
+                {entry.text}
+                {entry.streaming && (
+                  <span className="ml-0.5 inline-block h-3 w-0.5 animate-pulse bg-current opacity-70" />
+                )}
+              </>
             )}
           </div>
         ))}
