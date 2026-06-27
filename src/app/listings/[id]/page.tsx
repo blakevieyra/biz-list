@@ -590,6 +590,7 @@ export default async function BusinessDetailPage({
         <ListingVirtualAgent
           businessId={business.id}
           businessName={business.name}
+          businessImage={business.mediaUrls[0] ?? null}
           isAuthenticated={Boolean(userId)}
           autoOpen={canAccess(owner?.planTier ?? "free", "virtualAgent")}
         />
