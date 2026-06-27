@@ -282,22 +282,6 @@ export default async function BusinessDetailPage({
 
           <div className="space-y-6 lg:col-span-2 lg:row-start-1">
 
-            <BusinessActivitySection
-
-              businessId={business.id}
-
-              posts={posts}
-
-              currentUserId={userId}
-
-              isOwner={isOwner}
-
-              contentLikes={contentLikes}
-
-            />
-
-
-
             <ShopOfferingsSection
 
               businessId={business.id}
@@ -309,6 +293,20 @@ export default async function BusinessDetailPage({
               currentUserId={userId}
 
               isOwner={isOwner}
+
+            />
+
+            <BusinessActivitySection
+
+              businessId={business.id}
+
+              posts={posts}
+
+              currentUserId={userId}
+
+              isOwner={isOwner}
+
+              contentLikes={contentLikes}
 
             />
 
