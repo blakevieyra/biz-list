@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { FeedPostCard } from "@/components/feed-post-card";
+import { BusinessPostFeed } from "@/components/business-post-feed";
 import { HeroCyclingText } from "@/components/hero-cycling-text";
 import { CollaborationGridCard } from "@/components/collaboration-grid-card";
 import { EventCard } from "@/components/event-card";
@@ -13,6 +13,7 @@ import {
 import { getTrendingBusinessPosts } from "@/lib/data/business";
 import { getBusinessEvents } from "@/lib/data/events";
 import { resolveAreaScope } from "@/lib/feed/location-scope";
+import { SEED_BUSINESS_EVENTS } from "@/lib/mock-data";
 import { StarRating } from "@/components/ui";
 
 const features = [
@@ -50,12 +51,13 @@ export default async function HomePage() {
 
   const areaScope = resolveAreaScope(undefined, undefined);
 
-  const [businesses, collaborations, trendingPosts, events] = await Promise.all([
+  const [businesses, collaborations, trendingPosts, dbEvents] = await Promise.all([
     getBusinesses({ areaScope, viewer: null }),
     getCollaborations(),
     getTrendingBusinessPosts(3),
-    getBusinessEvents({ limit: 2, upcomingOnly: false }),
+    getBusinessEvents({ limit: 2 }),
   ]);
+  const events = dbEvents.length > 0 ? dbEvents : SEED_BUSINESS_EVENTS.slice(0, 2);
 
   return (
     <>
@@ -180,11 +182,9 @@ export default async function HomePage() {
                 View all
               </Link>
             </div>
-            <div className="mt-6 space-y-4">
+            <div className="mt-6">
               {trendingPosts.length > 0 ? (
-                trendingPosts.map((post) => (
-                  <FeedPostCard key={post.id} post={post} currentUserId={null} />
-                ))
+                <BusinessPostFeed posts={trendingPosts} embedded />
               ) : (
                 <p className="text-sm text-muted">No business updates yet.</p>
               )}
