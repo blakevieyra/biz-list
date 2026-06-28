@@ -469,6 +469,14 @@ export async function virtualAgentReply(input: {
 export type AgentAutomations = {
   emailMe?: { enabled: boolean; events: string[] };
   marketingSchedule?: { enabled: boolean; frequency: "daily" | "weekly" | "monthly" };
+  weeklyFeedPosts?: {
+    enabled: boolean;
+    /** 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat */
+    dayOfWeek: number;
+    /** "HH:MM" UTC */
+    timeUtc: string;
+    lastPostedAt?: string;
+  };
   leadOutreach?: { enabled: boolean; message: string };
   orderingServices?: { enabled: boolean; instructions: string };
 };
@@ -694,5 +702,163 @@ export async function createMarketingCampaign(input: {
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to create campaign." };
+  }
+}
+
+export async function publishFeedPostNow(): Promise<{ message?: string; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { message: "Demo: post published to your feed." };
+  }
+
+  try {
+    const { supabase, user } = await requireUserWithPlan("automatedMarketing");
+    const business = await loadOwnerBusiness(user.id);
+    const draft = await generateFreshAutomatedPostAI(business);
+
+    const { error } = await supabase.from("business_posts").insert({
+      business_id: business.id,
+      author_id: user.id,
+      post_type: draft.postType,
+      title: draft.title,
+      body: draft.body,
+      media_urls: business.mediaUrls.slice(0, 1),
+      engagement_score: 5,
+      is_trending: false,
+    });
+
+    if (error) return { error: error.message };
+
+    await supabase.from("marketing_campaigns").insert({
+      user_id: user.id,
+      business_id: business.id,
+      title: draft.title,
+      channel: "social",
+      content: draft.body,
+      status: "sent",
+      scheduled_for: new Date().toISOString(),
+    });
+
+    // Update lastPostedAt in automation settings
+    const { data: bizRow } = await supabase
+      .from("businesses")
+      .select("agent_automations")
+      .eq("id", business.id)
+      .single();
+
+    const automations = (bizRow?.agent_automations ?? {}) as AgentAutomations;
+    if (automations.weeklyFeedPosts) {
+      automations.weeklyFeedPosts.lastPostedAt = new Date().toISOString();
+      await supabase
+        .from("businesses")
+        .update({ agent_automations: automations })
+        .eq("id", business.id);
+    }
+
+    revalidatePath("/dashboard/marketing");
+    revalidatePath("/feed");
+    revalidatePath(`/listings/${business.id}`);
+    return { message: `"${draft.title}" published to your feed.` };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to publish post." };
+  }
+}
+
+export async function saveWeeklyPostSchedule(input: {
+  enabled: boolean;
+  dayOfWeek: number;
+  timeUtc: string;
+}): Promise<{ success?: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: true };
+  }
+
+  try {
+    const { supabase, user } = await requireUserWithPlan("automatedMarketing");
+    const business = await loadOwnerBusiness(user.id);
+
+    const { data: bizRow } = await supabase
+      .from("businesses")
+      .select("agent_automations")
+      .eq("id", business.id)
+      .single();
+
+    const automations = (bizRow?.agent_automations ?? {}) as AgentAutomations;
+    automations.weeklyFeedPosts = {
+      enabled: input.enabled,
+      dayOfWeek: input.dayOfWeek,
+      timeUtc: input.timeUtc,
+      lastPostedAt: automations.weeklyFeedPosts?.lastPostedAt,
+    };
+
+    const { error } = await supabase
+      .from("businesses")
+      .update({ agent_automations: automations })
+      .eq("id", business.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/marketing");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to save schedule." };
+  }
+}
+
+export async function getWeeklyPostSchedule(): Promise<{
+  enabled: boolean;
+  dayOfWeek: number;
+  timeUtc: string;
+  lastPostedAt?: string;
+} | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  try {
+    const { supabase, user } = await requireUserWithPlan("automatedMarketing");
+    const { data: bizRow } = await supabase
+      .from("businesses")
+      .select("agent_automations")
+      .eq("owner_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    const automations = (bizRow?.agent_automations ?? {}) as AgentAutomations;
+    return automations.weeklyFeedPosts ?? { enabled: false, dayOfWeek: 1, timeUtc: "09:00" };
+  } catch {
+    return null;
+  }
+}
+
+export async function getRecentAutoPostHistory(limit = 10): Promise<
+  { id: string; title: string; body: string; postType: string; createdAt: string }[]
+> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const { supabase, user } = await requireUserWithPlan("automatedMarketing");
+    const { data: bizRow } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("owner_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!bizRow) return [];
+
+    const { data } = await supabase
+      .from("business_posts")
+      .select("id, title, body, post_type, created_at")
+      .eq("business_id", bizRow.id)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    return (data ?? []).map((r) => ({
+      id: r.id,
+      title: r.title,
+      body: r.body,
+      postType: r.post_type ?? "update",
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
   }
 }
