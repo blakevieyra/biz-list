@@ -788,3 +788,88 @@ export async function getFollowedBusinesses(userId: string): Promise<FollowedBus
   }
   return results;
 }
+
+export type PartnerBusiness = {
+  id: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  city: string;
+  state: string;
+  mediaUrl?: string;
+};
+
+/**
+ * Returns businesses that have a mutual follow with the given business.
+ * Mutual = the other business's owner follows this business AND this business's owner follows the other business.
+ */
+export async function getPartnerBusinesses(
+  businessId: string,
+  ownerId: string,
+  limit = 12,
+): Promise<PartnerBusiness[]> {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    // Mock: mutual followerIds cross-matching ownerId
+    const biz = SEED_BUSINESSES.find((b) => b.id === businessId);
+    if (!biz) return [];
+    return SEED_BUSINESSES.filter(
+      (b) =>
+        b.id !== businessId &&
+        biz.followerIds.includes(b.ownerId) &&
+        b.followerIds.includes(ownerId),
+    ).map((b) => ({
+      id: b.id,
+      name: b.name,
+      category: b.category,
+      subcategory: b.subcategory,
+      city: b.city,
+      state: b.state,
+      mediaUrl: b.mediaUrls[0],
+    }));
+  }
+
+  // Step 1: find all user IDs who follow this business
+  const { data: followers } = await supabase
+    .from("business_follows")
+    .select("follower_id")
+    .eq("business_id", businessId);
+
+  const followerUserIds = (followers ?? []).map((f: { follower_id: string }) => f.follower_id);
+  if (!followerUserIds.length) return [];
+
+  // Step 2: find businesses owned by those followers
+  const { data: candidateBusinesses } = await supabase
+    .from("businesses")
+    .select("id, name, category, subcategory, city, state, media_urls, owner_id")
+    .in("owner_id", followerUserIds)
+    .neq("id", businessId)
+    .limit(limit * 3);
+
+  if (!candidateBusinesses?.length) return [];
+
+  // Step 3: check which of those businesses the current owner also follows
+  const candidateIds = candidateBusinesses.map((b: { id: string }) => b.id);
+  const { data: ownerFollows } = await supabase
+    .from("business_follows")
+    .select("business_id")
+    .eq("follower_id", ownerId)
+    .in("business_id", candidateIds);
+
+  const mutualIds = new Set(
+    (ownerFollows ?? []).map((f: { business_id: string }) => f.business_id),
+  );
+
+  return candidateBusinesses
+    .filter((b: { id: string }) => mutualIds.has(b.id))
+    .slice(0, limit)
+    .map((b: { id: string; name: string; category: string; subcategory?: string; city: string; state: string; media_urls?: string[] }) => ({
+      id: b.id,
+      name: b.name,
+      category: b.category,
+      subcategory: b.subcategory,
+      city: b.city,
+      state: b.state,
+      mediaUrl: b.media_urls?.[0],
+    }));
+}

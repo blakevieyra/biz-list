@@ -33,6 +33,8 @@ import {
 
   getBusinessConnectionState,
 
+  getPartnerBusinesses,
+
   getProfileById,
 
 } from "@/lib/data";
@@ -88,7 +90,7 @@ export default async function BusinessDetailPage({
 
 
 
-  const [owner, connectionState, posts, reviews, events, isSaved] = await Promise.all([
+  const [owner, connectionState, posts, reviews, events, isSaved, partnerBusinesses] = await Promise.all([
 
     getProfileById(business.ownerId),
 
@@ -101,6 +103,8 @@ export default async function BusinessDetailPage({
     getBusinessEvents({ businessId: business.id, userId, limit: 6 }),
 
     userId ? getSavedItemState(userId, "listing", business.id) : Promise.resolve(false),
+
+    getPartnerBusinesses(business.id, business.ownerId),
 
   ]);
 
@@ -400,6 +404,70 @@ export default async function BusinessDetailPage({
               </div>
 
             </Card>
+
+
+
+            {partnerBusinesses.length > 0 && (
+
+              <Card>
+
+                <h2 className="font-semibold">Partners</h2>
+
+                <p className="mt-1 text-xs text-muted">Businesses and organizations this listing has a mutual connection with.</p>
+
+                <ul className="mt-3 space-y-2">
+
+                  {partnerBusinesses.map((partner) => (
+
+                    <li key={partner.id}>
+
+                      <a
+
+                        href={`/listings/${partner.id}`}
+
+                        className="flex items-center gap-2.5 rounded-lg p-1.5 hover:bg-slate-50"
+
+                      >
+
+                        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-slate-100">
+
+                          {partner.mediaUrl ? (
+
+                            // eslint-disable-next-line @next/next/no-img-element
+
+                            <img src={partner.mediaUrl} alt="" className="h-full w-full object-cover" />
+
+                          ) : (
+
+                            <div className="flex h-full w-full items-center justify-center text-sm font-bold text-accent/30">
+
+                              {partner.name.charAt(0)}
+
+                            </div>
+
+                          )}
+
+                        </div>
+
+                        <div className="min-w-0">
+
+                          <p className="truncate text-sm font-medium leading-snug">{partner.name}</p>
+
+                          <p className="truncate text-xs text-muted">{partner.category} · {partner.city}, {partner.state}</p>
+
+                        </div>
+
+                      </a>
+
+                    </li>
+
+                  ))}
+
+                </ul>
+
+              </Card>
+
+            )}
 
 
 

@@ -150,12 +150,10 @@ function CommentItem({
                 </button>
               </form>
             ) : (
-              <div className="mt-0.5 flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
-                  {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
-                </div>
-                <div className="flex shrink-0 items-center gap-2 self-start">
+              <div className="mt-0.5">
+                <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
+                {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
                   <ContentLikeButton
                     businessId={businessId}
                     targetType="comment"
