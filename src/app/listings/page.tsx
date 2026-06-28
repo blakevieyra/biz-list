@@ -77,7 +77,7 @@ export default async function ListingsPage({
     viewer,
   });
 
-  const latestPosts = await getLatestPostsForBusinessIds(allBusinesses.map((b) => b.id));
+  const latestPosts = await getLatestPostsForBusinessIds(allBusinesses.map((b) => b.id), 10);
 
   // Apply rating + status filters after fetching (uses already-loaded data)
   const businesses = allBusinesses.filter((b) => {
@@ -87,7 +87,7 @@ export default async function ListingsPage({
     if (statusFilter === "hiring") {
       const posts = latestPosts.get(b.id) ?? [];
       const hasJobPost = posts.some((p) => p.postType === "job");
-      if (!b.intents.includes("hiring") && !hasJobPost) return false;
+      if (!b.isHiring && !hasJobPost) return false;
     }
     if (statusFilter === "deals") {
       const posts = latestPosts.get(b.id) ?? [];
