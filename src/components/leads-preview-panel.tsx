@@ -95,6 +95,14 @@ export function LeadsPreviewPanel({
           {visible.map((lead) => (
             <li key={lead.id} className="rounded-xl border border-border p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  {lead.avatarUrl ? (
+                    <img src={lead.avatarUrl} alt={lead.displayName} className="mt-0.5 h-8 w-8 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">
+                      {lead.displayName.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()}
+                    </div>
+                  )}
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{lead.displayName}</p>
@@ -113,6 +121,7 @@ export function LeadsPreviewPanel({
                   {lead.matchReasons[0] && (
                     <p className="mt-1 text-sm text-muted">{lead.matchReasons[0]}</p>
                   )}
+                </div>
                 </div>
                 <MessageLeadButton
                   leadId={lead.id}

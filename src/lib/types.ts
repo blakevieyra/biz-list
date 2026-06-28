@@ -415,6 +415,7 @@ export interface AiAssessment {
 export interface LocalLead {
   id: string;
   displayName: string;
+  avatarUrl?: string;
   city: string;
   state: string;
   bio: string;

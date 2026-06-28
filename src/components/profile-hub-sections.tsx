@@ -354,38 +354,39 @@ export function MessagesHubSection({
             {sorted.map((n) => {
               const safeLink = getSafeAppLink(n.link);
               const isOrder = isBusinessUser && alertIsOrder(n);
-              return (
-                <Card
-                  key={n.id}
-                  className={`${n.read ? "opacity-70" : isOrder ? "border-emerald-300 bg-emerald-50/40" : "border-accent/30"}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {isOrder && !n.read && (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-                            Order
-                          </span>
-                        )}
-                        <p className="font-medium text-sm">{n.title}</p>
-                      </div>
-                      <p className="mt-0.5 text-sm text-muted">{n.body}</p>
-                      <p className="mt-1 text-xs text-muted">{formatDate(n.createdAt)}</p>
-                      {safeLink && (
-                        <Link href={safeLink} className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline">
-                          View →
-                        </Link>
+              const cardClass = `transition ${n.read ? "opacity-70" : isOrder ? "border-emerald-300 bg-emerald-50/40" : "border-accent/30"} ${safeLink ? "hover:border-accent/50 hover:shadow-sm" : ""}`;
+              const inner = (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isOrder && !n.read && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                          Order
+                        </span>
                       )}
+                      <p className="font-medium text-sm">{n.title}</p>
                     </div>
-                    {!n.read && (
-                      <form action={markNotificationRead.bind(null, n.id)}>
-                        <button type="submit" className="shrink-0 text-xs text-muted hover:text-accent">
-                          Mark read
-                        </button>
-                      </form>
-                    )}
+                    <p className="mt-0.5 text-sm text-muted">{n.body}</p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted">{formatDate(n.createdAt)}</p>
+                      {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
+                    </div>
                   </div>
-                </Card>
+                  {!n.read && (
+                    <form action={markNotificationRead.bind(null, n.id)} onClick={(e) => e.stopPropagation()}>
+                      <button type="submit" className="shrink-0 text-xs text-muted hover:text-accent">
+                        Mark read
+                      </button>
+                    </form>
+                  )}
+                </div>
+              );
+              return safeLink ? (
+                <Link key={n.id} href={safeLink}>
+                  <Card className={cardClass}>{inner}</Card>
+                </Link>
+              ) : (
+                <Card key={n.id} className={cardClass}>{inner}</Card>
               );
             })}
           </div>

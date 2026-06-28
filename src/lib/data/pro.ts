@@ -254,6 +254,7 @@ export async function getLocalLeads(userId: string): Promise<LocalLead[]> {
       return {
         id: customer.id,
         displayName: customer.display_name,
+        avatarUrl: customer.avatar_url ?? undefined,
         city: customer.city,
         state: customer.state,
         bio: customer.bio,
