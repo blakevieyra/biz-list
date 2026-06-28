@@ -38,6 +38,7 @@ import {
 } from "@/lib/data";
 
 import { getBusinessPosts, getBusinessReviews, getExistingJobApplication } from "@/lib/data/business";
+import { getSavedItemState } from "@/lib/data/saved-items";
 import { getBusinessEvents } from "@/lib/data/events";
 import { EventCard } from "@/components/event-card";
 
@@ -87,7 +88,7 @@ export default async function BusinessDetailPage({
 
 
 
-  const [owner, connectionState, posts, reviews, events] = await Promise.all([
+  const [owner, connectionState, posts, reviews, events, isSaved] = await Promise.all([
 
     getProfileById(business.ownerId),
 
@@ -98,6 +99,8 @@ export default async function BusinessDetailPage({
     getBusinessReviews(business.id),
 
     getBusinessEvents({ businessId: business.id, userId, limit: 6 }),
+
+    userId ? getSavedItemState(userId, "listing", business.id) : Promise.resolve(false),
 
   ]);
 
@@ -222,6 +225,10 @@ export default async function BusinessDetailPage({
                 shareUrl={shareUrl}
 
                 businessName={business.name}
+
+                initialSaved={isSaved}
+
+                listingUrl={shareUrl}
 
               />
 

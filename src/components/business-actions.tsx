@@ -8,6 +8,7 @@ import {
 } from "@/lib/actions/social";
 import { toggleLikeBusiness } from "@/lib/actions/business";
 import type { BusinessConnectionState } from "@/lib/types";
+import { SaveButton } from "@/components/save-button";
 
 type OutreachType = "proposal" | "event" | null;
 
@@ -19,6 +20,8 @@ export function BusinessActions({
   shareTitle,
   shareUrl,
   businessName,
+  initialSaved = false,
+  listingUrl,
 }: {
   businessId: string;
   ownerId: string;
@@ -27,6 +30,8 @@ export function BusinessActions({
   shareTitle?: string;
   shareUrl?: string;
   businessName?: string;
+  initialSaved?: boolean;
+  listingUrl?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -173,6 +178,15 @@ export function BusinessActions({
             <button type="button" disabled={pending} onClick={openEventInvite} className={buttonClass}>
               Invite to event
             </button>
+            {currentUserId && (
+              <SaveButton
+                itemType="listing"
+                itemId={businessId}
+                itemTitle={businessName ?? shareTitle ?? "Business"}
+                itemUrl={listingUrl ?? shareUrl}
+                initialSaved={initialSaved}
+              />
+            )}
             {shareUrl && (
               <button type="button" onClick={handleShare} className={buttonClass}>
                 Share

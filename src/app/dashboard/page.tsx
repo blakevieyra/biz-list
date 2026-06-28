@@ -9,6 +9,7 @@ import { getBusinessPosts, getServiceOrdersForBusiness } from "@/lib/data/busine
 import { getBusinessById, getCurrentProfile } from "@/lib/data";
 import { getLatestAiAssessment, getLocalLeads } from "@/lib/data/pro";
 import { getConversations } from "@/lib/data/messages";
+import { getSavedItems } from "@/lib/data/saved-items";
 import { canAccess } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
   const businessRow = isBusiness ? await getOwnerBusiness(userId) : null;
   const business = businessRow ? await getBusinessById(businessRow.id) : null;
 
-  const [posts, leads, latestAudit, conversations, orders] = await Promise.all([
+  const [posts, leads, latestAudit, conversations, orders, savedItems] = await Promise.all([
     business ? getBusinessPosts(business.id) : Promise.resolve([]),
     isBusiness && canAccess(profile.planTier, "localLeads")
       ? getLocalLeads(userId)
@@ -46,6 +47,7 @@ export default async function DashboardPage() {
       : Promise.resolve(null),
     getConversations(userId),
     business ? getServiceOrdersForBusiness(business.id, userId) : Promise.resolve([]),
+    getSavedItems(userId),
   ]);
 
   const unreadCount = conversations.reduce((n, c) => n + c.unreadCount, 0);
@@ -230,6 +232,68 @@ export default async function DashboardPage() {
           <PlatinumGrowthPanel planTier={profile.planTier} />
         </div>
       )}
+
+      {/* Saved & interested */}
+      <div className="mt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold">Saved & interested</h2>
+            <p className="mt-0.5 text-xs text-muted">Events, listings, proposals, and opportunities you bookmarked.</p>
+          </div>
+        </div>
+        {savedItems.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {savedItems.slice(0, 9).map((item) => {
+              const typeColor: Record<string, string> = {
+                listing: "bg-blue-50 text-blue-700",
+                event: "bg-purple-50 text-purple-700",
+                collaboration: "bg-emerald-50 text-emerald-700",
+                proposal: "bg-amber-50 text-amber-700",
+                contract: "bg-orange-50 text-orange-700",
+                post: "bg-slate-100 text-slate-600",
+                person: "bg-pink-50 text-pink-700",
+              };
+              const typeLabel: Record<string, string> = {
+                listing: "Listing",
+                event: "Event",
+                collaboration: "Collaboration",
+                proposal: "Proposal",
+                contract: "Contract",
+                post: "Post",
+                person: "Person",
+              };
+              const content = (
+                <Card>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${typeColor[item.itemType] ?? "bg-slate-100 text-slate-600"}`}>
+                        {typeLabel[item.itemType] ?? item.itemType}
+                      </span>
+                      <p className="mt-1.5 font-medium leading-snug line-clamp-2">{item.itemTitle}</p>
+                      {item.itemSubtitle && (
+                        <p className="mt-0.5 text-xs text-muted line-clamp-1">{item.itemSubtitle}</p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+              return item.itemUrl ? (
+                <Link key={item.id} href={item.itemUrl} className="block hover:opacity-90 transition-opacity">
+                  {content}
+                </Link>
+              ) : (
+                <div key={item.id}>{content}</div>
+              );
+            })}
+          </div>
+        ) : (
+          <Card>
+            <p className="text-sm text-muted">
+              Nothing saved yet. Hit <strong>Save</strong> on any listing, event, or collaboration to pin it here.
+            </p>
+          </Card>
+        )}
+      </div>
     </>
   );
 }

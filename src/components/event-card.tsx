@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Card, formatPostDateTime } from "@/components/ui";
 import type { BusinessEvent } from "@/lib/types";
+import { SaveButton } from "@/components/save-button";
 
 function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; businessMediaUrl?: string }) {
   const [src, setSrc] = useState(imageUrl || businessMediaUrl);
@@ -34,7 +35,15 @@ function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; busines
   );
 }
 
-export function EventCard({ event }: { event: BusinessEvent }) {
+export function EventCard({
+  event,
+  currentUserId,
+  initialSaved = false,
+}: {
+  event: BusinessEvent;
+  currentUserId?: string | null;
+  initialSaved?: boolean;
+}) {
   const when = formatPostDateTime(event.startsAt);
   const where = [event.location || event.address, event.city, event.state]
     .filter(Boolean)
@@ -58,6 +67,19 @@ export function EventCard({ event }: { event: BusinessEvent }) {
           <p className="mt-3 text-sm font-medium text-accent">View event details →</p>
         </div>
       </Link>
+      {currentUserId && (
+        <div className="flex items-center justify-end border-t border-border px-4 py-2">
+          <SaveButton
+            itemType="event"
+            itemId={event.id}
+            itemTitle={event.title}
+            itemSubtitle={when}
+            itemUrl={`/events/${event.id}`}
+            initialSaved={initialSaved}
+            size="sm"
+          />
+        </div>
+      )}
     </Card>
   );
 }
