@@ -331,8 +331,46 @@ export async function getAiAssessments(userId: string): Promise<AiAssessment[]> 
 }
 
 export async function getLatestAiAssessment(userId: string): Promise<AiAssessment | null> {
-  const list = await getAiAssessments(userId);
-  return list[0] ?? null;
+  const supabase = await createClient();
+
+  const [legacyList, compResult] = await Promise.all([
+    getAiAssessments(userId),
+    supabase
+      ? supabase
+          .from("business_audits")
+          .select("id, business_name, result, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const legacy = legacyList[0] ?? null;
+  const compRow = compResult.data;
+
+  if (!compRow) return legacy;
+
+  const comp = compRow.result as { overallScore?: number; executiveSummary?: string } | null;
+  const compDate = compRow.created_at as string;
+
+  if (!legacy || new Date(compDate) >= new Date(legacy.createdAt)) {
+    return {
+      id: compRow.id as string,
+      userId,
+      businessName: compRow.business_name as string,
+      overallScore: comp?.overallScore ?? 0,
+      seoScore: 0,
+      onlinePresenceScore: 0,
+      businessClarityScore: 0,
+      summary: comp?.executiveSummary ?? "",
+      recommendations: [],
+      topicBreakdown: [],
+      createdAt: compDate,
+    } as unknown as AiAssessment;
+  }
+
+  return legacy;
 }
 
 function getMockLeads(): LocalLead[] {
