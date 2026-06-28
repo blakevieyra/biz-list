@@ -7,6 +7,9 @@ const intentStyles: Record<BusinessIntent, string> = {
   seeking_customers: "bg-sky-100 text-sky-800",
   seeking_advice: "bg-amber-100 text-amber-800",
   open_to_partnerships: "bg-emerald-100 text-emerald-800",
+  b2b: "bg-blue-100 text-blue-800",
+  contract: "bg-orange-100 text-orange-800",
+  proposal: "bg-teal-100 text-teal-800",
 };
 
 const categoryStyles: Record<ForumCategory, string> = {

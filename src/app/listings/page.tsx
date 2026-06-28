@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinesses, getCurrentProfile } from "@/lib/data";
 import { getLatestPostsForBusinessIds } from "@/lib/data/business";
+import { getBusinessIdsWithEvents } from "@/lib/data/events";
 import {
   DISCOVERY_FILTER_OPTIONS,
   DISCOVERY_RADIUS_LABELS,
@@ -21,6 +22,10 @@ const RATING_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: "hiring", label: "Hiring" },
   { value: "deals", label: "Has deals" },
+  { value: "events", label: "Has events" },
+  { value: "b2b", label: "B2B" },
+  { value: "contract", label: "Contract" },
+  { value: "proposal", label: "Open to proposals" },
 ];
 
 function filterChipClass(active: boolean) {
@@ -42,7 +47,7 @@ export default async function ListingsPage({
     category?: string;
     rating?: string;
     status?: string;
-  }>;
+  }>; // status: hiring | deals | events | b2b | contract | proposal
 }) {
   const params = await searchParams;
   const profile = await getCurrentProfile();
@@ -54,8 +59,11 @@ export default async function ListingsPage({
   );
   const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
   const minRating = ["2", "3", "4"].includes(params.rating ?? "") ? Number(params.rating) : null;
-  const statusFilter =
-    params.status === "hiring" || params.status === "deals" ? params.status : null;
+  const validStatuses = ["hiring", "deals", "events", "b2b", "contract", "proposal"] as const;
+  type StatusFilter = typeof validStatuses[number];
+  const statusFilter: StatusFilter | null = validStatuses.includes(params.status as StatusFilter)
+    ? (params.status as StatusFilter)
+    : null;
 
   const viewer = profile
     ? {
@@ -77,7 +85,11 @@ export default async function ListingsPage({
     viewer,
   });
 
-  const latestPosts = await getLatestPostsForBusinessIds(allBusinesses.map((b) => b.id), 10);
+  const businessIds = allBusinesses.map((b) => b.id);
+  const [latestPosts, businessIdsWithEvents] = await Promise.all([
+    getLatestPostsForBusinessIds(businessIds, 10),
+    getBusinessIdsWithEvents(businessIds),
+  ]);
 
   // Apply rating + status filters after fetching (uses already-loaded data)
   const businesses = allBusinesses.filter((b) => {
@@ -92,6 +104,18 @@ export default async function ListingsPage({
     if (statusFilter === "deals") {
       const posts = latestPosts.get(b.id) ?? [];
       if (!posts.some((p) => p.postType === "deal")) return false;
+    }
+    if (statusFilter === "events") {
+      if (!businessIdsWithEvents.has(b.id)) return false;
+    }
+    if (statusFilter === "b2b") {
+      if (!b.intents.includes("b2b")) return false;
+    }
+    if (statusFilter === "contract") {
+      if (!b.intents.includes("contract")) return false;
+    }
+    if (statusFilter === "proposal") {
+      if (!b.intents.includes("proposal")) return false;
     }
     return true;
   });
@@ -156,6 +180,7 @@ export default async function ListingsPage({
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Near</span>
           {DISCOVERY_FILTER_OPTIONS.map((option) => (
             <Link key={option} href={buildHref({ near: discoveryFilterHrefValue(option) })}
+              aria-current={discoveryFilter === option ? "true" : undefined}
               className={filterChipClass(discoveryFilter === option)}>
               {DISCOVERY_RADIUS_LABELS[option]}
             </Link>
@@ -167,32 +192,37 @@ export default async function ListingsPage({
       <section className="mb-3">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Industry</span>
-          <Link href={buildHref({ category: undefined })} className={filterChipClass(!categoryFilter)}>
+          <Link href={buildHref({ category: undefined })} aria-current={!categoryFilter ? "true" : undefined} className={filterChipClass(!categoryFilter)}>
             All industries
           </Link>
           {INDUSTRY_OPTIONS.map((category) => (
-            <Link key={category} href={buildHref({ category })} className={filterChipClass(categoryFilter === category)}>
+            <Link key={category} href={buildHref({ category })} aria-current={categoryFilter === category ? "true" : undefined} className={filterChipClass(categoryFilter === category)}>
               {category}
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Rating + Status */}
-      <section className="mb-6">
+      {/* Rating */}
+      <section className="mb-3">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Rating</span>
-          <Link href={buildHref({ rating: undefined })} className={filterChipClass(minRating === null)}>All ratings</Link>
+          <Link href={buildHref({ rating: undefined })} aria-current={minRating === null ? "true" : undefined} className={filterChipClass(minRating === null)}>All ratings</Link>
           {RATING_OPTIONS.map(({ value, label }) => (
-            <Link key={value} href={buildHref({ rating: value })} className={filterChipClass(minRating === Number(value))}>
+            <Link key={value} href={buildHref({ rating: value })} aria-current={minRating === Number(value) ? "true" : undefined} className={filterChipClass(minRating === Number(value))}>
               {label}
             </Link>
           ))}
-          <span className="mx-2 text-border">|</span>
+        </div>
+      </section>
+
+      {/* Status */}
+      <section className="mb-6">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Status</span>
-          <Link href={buildHref({ status: undefined })} className={filterChipClass(!statusFilter)}>All</Link>
+          <Link href={buildHref({ status: undefined })} aria-current={!statusFilter ? "true" : undefined} className={filterChipClass(!statusFilter)}>All</Link>
           {STATUS_OPTIONS.map(({ value, label }) => (
-            <Link key={value} href={buildHref({ status: value })} className={filterChipClass(statusFilter === value)}>
+            <Link key={value} href={buildHref({ status: value })} aria-current={statusFilter === value ? "true" : undefined} className={filterChipClass(statusFilter === value)}>
               {label}
             </Link>
           ))}
@@ -200,9 +230,15 @@ export default async function ListingsPage({
       </section>
 
       {businesses.length === 0 ? (
-        <p className="text-muted">
-          No businesses match your filters. Try expanding your distance or adjusting the filters above.
-        </p>
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-center">
+          <p className="font-medium">No businesses match your filters.</p>
+          <p className="mt-1 text-sm text-muted">Try expanding your distance or adjusting the filters above.</p>
+          {(minRating !== null || statusFilter || categoryFilter) && (
+            <Link href={buildHref({ rating: undefined, status: undefined, category: undefined })} className="mt-3 inline-block text-sm text-accent hover:underline">
+              Clear filters
+            </Link>
+          )}
+        </div>
       ) : (
         <div className="space-y-4">
           {businesses.map((business) => (
@@ -211,6 +247,7 @@ export default async function ListingsPage({
               business={business}
               latestPosts={latestPosts.get(business.id) ?? []}
               currentUserId={userId}
+              hasEvents={businessIdsWithEvents.has(business.id)}
             />
           ))}
         </div>

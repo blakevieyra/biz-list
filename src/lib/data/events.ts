@@ -403,3 +403,26 @@ export async function getEventsForBusinessOwner(
   const events = (rows as EventRow[] | null)?.map((row) => mapEventRow(row)) ?? [];
   return attachRsvpCounts(events);
 }
+
+export async function getBusinessIdsWithEvents(businessIds: string[]): Promise<Set<string>> {
+  if (!businessIds.length) return new Set();
+  // Guard against enormous IN clauses on very large result sets
+  const ids = businessIds.slice(0, 500);
+  const supabase = await createClient();
+  if (!supabase) return new Set();
+
+  const { data, error } = await supabase
+    .from("business_events")
+    .select("business_id")
+    .in("business_id", ids)
+    .eq("status", "published")
+    .gte("starts_at", new Date().toISOString())
+    .limit(500);
+
+  if (error) {
+    console.error("[getBusinessIdsWithEvents]", error.message);
+    return new Set();
+  }
+
+  return new Set((data ?? []).map((r: { business_id: string }) => r.business_id));
+}

@@ -8,6 +8,7 @@ import { BusinessMessageModal } from "@/components/business-message-modal";
 import { ServiceListing } from "@/components/service-listing";
 import { displayCategoryLabel } from "@/lib/industries";
 import type { BusinessPost, BusinessProfile } from "@/lib/types";
+import { INTENT_LABELS } from "@/lib/types";
 import { Card, formatPostDateTime, StarRating } from "@/components/ui";
 
 const actionButtonClass =
@@ -25,10 +26,12 @@ export function BusinessListingCard({
   business,
   latestPosts = [],
   currentUserId,
+  hasEvents = false,
 }: {
   business: BusinessProfile;
   latestPosts?: BusinessPost[];
   currentUserId: string | null;
+  hasEvents?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -116,6 +119,26 @@ export function BusinessListingCard({
                 {business.isHiring && (
                   <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 sm:text-xs">
                     Hiring
+                  </span>
+                )}
+                {business.intents.includes("b2b") && (
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 sm:text-xs">
+                    {INTENT_LABELS.b2b}
+                  </span>
+                )}
+                {business.intents.includes("contract") && (
+                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-800 sm:text-xs">
+                    {INTENT_LABELS.contract}
+                  </span>
+                )}
+                {business.intents.includes("proposal") && (
+                  <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-semibold text-teal-800 sm:text-xs">
+                    {INTENT_LABELS.proposal}
+                  </span>
+                )}
+                {hasEvents && (
+                  <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-800 sm:text-xs">
+                    Events
                   </span>
                 )}
               </div>

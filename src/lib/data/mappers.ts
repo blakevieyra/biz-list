@@ -73,6 +73,9 @@ type BusinessRow = {
   hours?: string;
   important_info?: string;
   is_hiring?: boolean;
+  job_title?: string;
+  job_description?: string;
+  job_requirements?: string;
   job_application_form?: unknown;
   services?: unknown;
   media_urls?: string[];
@@ -256,6 +259,9 @@ export function mapBusiness(
     hours: row.hours ?? "",
     importantInfo: row.important_info ?? "",
     isHiring: row.is_hiring ?? false,
+    jobTitle: row.job_title ?? "",
+    jobDescription: row.job_description ?? "",
+    jobRequirements: row.job_requirements ?? "",
     jobApplicationForm: parseJobApplicationForm(row.job_application_form),
     services: parseServices(row.services),
     mediaUrls: row.media_urls ?? [],

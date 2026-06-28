@@ -219,6 +219,38 @@ export async function updateBusinessDetails(input: {
   }
 }
 
+export async function saveJobListing(input: {
+  businessId: string;
+  isHiring: boolean;
+  jobTitle: string;
+  jobDescription: string;
+  jobRequirements: string;
+  jobApplicationForm: import("@/lib/types").JobApplicationFormConfig;
+}) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to update profile." };
+  try {
+    const { supabase } = await requireBusinessOwner(input.businessId);
+    const jobApplicationForm = sanitizeJobApplicationForm(input.jobApplicationForm);
+    const { error } = await supabase
+      .from("businesses")
+      .update({
+        is_hiring: input.isHiring,
+        job_title: input.jobTitle.trim().slice(0, 200),
+        job_description: input.jobDescription.trim().slice(0, 2000),
+        job_requirements: input.jobRequirements.trim().slice(0, 2000),
+        job_application_form: jobApplicationForm,
+      })
+      .eq("id", input.businessId);
+    if (error) return { error: error.message };
+    revalidatePath(`/listings/${input.businessId}`);
+    revalidatePath("/dashboard/jobs");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to save job listing." };
+  }
+}
+
 export async function saveBusinessDashboardProfile(input: {
   businessId: string;
   displayName: string;
@@ -236,11 +268,9 @@ export async function saveBusinessDashboardProfile(input: {
   phone: string;
   hours: string;
   importantInfo: string;
-  isHiring: boolean;
   services: BusinessService[];
   mediaUrls: string[];
   intents: BusinessIntent[];
-  jobApplicationForm?: import("@/lib/types").JobApplicationFormConfig;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to update profile." };
 
@@ -290,7 +320,6 @@ export async function saveBusinessDashboardProfile(input: {
 
     const services = sanitizeServices(input.services);
     const socialLinks = sanitizeSocialLinks(input.socialLinks);
-    const jobApplicationForm = sanitizeJobApplicationForm(input.jobApplicationForm);
     const website = getSafeExternalUrl(input.website.trim()) ?? null;
 
     const { error } = await supabase
@@ -312,11 +341,9 @@ export async function saveBusinessDashboardProfile(input: {
         phone: input.phone.trim(),
         hours: input.hours.trim(),
         important_info: input.importantInfo.trim(),
-        is_hiring: input.isHiring,
         services,
         media_urls: sanitizeMediaUrls(input.mediaUrls),
         intents: input.intents,
-        job_application_form: jobApplicationForm,
       })
       .eq("id", input.businessId);
 

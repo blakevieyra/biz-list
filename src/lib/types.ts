@@ -45,7 +45,10 @@ export type BusinessIntent =
   | "hiring"
   | "seeking_customers"
   | "seeking_advice"
-  | "open_to_partnerships";
+  | "open_to_partnerships"
+  | "b2b"
+  | "contract"
+  | "proposal";
 
 export type ForumCategory =
   | "general"
@@ -126,6 +129,9 @@ export interface BusinessProfile {
   hours: string;
   importantInfo: string;
   isHiring: boolean;
+  jobTitle: string;
+  jobDescription: string;
+  jobRequirements: string;
   jobApplicationForm: JobApplicationFormConfig;
   services: BusinessService[];
   mediaUrls: string[];
@@ -440,6 +446,9 @@ export const INTENT_LABELS: Record<BusinessIntent, string> = {
   seeking_customers: "Seeking Customers",
   seeking_advice: "Seeking Advice",
   open_to_partnerships: "Open to Partnerships",
+  b2b: "B2B",
+  contract: "Contract Work",
+  proposal: "Open to Proposals",
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {

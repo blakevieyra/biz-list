@@ -7,7 +7,6 @@ import { saveBusinessDashboardProfile } from "@/lib/actions/business";
 import { CategoryPicker, parseStoredCategory } from "@/components/industry-picker";
 import { ImageUpload } from "@/components/image-upload";
 import { SocialLinksEditor } from "@/components/social-links-editor";
-import { JobApplicationFormEditor } from "@/components/job-application-form-editor";
 import { ServicesEditor } from "@/components/services-editor";
 import { Card } from "@/components/ui";
 import type {
@@ -15,16 +14,10 @@ import type {
   BusinessProfile,
   BusinessService,
   BusinessSocialLinks,
-  JobApplicationFormConfig,
 } from "@/lib/types";
 import { INTENT_LABELS } from "@/lib/types";
 
-const intents: BusinessIntent[] = [
-  "hiring",
-  "seeking_customers",
-  "seeking_advice",
-  "open_to_partnerships",
-];
+const intents = Object.keys(INTENT_LABELS) as BusinessIntent[];
 
 export function BusinessProfileEditor({
   business,
@@ -54,8 +47,6 @@ export function BusinessProfileEditor({
     phone: business.phone,
     hours: business.hours,
     importantInfo: business.importantInfo,
-    isHiring: business.isHiring,
-    jobApplicationForm: business.jobApplicationForm ?? { questions: [] },
     services: business.services.length ? business.services : [{ name: "", description: "", price: "" }],
     mediaUrls: business.mediaUrls,
     intents: business.intents,
@@ -93,8 +84,6 @@ export function BusinessProfileEditor({
         phone: form.phone,
         hours: form.hours,
         importantInfo: form.importantInfo,
-        isHiring: form.isHiring,
-        jobApplicationForm: form.jobApplicationForm,
         services,
         mediaUrls: form.mediaUrls,
         intents: form.intents,
@@ -198,27 +187,8 @@ export function BusinessProfileEditor({
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.isHiring}
-              onChange={(e) => setForm({ ...form, isHiring: e.target.checked })}
-            />
-            <span>We&apos;re hiring</span>
-          </label>
         </div>
       </Card>
-
-      {form.isHiring && (
-        <Card>
-          <JobApplicationFormEditor
-            form={form.jobApplicationForm}
-            onChange={(jobApplicationForm: JobApplicationFormConfig) =>
-              setForm({ ...form, jobApplicationForm })
-            }
-          />
-        </Card>
-      )}
 
       <Card>
         <h2 className="font-semibold">What you&apos;re looking for</h2>

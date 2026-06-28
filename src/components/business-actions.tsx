@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   startMessageWithBusinessOwner,
+  sendProposalOutreach,
   toggleFollowBusiness,
 } from "@/lib/actions/social";
 import { toggleLikeBusiness } from "@/lib/actions/business";
@@ -58,16 +59,21 @@ export function BusinessActions({
   }
 
   function sendOutreach() {
-    const prefill = outreachType === "event"
-      ? `Hi! I wanted to invite ${biz} to ${eventName || "an upcoming event"}. ${outreachMsg}`.trim()
+    const body = outreachType === "event"
+      ? `Hi! I wanted to invite ${biz} to ${eventName || "an upcoming event"}.${outreachMsg.trim() ? " " + outreachMsg.trim() : ""}`.trim()
       : outreachMsg.trim();
-    if (!prefill) return;
+    // For events, require either a named event or a personal note so blank forms can't send
+    if (outreachType === "event" && !eventName.trim() && !outreachMsg.trim()) {
+      setError("Please add an event name or a personal note before sending.");
+      return;
+    }
+    if (!body) return;
     startTransition(async () => {
       setError(null);
-      const result = await startMessageWithBusinessOwner(businessId);
+      const result = await sendProposalOutreach(businessId, outreachType!, body);
       if (result.error) { setError(result.error); return; }
       if (result.conversationId) {
-        router.push(`/messages/${result.conversationId}?prefill=${encodeURIComponent(prefill)}`);
+        router.push(`/messages/${result.conversationId}`);
       }
     });
   }
@@ -236,7 +242,7 @@ export function BusinessActions({
             onClick={sendOutreach}
             className="mt-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
           >
-            {pending ? "Opening…" : "Open in messages"}
+            {pending ? "Sending…" : outreachType === "event" ? "Send invite" : "Send proposal"}
           </button>
         </div>
       )}

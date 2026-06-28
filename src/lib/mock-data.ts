@@ -300,6 +300,9 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Tue–Sun 7am–3pm",
     importantInfo: "Wholesale orders need 48hr notice.",
     isHiring: true,
+    jobTitle: "Baker",
+    jobDescription: "Join our team baking fresh pastries and breads daily.",
+    jobRequirements: "Early morning availability, food handler certification preferred.",
     jobApplicationForm: {
       questions: [
         {
@@ -385,6 +388,9 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Mon–Fri 9am–5pm",
     importantInfo: "Free 15-minute intro call for new clients.",
     isHiring: false,
+    jobTitle: "",
+    jobDescription: "",
+    jobRequirements: "",
     jobApplicationForm: { questions: [] },
     services: [
       { name: "Contract review", description: "Flat-fee review of vendor agreements, client contracts, and NDAs. Clear summary with redlines included.", price: "$299 flat fee", quantity: "Delivered in 3–5 business days · unlimited Q&A", imageUrl: DEMO_IMAGES.legal, serviceType: "Service", actionType: "form" },
@@ -418,6 +424,9 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Wed–Sat 10am–6pm",
     importantInfo: "Vendor applications reviewed monthly.",
     isHiring: true,
+    jobTitle: "Retail Associate",
+    jobDescription: "Help customers discover local artisan products and manage pop-up vendor relations.",
+    jobRequirements: "Customer service experience, passion for local makers.",
     jobApplicationForm: { questions: [] },
     services: [
       { name: "Pop-up retail", description: "Short-term shared shelf space in our Round Rock storefront. Perfect for local makers testing a new product line.", price: "From $150/month", quantity: "2–4 ft of dedicated shelf · 30 and 90-day terms", imageUrl: DEMO_IMAGES.retail, serviceType: "Retail", actionType: "form" },
@@ -452,6 +461,9 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Mon–Sat 5am–9pm",
     importantInfo: "First class free for new members.",
     isHiring: true,
+    jobTitle: "Fitness Coach",
+    jobDescription: "Lead group fitness classes and one-on-one personal training sessions.",
+    jobRequirements: "Certified personal trainer (NASM, ACE, or equivalent), CPR certified.",
     jobApplicationForm: { questions: [] },
     services: [
       { name: "Corporate wellness", description: "20-minute on-site stretch and mobility sessions for office teams. Reduces injury and improves focus — no equipment needed.", price: "From $199/mo", quantity: "Teams of 8–30 people · 2 sessions/week included", imageUrl: DEMO_IMAGES.flyerFitness, serviceType: "Service", actionType: "form" },
@@ -485,6 +497,9 @@ export const SEED_BUSINESSES: BusinessProfile[] = [
     hours: "Mon–Fri 8am–6pm",
     importantInfo: "Rush jobs available with 24hr notice.",
     isHiring: false,
+    jobTitle: "",
+    jobDescription: "",
+    jobRequirements: "",
     jobApplicationForm: { questions: [] },
     services: [
       { name: "Menu & signage printing", description: "Laminated menus, chalkboard inserts, window clings, and A-frame signs. Rush turnaround available for grand openings.", price: "From $89", quantity: "Min. 10 pieces · same-day rush available", imageUrl: DEMO_IMAGES.print, serviceType: "Service", actionType: "form" },

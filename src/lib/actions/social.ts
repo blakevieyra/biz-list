@@ -61,12 +61,16 @@ async function createNotification(
   }
 
   if (params.type !== "collaboration" && params.actorName) {
-    await emailNotificationToUser(params.userId, params.type, {
-      actorName: params.actorName,
-      businessName: params.businessName,
-      postTitle: params.postTitle,
-      link: params.link,
-    });
+    try {
+      await emailNotificationToUser(params.userId, params.type, {
+        actorName: params.actorName,
+        businessName: params.businessName,
+        postTitle: params.postTitle,
+        link: params.link,
+      });
+    } catch {
+      // Email failure is non-fatal — notification is already in the DB
+    }
   }
 }
 
@@ -989,7 +993,19 @@ export async function getOrCreateConversation(
       .select("id")
       .single();
 
-    if (error) return { error: error.message };
+    if (error) {
+      // Unique constraint violation means the row was created concurrently — re-fetch it
+      if (error.code === "23505") {
+        const { data: raced } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("participant_a", participantA)
+          .eq("participant_b", participantB)
+          .maybeSingle();
+        if (raced) return { conversationId: raced.id };
+      }
+      return { error: error.message };
+    }
 
     // Trigger emailMe automation when a NEW business conversation starts
     if (businessId && !options?.skipAutomations) {
@@ -1261,6 +1277,72 @@ export async function startMessageWithBusinessOwner(businessId: string) {
   if (!result.conversationId) return { error: "Could not create conversation." };
 
   return { conversationId: result.conversationId };
+}
+
+export async function sendProposalOutreach(
+  businessId: string,
+  outreachType: "proposal" | "event",
+  messageBody: string,
+) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to send messages." };
+  if (!messageBody.trim()) return { error: "Message cannot be empty." };
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("owner_id, name")
+      .eq("id", businessId)
+      .single();
+
+    if (!business) return { error: "Business not found." };
+    if (business.owner_id === user.id) return { error: "You cannot send a proposal to yourself." };
+
+    const moderation = moderateUserContent(messageBody.trim(), "Message");
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const result = await getOrCreateConversation(business.owner_id, businessId);
+    if ("error" in result && result.error) return { error: result.error };
+    if (!result.conversationId) return { error: "Could not create conversation." };
+    const conversationId = result.conversationId;
+
+    const { error: msgError } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      body: messageBody.trim().slice(0, 5000),
+    });
+
+    if (msgError) return { error: msgError.message };
+
+    const { data: senderProfile } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+
+    const senderName = senderProfile?.display_name ?? "Someone";
+    const notifTitle = outreachType === "event" ? "New event invitation" : "New partnership request";
+    const notifBody =
+      outreachType === "event"
+        ? `${senderName} invited ${business.name} to an event. Review and respond.`
+        : `${senderName} sent a collaboration proposal to ${business.name}. Review and respond.`;
+
+    await createNotification(supabase, {
+      userId: business.owner_id,
+      type: "collaboration",
+      title: notifTitle,
+      body: notifBody,
+      link: `/messages/${conversationId}`,
+      actorName: senderName,
+    });
+
+    revalidatePath(`/messages/${conversationId}`);
+    revalidatePath("/messages");
+    return { conversationId };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to send." };
+  }
 }
 
 export async function deleteForumComment(commentId: string): Promise<{ error?: string }> {
