@@ -247,31 +247,6 @@ export function MarketingPageClient({
         )}
       </Card>
 
-      {/* ── Recent auto-published posts ───────────────────────── */}
-      {postHistory.length > 0 && (
-        <section>
-          <h2 className="mb-3 font-semibold">Recent feed posts</h2>
-          <div className="space-y-3">
-            {postHistory.map((post) => (
-              <Card key={post.id}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{post.title}</p>
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-accent">
-                        {POST_TYPE_LABELS[post.postType] ?? post.postType}
-                      </span>
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted">{post.body}</p>
-                  </div>
-                  <span className="shrink-0 text-xs text-muted">{formatDate(post.createdAt)}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* ── Campaign drafts ───────────────────────────────────── */}
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -377,6 +352,31 @@ export function MarketingPageClient({
           </Card>
         )}
       </section>
+
+      {/* ── Recent auto-published posts ───────────────────────── */}
+      {postHistory.length > 0 && (
+        <section>
+          <h2 className="mb-3 font-semibold">Recent feed posts</h2>
+          <div className="space-y-3">
+            {postHistory.map((post) => (
+              <Card key={post.id}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{post.title}</p>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-accent">
+                        {POST_TYPE_LABELS[post.postType] ?? post.postType}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted">{post.body}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted">{formatDate(post.createdAt)}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

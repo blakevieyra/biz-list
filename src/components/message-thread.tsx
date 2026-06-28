@@ -59,6 +59,7 @@ export function MessageThread({
   otherUserAvatarUrl,
   otherUserIsSeekingWork,
   businessIsHiring,
+  initialBody,
 }: {
   conversationId: string;
   initialMessages: Message[];
@@ -69,9 +70,10 @@ export function MessageThread({
   otherUserAvatarUrl?: string;
   otherUserIsSeekingWork?: boolean;
   businessIsHiring?: boolean;
+  initialBody?: string;
 }) {
   const router = useRouter();
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(initialBody ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 

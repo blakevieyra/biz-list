@@ -14,9 +14,18 @@ const sourceLabels: Record<NonNullable<LocalLead["leadSource"]>, string> = {
   local: "Local match",
 };
 
-function MessageLeadButton({ leadId }: { leadId: string }) {
+function MessageLeadButton({
+  leadId,
+  leadSource,
+  displayName,
+}: {
+  leadId: string;
+  leadSource?: string;
+  displayName?: string;
+}) {
   const [error, dispatch, isPending] = useActionState(
-    (_prev: string | null, _fd: FormData) => contactLead(leadId),
+    (_prev: string | null, _fd: FormData) =>
+      contactLead(leadId, { source: leadSource, name: displayName }),
     null,
   );
 
@@ -105,7 +114,11 @@ export function LeadsPreviewPanel({
                     <p className="mt-1 text-sm text-muted">{lead.matchReasons[0]}</p>
                   )}
                 </div>
-                <MessageLeadButton leadId={lead.id} />
+                <MessageLeadButton
+                  leadId={lead.id}
+                  leadSource={lead.leadSource ?? undefined}
+                  displayName={lead.displayName}
+                />
               </div>
             </li>
           ))}

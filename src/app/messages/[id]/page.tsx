@@ -12,8 +12,10 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function ConversationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ prefill?: string }>;
 }) {
   const userId = await getAuthUserId();
   if (!userId) redirect("/auth/login");
@@ -21,6 +23,7 @@ export default async function ConversationPage({
   if (!isSupabaseConfigured()) redirect("/messages");
 
   const { id } = await params;
+  const { prefill } = await searchParams;
 
   const [conversation, messages, currentProfile] = await Promise.all([
     getConversationForUser(id, userId),
@@ -49,6 +52,7 @@ export default async function ConversationPage({
         otherUserAvatarUrl={conversation.otherUserAvatarUrl}
         otherUserIsSeekingWork={conversation.otherUserIsSeekingWork}
         businessIsHiring={conversation.businessIsHiring}
+        initialBody={prefill}
       />
     </div>
   );

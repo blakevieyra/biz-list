@@ -383,13 +383,16 @@ export async function runComprehensiveBusinessAudit(
   }
 }
 
-export async function contactLead(leadUserId: string): Promise<string | null> {
+export async function contactLead(
+  leadUserId: string,
+  meta?: { source?: string; name?: string },
+): Promise<string | null> {
   if (!isSupabaseConfigured()) {
     return "Connect Supabase to message leads.";
   }
 
   try {
-    const { user } = await requireUserWithPlan("localLeads");
+    const { user, profile } = await requireUserWithPlan("localLeads");
 
     if (leadUserId === user.id) {
       return "You cannot message yourself.";
@@ -400,7 +403,24 @@ export async function contactLead(leadUserId: string): Promise<string | null> {
     if (result.error || !result.conversationId) {
       return result.error ?? "Could not start conversation.";
     }
-    redirect(`/messages/${result.conversationId}`);
+
+    const firstName = meta?.name?.split(" ")[0] ?? meta?.name ?? "";
+    const greeting = firstName ? `Hi ${firstName}` : "Hi there";
+    const bizName = profile?.display_name ?? "us";
+
+    const prefillMap: Record<string, string> = {
+      follower: `${greeting}! Thanks for following ${bizName} on BizList — we'd love to connect. Feel free to reach out with any questions about what we offer!`,
+      seeking: `${greeting}, I noticed you're open to new opportunities and your background looks like a great fit. Would you be open to a conversation about joining our team at ${bizName}?`,
+      interest: `${greeting}, I found your profile through BizList and noticed we have some shared interests. I'd love to connect and explore how we might be able to help each other!`,
+      local: `${greeting}, I came across your profile on BizList and thought there might be a great connection here. ${bizName} serves this area — would love to introduce ourselves!`,
+    };
+
+    const prefill = meta?.source ? (prefillMap[meta.source] ?? "") : "";
+    const url = prefill
+      ? `/messages/${result.conversationId}?prefill=${encodeURIComponent(prefill)}`
+      : `/messages/${result.conversationId}`;
+
+    redirect(url);
   } catch (e) {
     if (e instanceof Error && e.message.includes("NEXT_REDIRECT")) throw e;
     return e instanceof Error ? e.message : "Could not open conversation.";
