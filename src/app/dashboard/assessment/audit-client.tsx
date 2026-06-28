@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { PageHeader, Card } from "@/components/ui";
 import type { ComprehensiveAuditResult, ComprehensiveAuditSection } from "@/lib/ai/ai-services";
+import { emailAuditReport } from "@/lib/actions/pro";
 
 export type AuditProfileData = {
   businessName: string;
@@ -86,30 +87,28 @@ function SectionCard({ section }: { section: ComprehensiveAuditSection }) {
             <p className="text-xs text-muted">{section.summary}</p>
           </div>
         </div>
-        <span className="shrink-0 text-muted">{open ? "▲" : "▼"}</span>
+        <span className="shrink-0 text-muted print:hidden">{open ? "▲" : "▼"}</span>
       </button>
-      {open && (
-        <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
-          <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
-            <ul className="space-y-1">
-              {section.strengths.map((s) => <li key={s} className="text-sm text-muted">• {s}</li>)}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-red-600">Gaps & Risks</p>
-            <ul className="space-y-1">
-              {section.gaps.map((g) => <li key={g} className="text-sm text-muted">• {g}</li>)}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-accent">Action Items</p>
-            <ul className="space-y-1">
-              {section.actions.map((a) => <li key={a} className="text-sm text-muted">→ {a}</li>)}
-            </ul>
-          </div>
+      <div className={`mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-3 ${open ? "" : "hidden print:grid"}`}>
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
+          <ul className="space-y-1">
+            {section.strengths.map((s) => <li key={s} className="text-sm text-muted">• {s}</li>)}
+          </ul>
         </div>
-      )}
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-red-600">Gaps & Risks</p>
+          <ul className="space-y-1">
+            {section.gaps.map((g) => <li key={g} className="text-sm text-muted">• {g}</li>)}
+          </ul>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-accent">Action Items</p>
+          <ul className="space-y-1">
+            {section.actions.map((a) => <li key={a} className="text-sm text-muted">→ {a}</li>)}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
@@ -135,20 +134,83 @@ function ReportView({
 }) {
   const internalSections = result.sections.filter((s) => s.phase === "internal");
   const externalSections = result.sections.filter((s) => s.phase === "external");
+  const [emailPending, startEmail] = useTransition();
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sent" | "error">("idle");
+
+  function handlePrint() {
+    window.print();
+  }
+
+  function handleEmail() {
+    setEmailStatus("idle");
+    startEmail(async () => {
+      const res = await emailAuditReport(result, businessName);
+      setEmailStatus(res.error ? "error" : "sent");
+    });
+  }
 
   return (
     <>
+      <style>{`
+        @media print {
+          nav, header, aside, footer,
+          [data-sidebar], [data-nav],
+          .print\\:hidden { display: none !important; }
+
+          body { background: #fff !important; color: #001B44 !important; font-family: Arial, sans-serif; }
+
+          .print-header {
+            display: block !important;
+            text-align: center;
+            padding: 12px 0 20px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+          }
+
+          details { display: block !important; }
+          details summary { pointer-events: none; }
+          details > div { display: block !important; }
+
+          * { page-break-inside: avoid; }
+        }
+
+        @media screen { .print-header { display: none; } }
+      `}</style>
+
+      <div className="print-header">
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#007BFF" }}>BizList · AI Business Audit Report</p>
+        <p style={{ margin: "4px 0 0", fontSize: 22, fontWeight: 800, color: "#001B44" }}>{businessName}</p>
+        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+      </div>
+
       <PageHeader
         title="Business Audit Report"
         description={`${businessName} · Full internal & external AI audit`}
         action={
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
-          >
-            {backLabel}
-          </button>
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              type="button"
+              onClick={handleEmail}
+              disabled={emailPending}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40 disabled:opacity-50"
+            >
+              {emailPending ? "Sending…" : emailStatus === "sent" ? "Sent!" : emailStatus === "error" ? "Error — retry" : "Email Report"}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+            >
+              Export PDF
+            </button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+            >
+              {backLabel}
+            </button>
+          </div>
         }
       />
 
@@ -198,7 +260,7 @@ function ReportView({
         </div>
       </div>
 
-      <Link href="/dashboard" className="mt-8 inline-block text-sm text-accent hover:underline">
+      <Link href="/dashboard" className="mt-8 inline-block text-sm text-accent hover:underline print:hidden">
         ← Back to dashboard
       </Link>
     </>

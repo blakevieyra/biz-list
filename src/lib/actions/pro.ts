@@ -14,6 +14,8 @@ import {
   type ComprehensiveAuditResult,
 } from "@/lib/ai/ai-services";
 import { emailAssessmentComplete } from "@/lib/email/actions";
+import { buildAuditEmailHtml, buildAuditEmailPlainText } from "@/lib/email/audit-email";
+import { sendRawHtmlEmail } from "@/lib/email/send";
 import { canAccess } from "@/lib/plans";
 import type { PlanFeature } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
@@ -882,3 +884,34 @@ export async function getRecentAutoPostHistory(limit = 10): Promise<
     return [];
   }
 }
+
+export async function emailAuditReport(
+  result: ComprehensiveAuditResult,
+  businessName: string,
+): Promise<{ error?: string; success?: boolean }> {
+  try {
+    const { user, profile } = await requireUserWithPlan();
+    const email = profile?.email ?? user.email;
+    if (!email) return { error: "No email address found for your account." };
+
+    const html = buildAuditEmailHtml(
+      result,
+      businessName,
+      profile?.display_name ?? undefined,
+    );
+    const text = buildAuditEmailPlainText(result, businessName);
+
+    await sendRawHtmlEmail({
+      to: email,
+      subject: `Your BizList AI Audit: ${businessName} — ${result.overallScore}/100`,
+      html,
+      text,
+    });
+
+    return { success: true };
+  } catch (e) {
+    console.error("[emailAuditReport]", e);
+    return { error: e instanceof Error ? e.message : "Failed to send email." };
+  }
+}
+

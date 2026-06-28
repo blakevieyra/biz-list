@@ -86,6 +86,61 @@ export async function sendAppEmail(input: SendEmailInput): Promise<void> {
   }
 }
 
+export async function sendRawHtmlEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  if (!input.to) return;
+
+  if (!isEmailConfigured()) {
+    console.info("[BizList email — NOT SENT, no email provider configured]", {
+      to: input.to,
+      subject: input.subject,
+    });
+    return;
+  }
+
+  const logo = getLogoInlineAttachment();
+
+  try {
+    console.info("[BizList email] sending raw to", input.to, "subject:", input.subject);
+
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY!);
+      await resend.emails.send({
+        from: getEmailFrom(),
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        attachments: [{ content: logo.content, filename: logo.filename, contentId: EMAIL_LOGO_CID }],
+      });
+    } else if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+      await sgMail.send({
+        from: getEmailFrom(),
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        attachments: [logo],
+      });
+    }
+
+    console.info("[BizList email] sent OK");
+  } catch (err: unknown) {
+    const error = err as { message?: string; response?: { body?: unknown; status?: number } };
+    console.error("[BizList email send error]", {
+      message: error?.message,
+      status: error?.response?.status,
+      body: JSON.stringify(error?.response?.body),
+    });
+    throw error;
+  }
+}
+
 export async function sendTemplateEmail(
   to: string,
   template: Omit<SendEmailInput, "to">,
