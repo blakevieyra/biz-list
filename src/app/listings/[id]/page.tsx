@@ -221,6 +221,8 @@ export default async function BusinessDetailPage({
 
                 shareUrl={shareUrl}
 
+                businessName={business.name}
+
               />
 
               {/* Likes · Followers · Website · Social links */}
@@ -356,6 +358,28 @@ export default async function BusinessDetailPage({
 
             <ListingPhotosCard urls={business.mediaUrls} />
 
+            <Card>
+
+              <h2 className="font-semibold">What they&apos;re looking for</h2>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+
+                {business.intents.length > 0 ? (
+
+                  business.intents.map((intent) => <IntentBadge key={intent} intent={intent} />)
+
+                ) : (
+
+                  <p className="text-sm text-muted">No partnership intents listed yet.</p>
+
+                )}
+
+              </div>
+
+            </Card>
+
+
+
             <Card id="about">
 
               <h2 className="font-semibold">About</h2>
@@ -473,28 +497,6 @@ export default async function BusinessDetailPage({
                 )}
 
               </dl>
-
-            </Card>
-
-
-
-            <Card>
-
-              <h2 className="font-semibold">What they&apos;re looking for</h2>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-
-                {business.intents.length > 0 ? (
-
-                  business.intents.map((intent) => <IntentBadge key={intent} intent={intent} />)
-
-                ) : (
-
-                  <p className="text-sm text-muted">No partnership intents listed yet.</p>
-
-                )}
-
-              </div>
 
             </Card>
 

@@ -9,6 +9,8 @@ import {
 import { toggleLikeBusiness } from "@/lib/actions/business";
 import type { BusinessConnectionState } from "@/lib/types";
 
+type OutreachType = "proposal" | "event" | null;
+
 export function BusinessActions({
   businessId,
   ownerId,
@@ -16,6 +18,7 @@ export function BusinessActions({
   initialState,
   shareTitle,
   shareUrl,
+  businessName,
 }: {
   businessId: string;
   ownerId: string;
@@ -23,12 +26,46 @@ export function BusinessActions({
   initialState: BusinessConnectionState;
   shareTitle?: string;
   shareUrl?: string;
+  businessName?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
+  const [outreachType, setOutreachType] = useState<OutreachType>(null);
+  const [outreachMsg, setOutreachMsg] = useState("");
+  const [eventName, setEventName] = useState("");
   const isOwner = currentUserId === ownerId;
+
+  const biz = businessName ?? "this business";
+
+  function openProposal() {
+    if (!currentUserId) { router.push("/auth/login"); return; }
+    setOutreachType("proposal");
+    setOutreachMsg(`Hi! I'd like to explore a collaboration opportunity with ${biz}. We think there could be a great partnership here — would love to connect and share more details.`);
+  }
+
+  function openEventInvite() {
+    if (!currentUserId) { router.push("/auth/login"); return; }
+    setOutreachType("event");
+    setEventName("");
+    setOutreachMsg("");
+  }
+
+  function sendOutreach() {
+    const prefill = outreachType === "event"
+      ? `Hi! I wanted to invite ${biz} to ${eventName || "an upcoming event"}. ${outreachMsg}`.trim()
+      : outreachMsg.trim();
+    if (!prefill) return;
+    startTransition(async () => {
+      setError(null);
+      const result = await startMessageWithBusinessOwner(businessId);
+      if (result.error) { setError(result.error); return; }
+      if (result.conversationId) {
+        router.push(`/messages/${result.conversationId}?prefill=${encodeURIComponent(prefill)}`);
+      }
+    });
+  }
 
   function handleFollow() {
     if (!currentUserId) {
@@ -112,12 +149,7 @@ export function BusinessActions({
       <div className="flex flex-wrap gap-2">
         {!isOwner && (
           <>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={handleFollow}
-              className={buttonClass}
-            >
+            <button type="button" disabled={pending} onClick={handleFollow} className={buttonClass}>
               {state.isFollowing ? "Following" : "Follow"}
             </button>
             <button
@@ -132,13 +164,14 @@ export function BusinessActions({
             >
               {state.isLiked ? "Liked" : "Like"}
             </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={handleMessage}
-              className={buttonClass}
-            >
+            <button type="button" disabled={pending} onClick={handleMessage} className={buttonClass}>
               Message
+            </button>
+            <button type="button" disabled={pending} onClick={openProposal} className={buttonClass}>
+              Propose
+            </button>
+            <button type="button" disabled={pending} onClick={openEventInvite} className={buttonClass}>
+              Invite to event
             </button>
             {shareUrl && (
               <button type="button" onClick={handleShare} className={buttonClass}>
@@ -148,6 +181,52 @@ export function BusinessActions({
           </>
         )}
       </div>
+
+      {/* Outreach composer */}
+      {outreachType && (
+        <div className="mt-3 rounded-xl border border-border bg-card p-4 text-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-medium">
+              {outreachType === "proposal" ? "Send a collaboration proposal" : "Invite to an event"}
+            </p>
+            <button
+              type="button"
+              onClick={() => setOutreachType(null)}
+              className="text-xs text-muted hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {outreachType === "event" && (
+            <input
+              type="text"
+              value={eventName}
+              onChange={(e) => setEventName(e.target.value)}
+              placeholder="Event name or link (optional)"
+              className="mb-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            />
+          )}
+
+          <textarea
+            rows={3}
+            value={outreachMsg}
+            onChange={(e) => setOutreachMsg(e.target.value)}
+            placeholder={outreachType === "event" ? "Add a personal note (optional)…" : "Edit your message…"}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+          />
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={sendOutreach}
+            className="mt-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+          >
+            {pending ? "Opening…" : "Open in messages"}
+          </button>
+        </div>
+      )}
+
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );

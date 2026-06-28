@@ -30,6 +30,26 @@ const POST_TYPE_LABELS: Record<string, string> = {
   discussion: "Discussion",
 };
 
+const TOPIC_OPTIONS = [
+  { value: "social", label: "Social post" },
+  { value: "product", label: "Product spotlight" },
+  { value: "service", label: "Service highlight" },
+  { value: "deal", label: "Deal / offer" },
+  { value: "event", label: "Event promotion" },
+  { value: "update", label: "Business update" },
+  { value: "hiring", label: "Hiring post" },
+  { value: "email", label: "Email campaign" },
+  { value: "local", label: "Local promotion" },
+  { value: "seasonal", label: "Seasonal content" },
+];
+
+type CalendarSlot = {
+  id: string;
+  date: string;
+  topic: string;
+  content: string;
+};
+
 type Schedule = {
   enabled: boolean;
   dayOfWeek: number;
@@ -55,6 +75,10 @@ type PostHistory = {
   createdAt: string;
 };
 
+function newSlot(): CalendarSlot {
+  return { id: Math.random().toString(36).slice(2), date: "", topic: "social", content: "" };
+}
+
 export function MarketingPageClient({
   initialSchedule,
   campaigns,
@@ -70,17 +94,47 @@ export function MarketingPageClient({
   const [schedPending, startScheduleTransition] = useTransition();
   const [publishPending, startPublishTransition] = useTransition();
   const [draftPending, startDraftTransition] = useTransition();
-  const [campaignPending, startCampaignTransition] = useTransition();
+  const [calendarPending, startCalendarTransition] = useTransition();
   const [publishMsg, setPublishMsg] = useState<string | null>(null);
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
-  const [campaignMsg, setCampaignMsg] = useState<string | null>(null);
+  const [calendarMsg, setCalendarMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Campaign form
-  const [title, setTitle] = useState("");
-  const [channel, setChannel] = useState("social");
-  const [content, setContent] = useState("");
-  const [scheduledFor, setScheduledFor] = useState("");
+  // Monthly content calendar
+  const [calendarTitle, setCalendarTitle] = useState("");
+  const [slots, setSlots] = useState<CalendarSlot[]>([newSlot()]);
+
+  function updateSlot(id: string, field: keyof CalendarSlot, value: string) {
+    setSlots((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value } : s));
+  }
+
+  function removeSlot(id: string) {
+    setSlots((prev) => prev.length > 1 ? prev.filter((s) => s.id !== id) : prev);
+  }
+
+  function saveCalendar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!calendarTitle.trim()) return;
+    const filled = slots.filter((s) => s.content.trim());
+    if (!filled.length) return;
+    setError(null);
+    setCalendarMsg(null);
+    startCalendarTransition(async () => {
+      for (const slot of filled) {
+        const result = await createMarketingCampaign({
+          title: `${calendarTitle} — ${TOPIC_OPTIONS.find((t) => t.value === slot.topic)?.label ?? slot.topic}`,
+          channel: slot.topic,
+          content: slot.content,
+          scheduledFor: slot.date || undefined,
+        });
+        if (result.error) { setError(result.error); return; }
+      }
+      setCalendarTitle("");
+      setSlots([newSlot()]);
+      setCalendarMsg(`${filled.length} post${filled.length > 1 ? "s" : ""} saved to calendar.`);
+      router.refresh();
+    });
+  }
 
   function saveSchedule() {
     setError(null);
@@ -115,24 +169,6 @@ export function MarketingPageClient({
       const result = await generatePlatinumMarketingDraft("email");
       if (result.error) { setError(result.error); return; }
       setDraftMsg(result.message ?? "Draft created!");
-      router.refresh();
-    });
-  }
-
-  function saveCampaign(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setCampaignMsg(null);
-    startCampaignTransition(async () => {
-      const result = await createMarketingCampaign({
-        title,
-        channel,
-        content,
-        scheduledFor: scheduledFor || undefined,
-      });
-      if (result.error) { setError(result.error); return; }
-      setTitle(""); setContent(""); setScheduledFor("");
-      setCampaignMsg("Campaign saved.");
       router.refresh();
     });
   }
@@ -247,10 +283,13 @@ export function MarketingPageClient({
         )}
       </Card>
 
-      {/* ── Campaign drafts ───────────────────────────────────── */}
+      {/* ── Monthly Content Calendar ──────────────────────────── */}
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold">Campaigns & drafts</h2>
+          <div>
+            <h2 className="font-semibold">Campaigns & content calendar</h2>
+            <p className="mt-0.5 text-xs text-muted">Plan multiple posts throughout the month — different dates, topics, and content in one go.</p>
+          </div>
           <button
             type="button"
             disabled={draftPending}
@@ -262,93 +301,139 @@ export function MarketingPageClient({
         </div>
         {draftMsg && <p className="mb-3 text-sm text-emerald-700">{draftMsg}</p>}
 
-        {/* Campaign creator */}
         <Card>
-          <h3 className="font-medium">Create campaign</h3>
-          <form onSubmit={saveCampaign} className="mt-3 space-y-3">
+          <h3 className="font-medium">Monthly content planner</h3>
+          <p className="mt-1 text-xs text-muted">Add as many scheduled posts as you want — product info, offers, events, services — all in one campaign.</p>
+
+          <form onSubmit={saveCalendar} className="mt-4 space-y-4">
             <input
               required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Campaign title"
+              value={calendarTitle}
+              onChange={(e) => setCalendarTitle(e.target.value)}
+              placeholder="Campaign name (e.g. July Promotions)"
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
             />
-            <select
-              value={channel}
-              onChange={(e) => setChannel(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="social">Social post</option>
-              <option value="email">Email</option>
-              <option value="local">Local promotion</option>
-            </select>
-            <textarea
-              required
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={4}
-              placeholder="Write your campaign message — or use the AI button above to generate one."
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <div>
-              <label className="block text-xs font-medium text-muted mb-1">Schedule for (optional)</label>
-              <input
-                type="datetime-local"
-                value={scheduledFor}
-                onChange={(e) => setScheduledFor(e.target.value)}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-              />
+
+            {/* Slot list */}
+            <div className="space-y-3">
+              {slots.map((slot, i) => (
+                <div key={slot.id} className="rounded-xl border border-border bg-slate-50/60 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-muted uppercase tracking-wide">Post {i + 1}</span>
+                    {slots.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSlot(slot.id)}
+                        className="text-xs text-muted hover:text-red-500"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Scheduled date (optional)</label>
+                      <input
+                        type="datetime-local"
+                        value={slot.date}
+                        onChange={(e) => updateSlot(slot.id, "date", e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Topic / type</label>
+                      <select
+                        value={slot.topic}
+                        onChange={(e) => updateSlot(slot.id, "topic", e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                      >
+                        {TOPIC_OPTIONS.map((t) => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={slot.content}
+                    onChange={(e) => updateSlot(slot.id, "content", e.target.value)}
+                    placeholder={
+                      slot.topic === "product" ? "Highlight a specific product — what it is, who it's for, and why they should try it…"
+                      : slot.topic === "service" ? "Describe a service offering — what's included, pricing, availability…"
+                      : slot.topic === "deal" ? "Describe your deal or offer — discount, limited time, promo code…"
+                      : slot.topic === "event" ? "Share event details — name, date, location, what to expect…"
+                      : slot.topic === "email" ? "Write your email campaign message…"
+                      : "Write your post content…"
+                    }
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                  />
+                </div>
+              ))}
             </div>
-            {campaignMsg && <p className="text-sm text-emerald-700">{campaignMsg}</p>}
+
+            <button
+              type="button"
+              onClick={() => setSlots((prev) => [...prev, newSlot()])}
+              className="w-full rounded-xl border border-dashed border-border py-2 text-sm text-muted hover:border-accent hover:text-accent transition-colors"
+            >
+              + Add another post
+            </button>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {calendarMsg && <p className="text-sm text-emerald-700">{calendarMsg}</p>}
+
             <button
               type="submit"
-              disabled={campaignPending}
-              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              disabled={calendarPending}
+              className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
             >
-              {campaignPending ? "Saving…" : "Save campaign"}
+              {calendarPending ? "Saving…" : `Save ${slots.filter((s) => s.content.trim()).length || ""} post${slots.filter((s) => s.content.trim()).length !== 1 ? "s" : ""} to calendar`}
             </button>
           </form>
         </Card>
 
         {/* Existing campaigns */}
         {campaigns.length > 0 && (
-          <div className="mt-4 space-y-3">
-            {campaigns.map((c) => (
-              <Card key={c.id}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{c.title}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        c.status === "sent"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : c.status === "scheduled"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {c.status}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-muted capitalize">
-                        {c.channel}
-                      </span>
+          <div className="mt-6">
+            <h3 className="mb-3 text-sm font-semibold text-muted">Saved campaigns</h3>
+            <div className="space-y-3">
+              {campaigns.map((c) => (
+                <Card key={c.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">{c.title}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          c.status === "sent"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : c.status === "scheduled"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {c.status}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-muted capitalize">
+                          {TOPIC_OPTIONS.find((t) => t.value === c.channel)?.label ?? c.channel}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted">{c.content}</p>
+                      {c.scheduled_for && (
+                        <p className="mt-1 text-xs text-muted">Scheduled: {formatDate(c.scheduled_for)}</p>
+                      )}
                     </div>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted">{c.content}</p>
-                    {c.scheduled_for && (
-                      <p className="mt-1 text-xs text-muted">Scheduled: {formatDate(c.scheduled_for)}</p>
+                    {c.created_at && (
+                      <span className="shrink-0 text-xs text-muted">{formatDate(c.created_at)}</span>
                     )}
                   </div>
-                  {c.created_at && (
-                    <span className="shrink-0 text-xs text-muted">{formatDate(c.created_at)}</span>
-                  )}
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 
         {campaigns.length === 0 && (
           <Card className="mt-3">
-            <p className="text-sm text-muted">No campaigns yet — save one above or use the AI generate button.</p>
+            <p className="text-sm text-muted">No campaigns yet — add posts above or use the AI generate button.</p>
           </Card>
         )}
       </section>
