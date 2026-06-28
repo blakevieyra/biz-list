@@ -8,10 +8,18 @@ import {
   toggleFollowBusiness,
 } from "@/lib/actions/social";
 import { toggleLikeBusiness } from "@/lib/actions/business";
-import type { BusinessConnectionState } from "@/lib/types";
+import type { BusinessConnectionState, BusinessEvent } from "@/lib/types";
 import { SaveButton } from "@/components/save-button";
 
 type OutreachType = "proposal" | "event" | null;
+
+function formatEventDate(startsAt: string) {
+  return new Date(startsAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 export function BusinessActions({
   businessId,
@@ -23,6 +31,7 @@ export function BusinessActions({
   businessName,
   initialSaved = false,
   listingUrl,
+  senderEvents = [],
 }: {
   businessId: string;
   ownerId: string;
@@ -33,106 +42,98 @@ export function BusinessActions({
   businessName?: string;
   initialSaved?: boolean;
   listingUrl?: string;
+  senderEvents?: BusinessEvent[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [sentConversationId, setSentConversationId] = useState<string | null>(null);
   const [outreachType, setOutreachType] = useState<OutreachType>(null);
   const [outreachMsg, setOutreachMsg] = useState("");
-  const [eventName, setEventName] = useState("");
+  const [selectedEventId, setSelectedEventId] = useState("");
   const isOwner = currentUserId === ownerId;
 
   const biz = businessName ?? "this business";
 
-  function openProposal() {
+  const selectedEvent = senderEvents.find((e) => e.id === selectedEventId) ?? null;
+
+  function buildEventNote(event: BusinessEvent | null, extra: string) {
+    const base = event
+      ? `Hi! I'd like to invite ${biz} to ${event.title} on ${formatEventDate(event.startsAt)}${event.location ? ` at ${event.location}` : ""}. Would love to see you there!`
+      : `Hi! I wanted to invite ${biz} to an upcoming event.`;
+    return extra.trim() ? `${base}\n\n${extra.trim()}` : base;
+  }
+
+  function openCollaborate() {
     if (!currentUserId) { router.push("/auth/login"); return; }
+    setSent(false);
+    setSentConversationId(null);
     setOutreachType("proposal");
     setOutreachMsg(`Hi! I'd like to explore a collaboration opportunity with ${biz}. We think there could be a great partnership here — would love to connect and share more details.`);
   }
 
   function openEventInvite() {
     if (!currentUserId) { router.push("/auth/login"); return; }
+    setSent(false);
+    setSentConversationId(null);
     setOutreachType("event");
-    setEventName("");
+    setSelectedEventId(senderEvents[0]?.id ?? "");
     setOutreachMsg("");
   }
 
   function sendOutreach() {
+    const event = outreachType === "event" ? selectedEvent : null;
     const body = outreachType === "event"
-      ? `Hi! I wanted to invite ${biz} to ${eventName || "an upcoming event"}.${outreachMsg.trim() ? " " + outreachMsg.trim() : ""}`.trim()
+      ? buildEventNote(event, outreachMsg)
       : outreachMsg.trim();
-    // For events, require either a named event or a personal note so blank forms can't send
-    if (outreachType === "event" && !eventName.trim() && !outreachMsg.trim()) {
-      setError("Please add an event name or a personal note before sending.");
+
+    if (!body) {
+      setError("Please write a message before sending.");
       return;
     }
-    if (!body) return;
     startTransition(async () => {
       setError(null);
       const result = await sendProposalOutreach(businessId, outreachType!, body);
       if (result.error) { setError(result.error); return; }
-      if (result.conversationId) {
-        router.push(`/messages/${result.conversationId}`);
-      }
+      setSent(true);
+      setSentConversationId(result.conversationId ?? null);
     });
   }
 
   function handleFollow() {
-    if (!currentUserId) {
-      router.push("/auth/login");
-      return;
-    }
-
+    if (!currentUserId) { router.push("/auth/login"); return; }
     startTransition(async () => {
       setError(null);
       const result = await toggleFollowBusiness(businessId);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+      if (result.error) { setError(result.error); return; }
       setState((prev) => ({
         ...prev,
         isFollowing: !prev.isFollowing,
-        followerCount: prev.isFollowing
-          ? prev.followerCount - 1
-          : prev.followerCount + 1,
+        followerCount: prev.isFollowing ? prev.followerCount - 1 : prev.followerCount + 1,
       }));
       router.refresh();
     });
   }
 
   function handleLike() {
-    if (!currentUserId) {
-      router.push("/auth/login");
-      return;
-    }
-
+    if (!currentUserId) { router.push("/auth/login"); return; }
     startTransition(async () => {
       setError(null);
       const result = await toggleLikeBusiness(businessId);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+      if (result.error) { setError(result.error); return; }
       setState((prev) => ({ ...prev, isLiked: !prev.isLiked }));
       router.refresh();
     });
   }
 
   function handleMessage() {
-    if (!currentUserId) {
-      router.push("/auth/login");
-      return;
-    }
-
+    if (!currentUserId) { router.push("/auth/login"); return; }
     startTransition(async () => {
       setError(null);
       const result = await startMessageWithBusinessOwner(businessId);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+      if (result.error) { setError(result.error); return; }
       if (result.conversationId) {
         router.push(`/messages/${result.conversationId}`);
       }
@@ -145,9 +146,7 @@ export function BusinessActions({
       try {
         await navigator.share({ title: shareTitle ?? "BizList listing", url: shareUrl });
         return;
-      } catch {
-        /* user cancelled */
-      }
+      } catch { /* user cancelled */ }
     }
     await navigator.clipboard.writeText(shareUrl);
   }
@@ -178,8 +177,8 @@ export function BusinessActions({
             <button type="button" disabled={pending} onClick={handleMessage} className={buttonClass}>
               Message
             </button>
-            <button type="button" disabled={pending} onClick={openProposal} className={buttonClass}>
-              Propose
+            <button type="button" disabled={pending} onClick={openCollaborate} className={buttonClass}>
+              Collaborate
             </button>
             <button type="button" disabled={pending} onClick={openEventInvite} className={buttonClass}>
               Invite to event
@@ -203,11 +202,11 @@ export function BusinessActions({
       </div>
 
       {/* Outreach composer */}
-      {outreachType && (
+      {outreachType && !sent && (
         <div className="mt-3 rounded-xl border border-border bg-card p-4 text-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="font-medium">
-              {outreachType === "proposal" ? "Send a collaboration proposal" : "Invite to an event"}
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-semibold">
+              {outreachType === "proposal" ? "Send a collaboration request" : "Invite to an event"}
             </p>
             <button
               type="button"
@@ -219,35 +218,84 @@ export function BusinessActions({
           </div>
 
           {outreachType === "event" && (
-            <input
-              type="text"
-              value={eventName}
-              onChange={(e) => setEventName(e.target.value)}
-              placeholder="Event name or link (optional)"
-              className="mb-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-            />
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium text-muted">
+                Select one of your events
+              </label>
+              {senderEvents.length > 0 ? (
+                <select
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                >
+                  <option value="">— Choose an event —</option>
+                  {senderEvents.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.title} · {formatEventDate(event.startsAt)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted">
+                  You have no upcoming events. You can still send a personal invite below.
+                </p>
+              )}
+            </div>
           )}
 
-          <textarea
-            rows={3}
-            value={outreachMsg}
-            onChange={(e) => setOutreachMsg(e.target.value)}
-            placeholder={outreachType === "event" ? "Add a personal note (optional)…" : "Edit your message…"}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-          />
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">
+              {outreachType === "event" ? "Personal note" : "Your message"}
+            </label>
+            <textarea
+              rows={4}
+              value={outreachType === "event"
+                ? outreachMsg || buildEventNote(selectedEvent, "")
+                : outreachMsg}
+              onChange={(e) => setOutreachMsg(
+                outreachType === "event"
+                  ? e.target.value
+                  : e.target.value
+              )}
+              onFocus={() => {
+                if (outreachType === "event" && !outreachMsg) {
+                  setOutreachMsg(buildEventNote(selectedEvent, ""));
+                }
+              }}
+              placeholder={outreachType === "event" ? "Personalise your invite…" : "Edit your message…"}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            />
+          </div>
+
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
           <button
             type="button"
             disabled={pending}
             onClick={sendOutreach}
-            className="mt-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+            className="mt-3 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
           >
-            {pending ? "Sending…" : outreachType === "event" ? "Send invite" : "Send proposal"}
+            {pending ? "Sending…" : outreachType === "event" ? "Send invite" : "Send message"}
           </button>
         </div>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {/* Sent confirmation */}
+      {sent && (
+        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
+          <p className="font-medium text-emerald-800">Message sent!</p>
+          {sentConversationId && (
+            <a
+              href={`/messages/${sentConversationId}`}
+              className="mt-1 block text-xs text-emerald-700 underline"
+            >
+              View conversation →
+            </a>
+          )}
+        </div>
+      )}
+
+      {!sent && error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

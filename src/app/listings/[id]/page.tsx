@@ -39,7 +39,7 @@ import {
 
 import { getBusinessPosts, getBusinessReviews, getExistingJobApplication } from "@/lib/data/business";
 import { getSavedItemState } from "@/lib/data/saved-items";
-import { getBusinessEvents } from "@/lib/data/events";
+import { getBusinessEvents, getEventsForBusinessOwner, getUserSavedEvents } from "@/lib/data/events";
 import { EventCard } from "@/components/event-card";
 
 import { getBusinessContentLikeState } from "@/lib/data/content-likes";
@@ -113,6 +113,20 @@ export default async function BusinessDetailPage({
 
 
   const isOwner = userId === business.ownerId;
+
+  const [senderHostedEvents, senderAttendingEvents] = userId && !isOwner
+    ? await Promise.all([
+        getEventsForBusinessOwner(userId),
+        getUserSavedEvents(userId, 20),
+      ])
+    : [[], []];
+  const seenEventIds = new Set<string>();
+  const senderEvents = [...senderHostedEvents, ...senderAttendingEvents].filter((e) => {
+    if (seenEventIds.has(e.id)) return false;
+    seenEventIds.add(e.id);
+    return true;
+  });
+
   const customerProfile =
     userId && !isOwner ? await getProfileById(userId) : null;
   const existingApplication =
@@ -229,6 +243,8 @@ export default async function BusinessDetailPage({
                 initialSaved={isSaved}
 
                 listingUrl={shareUrl}
+
+                senderEvents={senderEvents}
 
               />
 
