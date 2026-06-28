@@ -39,7 +39,7 @@ export default async function CollaboratePage({
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const isBusinessAccount =
-    profile?.role === "business" || profile?.role === "organization";
+    profile?.role === "business" || profile?.role === "organization" || profile?.role === "marketer";
 
   const discoveryFilter = resolveActiveDiscoveryFilter({
     miles: undefined,

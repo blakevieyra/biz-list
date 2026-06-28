@@ -12,7 +12,7 @@ export default async function NewCollaborationPage({
   const profile = await getCurrentProfile();
   if (!profile) redirect("/auth/login");
 
-  const isBusinessAccount = profile.role === "business" || profile.role === "organization";
+  const isBusinessAccount = profile.role === "business" || profile.role === "organization" || profile.role === "marketer";
   if (!isBusinessAccount) {
     redirect("/partnerships");
   }

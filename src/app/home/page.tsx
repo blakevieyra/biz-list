@@ -50,7 +50,7 @@ export default async function HomeHubPage({
     industryInterests: profile.industryInterests,
   };
 
-  const isBusinessAccount = profile.role === "business" || profile.role === "organization";
+  const isBusinessAccount = profile.role === "business" || profile.role === "organization" || profile.role === "marketer";
 
   const businessPosts = await getFeedBusinessPosts({
     viewer,

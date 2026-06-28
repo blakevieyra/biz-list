@@ -11,7 +11,7 @@ export default async function EditProfilePage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/profile/create");
 
-  if (profile.role === "business" || profile.role === "organization") {
+  if (profile.role === "business" || profile.role === "organization" || profile.role === "marketer") {
     redirect("/dashboard/profile");
   }
 

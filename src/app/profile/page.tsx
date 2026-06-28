@@ -50,7 +50,7 @@ export default async function ProfileHubPage({
   if (!profile) redirect("/profile/create");
 
   const isBusinessAccount =
-    profile.role === "business" || profile.role === "organization";
+    profile.role === "business" || profile.role === "organization" || profile.role === "marketer";
 
   const [following, applications, conversations, notifications, unreadMessages, unreadAlerts, latestAudit, leads] =
     await Promise.all([

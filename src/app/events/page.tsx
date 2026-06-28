@@ -73,7 +73,7 @@ export default async function EventsPage({
     return qs ? `/events?${qs}` : "/events";
   }
 
-  const isBusinessAccount = profile?.role === "business" || profile?.role === "organization";
+  const isBusinessAccount = profile?.role === "business" || profile?.role === "organization" || profile?.role === "marketer";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">

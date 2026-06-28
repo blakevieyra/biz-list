@@ -72,7 +72,7 @@ const TEST_ACCOUNTS = [
   },
   {
     email: "test-marketer-platinum@bizlist.app",
-    role: "marketer" as const,
+    role: "marketer" as "business" | "organization" | "customer" | "marketer",
     plan: "platinum" as const,
     displayName: "Devon Price",
     businessName: "Price Growth Partners",
@@ -95,7 +95,7 @@ const TEST_ACCOUNTS = [
   },
 ];
 
-async function requireOwner() {
+async function requireOwner(_req: Request) {
   const admin = getSupabaseAdmin();
   if (!admin) return { error: "Admin unavailable", admin: null, callerId: null };
   const supabase = await createClient();
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get("action") ?? "test";
 
-  const { error, admin } = await requireOwner();
+  const { error, admin } = await requireOwner(req as Request);
   if (error || !admin) return NextResponse.json({ error }, { status: error === "Unauthorized" ? 401 : 403 });
 
   // ── CLEAN ────────────────────────────────────────────────────────

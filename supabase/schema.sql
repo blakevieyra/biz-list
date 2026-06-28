@@ -3,7 +3,7 @@
 
 create extension if not exists "pgcrypto";
 
-create type user_role as enum ('business', 'organization', 'customer');
+create type user_role as enum ('business', 'organization', 'customer', 'marketer');
 create type business_intent as enum (
   'hiring',
   'seeking_customers',
