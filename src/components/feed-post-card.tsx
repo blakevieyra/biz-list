@@ -139,19 +139,18 @@ export function FeedPostCard({
                       />
                     )}
                   </div>
-                  {post.businessCategory && (
-                    <p className="text-sm font-medium text-muted">{post.businessCategory}</p>
-                  )}
-                  {((post.businessLikeCount ?? 0) > 0 || (post.businessFollowerCount ?? 0) > 0) && (
-                    <p className="text-xs text-muted">
+                  {(post.businessCategory || (post.businessFollowerCount ?? 0) > 0 || (post.businessLikeCount ?? 0) > 0) && (
+                    <p className="text-sm font-medium text-muted">
+                      {post.businessCategory && <span>{post.businessCategory}</span>}
+                      {post.businessCategory && ((post.businessFollowerCount ?? 0) > 0 || (post.businessLikeCount ?? 0) > 0) && <span> · </span>}
                       {(post.businessLikeCount ?? 0) > 0 && (
-                        <span>{post.businessLikeCount} {post.businessLikeCount === 1 ? "like" : "likes"}</span>
+                        <span className="text-xs">{post.businessLikeCount} {post.businessLikeCount === 1 ? "like" : "likes"}</span>
                       )}
                       {(post.businessLikeCount ?? 0) > 0 && (post.businessFollowerCount ?? 0) > 0 && (
-                        <span> · </span>
+                        <span className="text-xs"> · </span>
                       )}
                       {(post.businessFollowerCount ?? 0) > 0 && (
-                        <span>{post.businessFollowerCount} {post.businessFollowerCount === 1 ? "follower" : "followers"}</span>
+                        <span className="text-xs">{post.businessFollowerCount} {post.businessFollowerCount === 1 ? "follower" : "followers"}</span>
                       )}
                     </p>
                   )}
