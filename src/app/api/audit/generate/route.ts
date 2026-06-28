@@ -3,7 +3,7 @@ import { isClaudeConfigured } from "@/lib/ai/claude-client";
 import { generateComprehensiveBusinessAuditAI } from "@/lib/ai/ai-services";
 import { createClient } from "@/lib/supabase/server";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const MONTHLY_LIMIT = 5;
 

@@ -446,7 +446,7 @@ Return ONLY this JSON (no markdown, no commentary):
   const text = await claudeComplete({
     system,
     user,
-    maxTokens: 8000,
+    maxTokens: 3500,
     temperature: 0.2,
   });
 
