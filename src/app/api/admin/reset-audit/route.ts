@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-const OWNER_EMAILS = ["blake.vieyra@gmail.com", "blakevieyra@gmail.com"];
+const OWNER_EMAILS = ["blake.vieyra@gmail.com", "blakevieyra@gmail.com", "maria@demo.allconnect.app"];
 
 export async function POST(req: Request) {
   const admin = getSupabaseAdmin();
