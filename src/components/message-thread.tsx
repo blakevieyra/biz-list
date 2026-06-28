@@ -10,10 +10,14 @@ export function MessageThread({
   conversationId,
   initialMessages,
   currentUserId,
+  otherUserIsSeekingWork,
+  businessIsHiring,
 }: {
   conversationId: string;
   initialMessages: Message[];
   currentUserId: string;
+  otherUserIsSeekingWork?: boolean;
+  businessIsHiring?: boolean;
 }) {
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -22,6 +26,20 @@ export function MessageThread({
 
   return (
     <div>
+      {(otherUserIsSeekingWork || businessIsHiring) && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {otherUserIsSeekingWork && (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
+              Looking for work
+            </span>
+          )}
+          {businessIsHiring && (
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+              Hiring
+            </span>
+          )}
+        </div>
+      )}
       <div className="space-y-3">
         {initialMessages.length === 0 ? (
           <Card>

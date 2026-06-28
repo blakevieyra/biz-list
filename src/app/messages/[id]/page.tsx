@@ -39,6 +39,8 @@ export default async function ConversationPage({
         conversationId={id}
         initialMessages={messages}
         currentUserId={userId}
+        otherUserIsSeekingWork={conversation.otherUserIsSeekingWork}
+        businessIsHiring={conversation.businessIsHiring}
       />
     </div>
   );

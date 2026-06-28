@@ -19,11 +19,11 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
     const otherUserId =
       row.participant_a === userId ? row.participant_b : row.participant_a;
 
-    const [{ data: otherProfile }, { data: lastMessage }, { count: unreadCount }] =
+    const [{ data: otherProfile }, { data: lastMessage }, { count: unreadCount }, { data: bizRow }] =
       await Promise.all([
         supabase
           .from("profiles")
-          .select("display_name")
+          .select("display_name, avatar_url, is_seeking_work, plan_tier")
           .eq("id", otherUserId)
           .single(),
         supabase
@@ -39,6 +39,9 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
           .eq("conversation_id", row.id)
           .neq("sender_id", userId)
           .eq("read", false),
+        row.business_id
+          ? supabase.from("businesses").select("is_hiring").eq("id", row.business_id).maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
 
     conversations.push({
@@ -48,6 +51,10 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
       businessId: row.business_id ?? undefined,
       otherUserId,
       otherUserName: otherProfile?.display_name ?? "Unknown",
+      otherUserAvatarUrl: otherProfile?.avatar_url ?? undefined,
+      otherUserIsSeekingWork: otherProfile?.is_seeking_work ?? false,
+      otherUserPlanTier: otherProfile?.plan_tier ?? undefined,
+      businessIsHiring: bizRow?.is_hiring ?? false,
       lastMessage: lastMessage?.body,
       lastMessageAt: lastMessage?.created_at,
       unreadCount: unreadCount ?? 0,
@@ -122,11 +129,16 @@ export async function getConversationForUser(
   const otherUserId =
     row.participant_a === userId ? row.participant_b : row.participant_a;
 
-  const { data: otherProfile } = await supabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", otherUserId)
-    .single();
+  const [{ data: otherProfile }, { data: bizRow }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, avatar_url, is_seeking_work, plan_tier")
+      .eq("id", otherUserId)
+      .single(),
+    row.business_id
+      ? supabase.from("businesses").select("is_hiring").eq("id", row.business_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   return {
     id: row.id,
@@ -135,6 +147,10 @@ export async function getConversationForUser(
     businessId: row.business_id ?? undefined,
     otherUserId,
     otherUserName: otherProfile?.display_name ?? "Unknown",
+    otherUserAvatarUrl: otherProfile?.avatar_url ?? undefined,
+    otherUserIsSeekingWork: otherProfile?.is_seeking_work ?? false,
+    otherUserPlanTier: otherProfile?.plan_tier ?? undefined,
+    businessIsHiring: bizRow?.is_hiring ?? false,
     unreadCount: 0,
     createdAt: row.created_at,
   };

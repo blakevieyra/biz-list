@@ -113,6 +113,11 @@ export function BusinessListingCard({
                     {business.followerIds.length} followers
                   </span>
                 )}
+                {business.isHiring && (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 sm:text-xs">
+                    Hiring
+                  </span>
+                )}
               </div>
             </div>
 

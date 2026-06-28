@@ -348,6 +348,10 @@ export interface Conversation {
   businessId?: string;
   otherUserId: string;
   otherUserName: string;
+  otherUserAvatarUrl?: string;
+  otherUserIsSeekingWork?: boolean;
+  otherUserPlanTier?: string;
+  businessIsHiring?: boolean;
   lastMessage?: string;
   lastMessageAt?: string;
   unreadCount: number;

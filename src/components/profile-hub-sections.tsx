@@ -13,6 +13,9 @@ import type {
 type ConversationPreview = {
   id: string;
   otherUserName: string;
+  otherUserIsSeekingWork?: boolean;
+  otherUserPlanTier?: string;
+  businessIsHiring?: boolean;
   lastMessage?: string;
   lastMessageAt?: string;
   unreadCount: number;
@@ -367,7 +370,19 @@ export function MessagesHubSection({
                 <Card className="group transition hover:border-accent/40 hover:shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium group-hover:text-accent">{c.otherUserName}</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="font-medium group-hover:text-accent">{c.otherUserName}</p>
+                        {c.otherUserIsSeekingWork && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+                            Looking for work
+                          </span>
+                        )}
+                        {c.businessIsHiring && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-800">
+                            Hiring
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-0.5 line-clamp-1 text-sm text-muted">
                         {c.lastMessage ?? "Start the conversation"}
                       </p>
