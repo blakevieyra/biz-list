@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { CollaborationInterestedButton } from "@/components/collaboration-interested-button";
-import { commentOnCollaboration, deleteCollaboration } from "@/lib/actions/social";
+import { commentOnCollaboration, deleteCollaboration, deleteCollaborationComment, editCollaborationComment } from "@/lib/actions/social";
 import { ReportButton } from "@/components/report-button";
 import type { CollaborationComment, CollaborationIdea } from "@/lib/types";
 import { Card, formatPostDateTime } from "@/components/ui";
@@ -35,7 +35,27 @@ export function CollaborationProposalCard({
   const [deletePending, startDeleteTransition] = useTransition();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentBody, setEditCommentBody] = useState("");
+  const [commentActionPending, startCommentAction] = useTransition();
   const isAuthor = currentUserId === idea.authorId;
+
+  function handleDeleteComment(commentId: string) {
+    if (!confirm("Delete this comment?")) return;
+    startCommentAction(async () => {
+      await deleteCollaborationComment(commentId);
+      router.refresh();
+    });
+  }
+
+  function handleEditCommentSave(e: React.FormEvent, commentId: string) {
+    e.preventDefault();
+    startCommentAction(async () => {
+      await editCollaborationComment(commentId, editCommentBody);
+      setEditingCommentId(null);
+      router.refresh();
+    });
+  }
   const interestCount = idea.interestedCount ?? 0;
 
   function handleDelete() {
@@ -161,12 +181,38 @@ export function CollaborationProposalCard({
               <p className="mt-2 text-xs text-muted">No comments yet.</p>
             ) : (
               <ul className="mt-2 space-y-2">
-                {comments.slice(-6).map((comment) => (
-                  <li key={comment.id} className="text-xs">
-                    <span className="font-medium">{comment.authorName}</span>
-                    <span className="text-muted"> · {comment.body}</span>
-                  </li>
-                ))}
+                {comments.slice(-6).map((comment) => {
+                  const isOwnComment = currentUserId === comment.authorId;
+                  return (
+                    <li key={comment.id} className="text-xs">
+                      {editingCommentId === comment.id ? (
+                        <form onSubmit={(e) => handleEditCommentSave(e, comment.id)} className="flex gap-1.5">
+                          <input
+                            value={editCommentBody}
+                            onChange={(e) => setEditCommentBody(e.target.value)}
+                            className="min-w-0 flex-1 rounded border border-border px-1.5 py-0.5 text-xs"
+                            autoFocus
+                          />
+                          <button type="submit" disabled={commentActionPending} className="font-medium text-accent hover:underline disabled:opacity-50">Save</button>
+                          <button type="button" onClick={() => setEditingCommentId(null)} className="text-muted hover:underline">Cancel</button>
+                        </form>
+                      ) : (
+                        <div className="flex items-start justify-between gap-1">
+                          <span>
+                            <span className="font-medium">{comment.authorName}</span>
+                            <span className="text-muted"> · {comment.body}</span>
+                          </span>
+                          {isOwnComment && (
+                            <div className="flex shrink-0 gap-2 ml-1">
+                              <button type="button" onClick={() => { setEditingCommentId(comment.id); setEditCommentBody(comment.body); }} className="text-muted hover:text-foreground">Edit</button>
+                              <button type="button" onClick={() => handleDeleteComment(comment.id)} disabled={commentActionPending} className="text-muted hover:text-red-600 disabled:opacity-50">Delete</button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

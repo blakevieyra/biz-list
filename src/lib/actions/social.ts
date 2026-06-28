@@ -1262,3 +1262,75 @@ export async function startMessageWithBusinessOwner(businessId: string) {
 
   return { conversationId: result.conversationId };
 }
+
+export async function deleteForumComment(commentId: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const { error } = await supabase
+      .from("forum_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/forum");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete comment." };
+  }
+}
+
+export async function editForumComment(commentId: string, body: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 2000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+    const { error } = await supabase
+      .from("forum_comments")
+      .update({ body: trimmed })
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/forum");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to edit comment." };
+  }
+}
+
+export async function deleteCollaborationComment(commentId: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const { error } = await supabase
+      .from("collaboration_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/partnerships");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete comment." };
+  }
+}
+
+export async function editCollaborationComment(commentId: string, body: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 1000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+    const { error } = await supabase
+      .from("collaboration_comments")
+      .update({ body: trimmed })
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/partnerships");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to edit comment." };
+  }
+}

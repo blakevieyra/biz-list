@@ -336,3 +336,39 @@ export async function notifyJobMatchToCustomerPro(input: {
     state: input.state,
   });
 }
+
+export async function deleteEventComment(commentId: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const { error } = await supabase
+      .from("event_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/events/[id]", "page");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete comment." };
+  }
+}
+
+export async function editEventComment(commentId: string, body: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 1000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+    const { error } = await supabase
+      .from("event_comments")
+      .update({ body: trimmed })
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/events/[id]", "page");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to edit comment." };
+  }
+}

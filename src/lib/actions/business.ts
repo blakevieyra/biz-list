@@ -873,3 +873,39 @@ export async function updateServiceOrderStatus(input: {
     return { error: e instanceof Error ? e.message : "Failed to update order." };
   }
 }
+
+export async function deleteBusinessPostComment(commentId: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const { error } = await supabase
+      .from("business_post_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete comment." };
+  }
+}
+
+export async function editBusinessPostComment(commentId: string, body: string): Promise<{ error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const trimmed = body.trim().slice(0, 2000);
+    if (!trimmed) return { error: "Comment cannot be empty." };
+    const { error } = await supabase
+      .from("business_post_comments")
+      .update({ body: trimmed })
+      .eq("id", commentId)
+      .eq("author_id", user.id);
+    if (error) return { error: error.message };
+    revalidatePath("/");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to edit comment." };
+  }
+}

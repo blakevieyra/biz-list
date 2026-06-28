@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
-import { commentOnBusinessPost } from "@/lib/actions/business";
+import { commentOnBusinessPost, deleteBusinessPostComment, editBusinessPostComment } from "@/lib/actions/business";
 import { uploadCommentAttachment } from "@/lib/actions/upload";
 import { ContentLikeButton } from "@/components/content-like-button";
 import { organizeCommentThreads } from "@/lib/comments/thread";
@@ -90,7 +90,29 @@ function CommentItem({
   replyToId: string | null;
   onReply: (commentId: string) => void;
 }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [editBody, setEditBody] = useState(comment.body);
+  const [actionPending, startAction] = useTransition();
   const isReplyTarget = replyToId === comment.id;
+  const isOwn = !!currentUserId && comment.authorId === currentUserId;
+
+  function handleDelete() {
+    if (!confirm("Delete this comment?")) return;
+    startAction(async () => {
+      await deleteBusinessPostComment(comment.id);
+      router.refresh();
+    });
+  }
+
+  function handleEditSave(e: React.FormEvent) {
+    e.preventDefault();
+    startAction(async () => {
+      await editBusinessPostComment(comment.id, editBody);
+      setEditing(false);
+      router.refresh();
+    });
+  }
 
   return (
     <li className={depth > 0 ? "ml-6 border-l border-border pl-3" : undefined}>
@@ -112,31 +134,58 @@ function CommentItem({
                 </span>
               )}
             </p>
-            <div className="mt-0.5 flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
-                {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
-              </div>
-              <div className="flex shrink-0 items-center gap-2 self-start">
-                <ContentLikeButton
-                  businessId={businessId}
-                  targetType="comment"
-                  targetId={comment.id}
-                  initialCount={comment.likeCount ?? 0}
-                  initialLiked={comment.likedByViewer ?? false}
-                  size="sm"
+            {editing ? (
+              <form onSubmit={handleEditSave} className="mt-1 flex gap-2">
+                <input
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1 text-sm"
+                  autoFocus
                 />
-                {currentUserId && (
-                  <button
-                    type="button"
-                    onClick={() => onReply(comment.id)}
-                    className="text-xs font-medium text-accent hover:underline"
-                  >
-                    Reply
-                  </button>
-                )}
+                <button type="submit" disabled={actionPending} className="text-xs font-medium text-accent hover:underline disabled:opacity-50">
+                  Save
+                </button>
+                <button type="button" onClick={() => { setEditing(false); setEditBody(comment.body); }} className="text-xs text-muted hover:underline">
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <div className="mt-0.5 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
+                  {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
+                </div>
+                <div className="flex shrink-0 items-center gap-2 self-start">
+                  <ContentLikeButton
+                    businessId={businessId}
+                    targetType="comment"
+                    targetId={comment.id}
+                    initialCount={comment.likeCount ?? 0}
+                    initialLiked={comment.likedByViewer ?? false}
+                    size="sm"
+                  />
+                  {currentUserId && (
+                    <button
+                      type="button"
+                      onClick={() => onReply(comment.id)}
+                      className="text-xs font-medium text-accent hover:underline"
+                    >
+                      Reply
+                    </button>
+                  )}
+                  {isOwn && (
+                    <>
+                      <button type="button" onClick={() => setEditing(true)} className="text-xs text-muted hover:text-foreground">
+                        Edit
+                      </button>
+                      <button type="button" onClick={handleDelete} disabled={actionPending} className="text-xs text-muted hover:text-red-600 disabled:opacity-50">
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

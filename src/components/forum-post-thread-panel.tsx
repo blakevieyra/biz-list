@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CommentForm } from "@/components/comment-form";
 import { ForumPostLikeButton } from "@/components/forum-post-like-button";
+import { ForumCommentList } from "@/components/forum-comment-list";
 import { Card, CategoryBadge, formatDate } from "@/components/ui";
 import { getCommentsForPost, getForumPostById } from "@/lib/data";
 import { getAuthUserId } from "@/lib/actions/auth";
@@ -69,21 +70,7 @@ export async function ForumPostThreadPanel({
 
       <div className="mt-6 border-t border-border pt-6">
         <h3 className="font-semibold">Comments ({comments.length})</h3>
-        <div className="mt-4 space-y-3">
-          {comments.length === 0 ? (
-            <p className="text-sm text-muted">No comments yet.</p>
-          ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="rounded-lg border border-border bg-slate-50/80 px-3 py-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium">{comment.authorName}</p>
-                  <span className="text-xs text-muted">{formatDate(comment.createdAt)}</span>
-                </div>
-                <p className="mt-1 text-sm text-muted">{comment.body}</p>
-              </div>
-            ))
-          )}
-        </div>
+        <ForumCommentList comments={comments} currentUserId={userId ?? null} />
         <CommentForm postId={post.id} isAuthenticated={Boolean(userId)} />
       </div>
     </Card>
