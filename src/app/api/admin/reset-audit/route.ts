@@ -9,8 +9,9 @@ export async function POST(req: Request) {
   if (!admin) return NextResponse.json({ error: "Admin client unavailable" }, { status: 503 });
 
   // Get the caller's email from their live session
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabaseClient = await createClient();
+  if (!supabaseClient) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!OWNER_EMAILS.includes(user.email?.toLowerCase() ?? "")) {
     return NextResponse.json({ error: `Forbidden — caller email: ${user.email}` }, { status: 403 });
