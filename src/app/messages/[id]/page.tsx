@@ -7,6 +7,7 @@ import {
   getMessages,
 } from "@/lib/data/messages";
 import { getAuthUserId } from "@/lib/actions/auth";
+import { getCurrentProfile } from "@/lib/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function ConversationPage({
@@ -20,11 +21,14 @@ export default async function ConversationPage({
   if (!isSupabaseConfigured()) redirect("/messages");
 
   const { id } = await params;
-  const conversation = await getConversationForUser(id, userId);
+
+  const [conversation, messages, currentProfile] = await Promise.all([
+    getConversationForUser(id, userId),
+    getMessages(id, userId),
+    getCurrentProfile(),
+  ]);
 
   if (!conversation) notFound();
-
-  const messages = await getMessages(id, userId);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
@@ -39,6 +43,10 @@ export default async function ConversationPage({
         conversationId={id}
         initialMessages={messages}
         currentUserId={userId}
+        currentUserName={currentProfile?.displayName ?? "Me"}
+        currentUserAvatarUrl={currentProfile?.avatarUrl}
+        otherUserName={conversation.otherUserName}
+        otherUserAvatarUrl={conversation.otherUserAvatarUrl}
         otherUserIsSeekingWork={conversation.otherUserIsSeekingWork}
         businessIsHiring={conversation.businessIsHiring}
       />

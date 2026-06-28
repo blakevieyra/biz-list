@@ -1,21 +1,69 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { sendMessage } from "@/lib/actions/social";
 import type { Message } from "@/lib/types";
 import { Card, formatDate } from "./ui";
 
+function Avatar({
+  name,
+  avatarUrl,
+  size = 36,
+}: {
+  name: string;
+  avatarUrl?: string;
+  size?: number;
+}) {
+  const initials = name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (avatarUrl) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt={name}
+        width={size}
+        height={size}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-teal-50 text-xs font-bold text-accent"
+      style={{ width: size, height: size }}
+    >
+      {initials || "?"}
+    </div>
+  );
+}
+
 export function MessageThread({
   conversationId,
   initialMessages,
   currentUserId,
+  currentUserName,
+  currentUserAvatarUrl,
+  otherUserName,
+  otherUserAvatarUrl,
   otherUserIsSeekingWork,
   businessIsHiring,
 }: {
   conversationId: string;
   initialMessages: Message[];
   currentUserId: string;
+  currentUserName?: string;
+  currentUserAvatarUrl?: string;
+  otherUserName?: string;
+  otherUserAvatarUrl?: string;
   otherUserIsSeekingWork?: boolean;
   businessIsHiring?: boolean;
 }) {
@@ -26,6 +74,7 @@ export function MessageThread({
 
   return (
     <div>
+      {/* Badges */}
       {(otherUserIsSeekingWork || businessIsHiring) && (
         <div className="mb-4 flex flex-wrap gap-2">
           {otherUserIsSeekingWork && (
@@ -40,7 +89,9 @@ export function MessageThread({
           )}
         </div>
       )}
-      <div className="space-y-3">
+
+      {/* Messages */}
+      <div className="space-y-4">
         {initialMessages.length === 0 ? (
           <Card>
             <p className="text-sm text-muted">No messages yet. Say hello!</p>
@@ -48,29 +99,34 @@ export function MessageThread({
         ) : (
           initialMessages.map((message) => {
             const isMine = message.senderId === currentUserId;
+            const name = isMine ? (currentUserName ?? "Me") : (otherUserName ?? message.senderName);
+            const avatarUrl = isMine ? currentUserAvatarUrl : otherUserAvatarUrl;
+
             return (
               <div
                 key={message.id}
-                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                className={`flex items-end gap-2.5 ${isMine ? "flex-row-reverse" : "flex-row"}`}
               >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                    isMine
-                      ? "bg-accent text-white"
-                      : "border border-border bg-card"
-                  }`}
-                >
-                  {!isMine && (
-                    <p className="mb-1 text-xs font-medium opacity-80">
-                      {message.senderName}
-                    </p>
-                  )}
-                  <p>{message.body}</p>
-                  <p
-                    className={`mt-1 text-xs ${isMine ? "text-teal-100" : "text-muted"}`}
-                  >
-                    {formatDate(message.createdAt)}
+                {/* Avatar */}
+                <Avatar name={name} avatarUrl={avatarUrl} size={34} />
+
+                {/* Bubble */}
+                <div className={`max-w-[72%] ${isMine ? "items-end" : "items-start"} flex flex-col`}>
+                  <p className={`mb-1 text-xs font-medium text-muted ${isMine ? "text-right" : "text-left"}`}>
+                    {name}
                   </p>
+                  <div
+                    className={`rounded-2xl px-4 py-3 text-sm ${
+                      isMine
+                        ? "rounded-br-sm bg-accent text-white"
+                        : "rounded-bl-sm border border-border bg-card"
+                    }`}
+                  >
+                    <p>{message.body}</p>
+                    <p className={`mt-1 text-xs ${isMine ? "text-teal-100" : "text-muted"}`}>
+                      {formatDate(message.createdAt)}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -78,19 +134,16 @@ export function MessageThread({
         )}
       </div>
 
+      {/* Compose */}
       <form
         className="mt-6"
         onSubmit={(e) => {
           e.preventDefault();
           if (!body.trim()) return;
-
           startTransition(async () => {
             setError(null);
             const result = await sendMessage(conversationId, body.trim());
-            if (result.error) {
-              setError(result.error);
-              return;
-            }
+            if (result.error) { setError(result.error); return; }
             setBody("");
             router.refresh();
           });
@@ -100,7 +153,7 @@ export function MessageThread({
           rows={3}
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Write a message..."
+          placeholder="Write a message…"
           className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-ring"
         />
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -109,7 +162,7 @@ export function MessageThread({
           disabled={pending || !body.trim()}
           className="mt-3 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
         >
-          {pending ? "Sending..." : "Send message"}
+          {pending ? "Sending…" : "Send message"}
         </button>
       </form>
     </div>
