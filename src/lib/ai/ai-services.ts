@@ -229,68 +229,230 @@ export type ComprehensiveAuditResult = {
   }[];
 };
 
-const FALLBACK_AUDIT: ComprehensiveAuditResult = {
-  overallScore: 62,
-  internalScore: 60,
-  externalScore: 64,
-  executiveSummary:
-    "Your business has a solid foundation with clear opportunities to strengthen operations, pricing, and online visibility. Addressing the identified gaps in a structured way will unlock meaningful growth over the next 12 months.",
-  sections: [
-    { id: "operations", label: "Operations", phase: "internal", score: 58, summary: "Core workflows exist but documentation gaps create inconsistency.", strengths: ["Day-to-day tasks are understood by the team", "Clear service delivery"], gaps: ["No documented SOPs — risk of inconsistency when scaling", "Manual steps that could be automated"], actions: ["Write a one-page SOP for your top 3 recurring tasks", "Identify one task to automate this quarter"] },
-    { id: "finance", label: "Financial Health", phase: "internal", score: 60, summary: "Revenue streams are established but pricing and cash visibility need work.", strengths: ["Established revenue model", "Repeat business present"], gaps: ["Pricing not benchmarked against market", "Limited cash-flow forecasting"], actions: ["Compare your pricing to 3 direct competitors", "Build a simple 3-month cash flow forecast"] },
-    { id: "team", label: "Team & Culture", phase: "internal", score: 63, summary: "Team strengths are clear but skill gaps could limit future growth.", strengths: ["Committed, reliable team", "Strong domain expertise"], gaps: ["Missing key skills for scale", "No formal onboarding process"], actions: ["Map your top skill gap and make a hire or training plan", "Create a one-page onboarding checklist"] },
-    { id: "products", label: "Products & Services", phase: "internal", score: 67, summary: "Core offering is differentiated but customer feedback reveals improvement areas.", strengths: ["Clear, differentiated offering", "Customers see real value"], gaps: ["Feedback loop is informal", "Upsell opportunities not developed"], actions: ["Survey your top 10 customers for structured feedback", "Define one new offering to pilot next quarter"] },
-    { id: "market", label: "Market & Competition", phase: "external", score: 61, summary: "Competitive landscape is understood but differentiation messaging needs sharpening.", strengths: ["Awareness of key competitors", "Niche positioning exists"], gaps: ["Differentiation not communicated clearly", "Trends not actively monitored"], actions: ["Sharpen one differentiating message across all channels", "Set up a monthly competitor review"] },
-    { id: "customers", label: "Customers & Audience", phase: "external", score: 68, summary: "Ideal customer is clear and referrals are working; acquisition needs more structure.", strengths: ["Well-defined ideal customer", "Word-of-mouth referrals"], gaps: ["Acquisition channels are limited", "No formal retention tracking"], actions: ["Launch a simple referral incentive program", "Set up a monthly repeat-customer check-in"] },
-    { id: "brand", label: "Brand & Presence", phase: "external", score: 64, summary: "Brand identity is recognized locally but online visibility and review volume lag.", strengths: ["Recognizable local brand", "Consistent voice"], gaps: ["Low online review count", "Inconsistent social cadence"], actions: ["Ask your next 20 happy customers for a Google review", "Commit to posting 3x/week on your main social channel"] },
-    { id: "growth", label: "Growth & Partnerships", phase: "external", score: 65, summary: "Growth vision is present but execution pathways and partnerships need structure.", strengths: ["Clear growth goal", "Openness to partnerships"], gaps: ["No formal partnership pipeline", "Growth barrier not actively addressed"], actions: ["Reach out to one complementary local business this month", "Break your annual growth goal into monthly milestones"] },
-  ],
-  priorityActions: [
-    { priority: "high", action: "Document your top 3 core operational processes as simple SOPs", category: "Operations", impact: "Enables delegation and creates consistent customer experience at scale" },
-    { priority: "high", action: "Review and validate your pricing against 3 direct competitors", category: "Financial Health", impact: "Quickly identifies if you're undercharging or missing margin" },
-    { priority: "high", action: "Ask your next 20 satisfied customers to leave a Google review", category: "Brand & Presence", impact: "Directly improves local search ranking and new customer trust" },
-    { priority: "medium", action: "Identify your #1 team skill gap and create a hire or training plan", category: "Team & Culture", impact: "Removes a key bottleneck blocking your growth goal" },
-    { priority: "medium", action: "Survey your best 10 customers for structured product/service feedback", category: "Products & Services", impact: "Reveals what to double down on and what to stop doing" },
-    { priority: "medium", action: "Reach out to one complementary local business about a cross-promotion", category: "Growth & Partnerships", impact: "Low-cost customer acquisition with warm audiences" },
-    { priority: "low", action: "Build a simple 3-month cash flow forecast", category: "Financial Health", impact: "Reduces financial surprises and improves decision-making" },
-    { priority: "low", action: "Set up a monthly competitor monitoring process (even 30 min/month)", category: "Market & Competition", impact: "Keeps your positioning sharp and flags threats early" },
-  ],
-};
+function buildProfileFallback(auditData: Record<string, string>): ComprehensiveAuditResult {
+  const name = auditData.businessName || "This business";
+  const category = auditData.category || "this industry";
+  const location = auditData.location || "your area";
+  const hasWebsite = Boolean(auditData.website?.trim());
+  const hasPhone = Boolean(auditData.phone?.trim());
+  const hasDescription = (auditData.description?.length ?? 0) > 60;
+  const hasServices = Boolean(auditData.services?.trim());
+  const hasReviews = Boolean(auditData.onlineReviews?.trim());
+  const hasCompetitors = Boolean(auditData.competitors?.trim());
+  const hasChannels = Boolean(auditData.onlineChannels?.trim());
+
+  const brandScore = (hasWebsite ? 20 : 0) + (hasChannels ? 20 : 0) + (hasReviews ? 25 : 0) + 20;
+  const productScore = (hasServices ? 30 : 0) + (hasDescription ? 25 : 0) + 30;
+  const marketScore = (hasCompetitors ? 30 : 0) + 40;
+
+  return {
+    overallScore: Math.round((brandScore + productScore + marketScore + 60) / 4),
+    internalScore: Math.round((productScore + 60) / 2),
+    externalScore: Math.round((brandScore + marketScore) / 2),
+    executiveSummary: `${name} operates in the ${category} space in ${location}. ${hasWebsite ? "A web presence was detected." : "No website was found — this is a critical gap for discovery."} ${hasReviews ? "Online reviews were found and analyzed." : "No online reviews were found, limiting trust signals."} This audit highlights the highest-leverage improvements available based on your current profile and market data.`,
+    sections: [
+      {
+        id: "operations", label: "Operations & Processes", phase: "internal", score: 58,
+        summary: `${name}'s operational profile shows a ${category} business in ${location} — service delivery exists but process documentation evidence is limited.`,
+        strengths: [`Operating as a ${category} business in ${location} implies established service delivery.`, hasServices ? `Service offerings are defined: ${auditData.services.slice(0, 80)}.` : "Core service exists."],
+        gaps: ["No operational documentation or SOP evidence found in public-facing materials.", "Scaling risk: without documented processes, quality and speed depend entirely on key individuals."],
+        actions: [`Document the top 3 recurring tasks for ${name} as one-page SOPs.`, "Identify one manual step per service that can be automated (scheduling, invoicing, or follow-up)."],
+      },
+      {
+        id: "finance", label: "Financial Health", phase: "internal", score: 60,
+        summary: `Revenue model for ${name} is active but pricing visibility and market benchmarking are not evident from public data.`,
+        strengths: [hasServices ? `Defined service menu supports structured pricing: ${auditData.services.slice(0, 80)}.` : "Active business operations indicate revenue generation.", `Operating in ${location} ${category} market which shows demand.`],
+        gaps: [hasCompetitors ? `Competitor pricing found (${auditData.competitors.slice(0, 100)}) — no evidence ${name} has benchmarked against these.` : "No competitor pricing benchmarking evidence found.", "No cash flow forecasting or financial projections evident."],
+        actions: [hasCompetitors ? `Compare ${name}'s pricing directly against identified competitors: ${auditData.competitors.slice(0, 80)}.` : `Research 3 competitor prices in ${location} for ${category} services.`, "Build a 3-month rolling cash flow forecast to reduce decision lag."],
+      },
+      {
+        id: "team", label: "Team & Culture", phase: "internal", score: 63,
+        summary: `${name} operates in ${category} in ${location} — team structure is not publicly documented but domain expertise is implied by active operations.`,
+        strengths: [`Active ${category} operation in ${location} implies functional team or owner expertise.`, auditData.isHiring === "Yes" ? `Currently hiring — signals growth intent and team investment.` : "Stable team structure based on operational continuity."],
+        gaps: [auditData.isHiring === "Yes" ? "Open hiring position creates skill gap risk until filled." : "No visible team credentials or expertise signals online.", "No onboarding, training, or culture documentation found publicly."],
+        actions: [auditData.isHiring === "Yes" ? "Prioritize filling the open role — identify the specific skill gap it resolves." : "Publish team credentials or owner bio to build trust and differentiate.", "Create a one-page onboarding doc for any new hire or contractor."],
+      },
+      {
+        id: "products", label: "Products & Services", phase: "internal", score: productScore,
+        summary: hasServices ? `${name} offers ${auditData.services.slice(0, 120)} — the offering is defined but competitive differentiation signals need strengthening.` : `${name}'s specific offerings are not prominently listed, creating a discovery gap for potential customers.`,
+        strengths: [hasServices ? `Concrete services offered: ${auditData.services.slice(0, 100)}.` : `Active ${category} business implies service delivery capacity.`, hasDescription ? `Business description provided: "${auditData.description.slice(0, 80)}…"` : "Business is operational and serving customers."],
+        gaps: [hasServices ? "No customer feedback mechanism or testimonial evidence found to validate service quality." : "Service list is not publicly defined — prospects cannot self-qualify.", "Upsell or bundled service packaging not evident."],
+        actions: [hasServices ? `Collect structured feedback on each service: ${auditData.services.slice(0, 80)}.` : "Publish a clear, priced service menu to your BizList profile and website.", "Define one cross-sell or bundle opportunity to introduce next quarter."],
+      },
+      {
+        id: "market", label: "Market & Competition", phase: "external", score: marketScore,
+        summary: hasCompetitors ? `Research identified competitors in the ${location} ${category} market: ${auditData.competitors.slice(0, 120)}. Differentiation clarity is the key gap.` : `The ${category} market in ${location} is active — specific competitor data was not surfaced during research.`,
+        strengths: [hasCompetitors ? `Named competitors found: ${auditData.competitors.slice(0, 120)}.` : `Established ${category} market in ${location} with real demand.`, auditData.mktTrend ? `Industry trend identified: ${auditData.mktTrend.slice(0, 100)}.` : "Active market conditions support growth."],
+        gaps: [hasCompetitors ? `Competitors are visible online — no evidence ${name} has a defined response to their positioning.` : "No competitor monitoring process evident.", auditData.mktTrend ? `Trend "${auditData.mktTrend.slice(0, 60)}" may be shifting customer expectations — no response strategy found.` : "Industry trends not being actively monitored or responded to."],
+        actions: [hasCompetitors ? `Identify one advantage over ${auditData.competitors.slice(0, 60)} and make it the primary message on your website and profile.` : `Research 3 active competitors in ${location} for ${category} and map their pricing and positioning.`, "Set a monthly 30-minute competitor review to track changes."],
+      },
+      {
+        id: "customers", label: "Customers & Audience", phase: "external", score: 65,
+        summary: auditData.custTarget ? `Target customer profile: ${auditData.custTarget.slice(0, 120)}. Acquisition channels and retention need more structure.` : `Typical ${category} customer in ${location}: ${auditData.custPain ? auditData.custPain.slice(0, 100) : "not yet defined from research"}.`,
+        strengths: [auditData.custTarget ? `Identified customer base: ${auditData.custTarget.slice(0, 100)}.` : `${category} in ${location} has a clearly addressable local audience.`, auditData.custAcquisition ? `Known acquisition channels: ${auditData.custAcquisition.slice(0, 80)}.` : "Word-of-mouth and local discovery are active in this market."],
+        gaps: ["No formal customer retention or repeat-purchase tracking evidence found.", auditData.custPain ? `Core customer pain point identified (${auditData.custPain.slice(0, 80)}) — no evidence of systematic messaging around this.` : "Customer pain points and motivators not prominently communicated."],
+        actions: [auditData.custAcquisition ? `Double down on your top acquisition channel: ${auditData.custAcquisition.slice(0, 80)}.` : "Define your #1 customer acquisition channel and invest in it this quarter.", "Launch a simple post-purchase follow-up (email or text) to drive repeat business."],
+      },
+      {
+        id: "brand", label: "Brand & Presence", phase: "external", score: brandScore,
+        summary: hasChannels ? `${name} has online presence on: ${auditData.onlineChannels.slice(0, 120)}. ${hasReviews ? `Review presence found: ${auditData.onlineReviews.slice(0, 80)}.` : "Review volume is a gap."}` : `${name} has limited discoverable online presence — no channels were found during research.`,
+        strengths: [hasChannels ? `Online channels found: ${auditData.onlineChannels.slice(0, 120)}.` : `${name} is listed on BizList — local directory presence is established.`, hasReviews ? `Review presence: ${auditData.onlineReviews.slice(0, 100)}.` : "Business is operational and has served customers who can provide reviews."],
+        gaps: [!hasChannels ? "No website, social profiles, or Google Business presence found during research — severe discovery handicap." : hasReviews ? "Review volume or recency may lag behind competitors." : "No online reviews found — trust signals are absent for new prospects.", auditData.brandPercep ? `First impression: "${auditData.brandPercep.slice(0, 100)}" — consistency and professionalism should be reinforced.` : "No consistent brand voice or visual identity found publicly."],
+        actions: [!hasWebsite ? "Launch a basic website — even a one-page site with contact info is essential." : hasChannels ? `Ensure all channels (${auditData.onlineChannels.slice(0, 60)}) are updated and consistent.` : "Claim and complete your Google Business Profile immediately.", hasReviews ? "Respond publicly to all existing reviews to show engagement." : `Ask your next 10 customers for a Google review — a direct request converts at 30–40%.`],
+      },
+      {
+        id: "growth", label: "Growth & Partnerships", phase: "external", score: 65,
+        summary: auditData.growthPartner ? `Partnership opportunities identified in ${location}: ${auditData.growthPartner.slice(0, 120)}.` : `${name} is positioned for growth in the ${category} market in ${location} — partnership pipeline needs development.`,
+        strengths: [auditData.mktOpportunity ? `Market opportunity identified: ${auditData.mktOpportunity.slice(0, 100)}.` : `${category} in ${location} has growth potential.`, auditData.growthPartner ? `Complementary partners available: ${auditData.growthPartner.slice(0, 100)}.` : "Local business network in area provides partnership opportunities."],
+        gaps: ["No formal partnership pipeline or co-marketing activity found.", "Annual growth targets, if any, are not broken into monthly milestones — execution risk."],
+        actions: [auditData.growthPartner ? `Reach out to one of these complementary businesses this week: ${auditData.growthPartner.slice(0, 80)}.` : `Identify one complementary ${category} business in ${location} and propose a cross-referral arrangement.`, auditData.mktOpportunity ? `Act on this opportunity: ${auditData.mktOpportunity.slice(0, 80)}.` : "Break your 12-month growth goal into 4 quarterly milestones with a named owner for each."],
+      },
+    ],
+    priorityActions: [
+      { priority: "high", action: hasChannels ? `Strengthen your online presence — update all discovered channels (${auditData.onlineChannels?.slice(0, 60) ?? "found during research"}) with current hours, services, and contact info.` : `Claim your Google Business Profile and create accounts on the top 2 social platforms for ${category} businesses.`, category: "Brand & Presence", impact: "Directly drives local search discovery and new customer trust." },
+      { priority: "high", action: hasReviews ? `Respond to all existing reviews and actively request new ones from your next 20 customers.` : `Ask your next 10 customers for a Google review — zero reviews is the single biggest trust barrier.`, category: "Brand & Presence", impact: "Review count and rating are Google ranking factors for local search." },
+      { priority: "high", action: hasCompetitors ? `Benchmark your pricing against ${auditData.competitors?.slice(0, 60) ?? "identified competitors"} and close any gap.` : `Research 3 competitors in ${location} for ${category} and price accordingly.`, category: "Financial Health", impact: "Pricing misalignment costs revenue immediately — easy to fix once identified." },
+      { priority: "medium", action: hasServices ? `Document your service delivery process for: ${auditData.services?.slice(0, 60) ?? "your top service"} as a one-page SOP.` : "Document your top 3 recurring delivery tasks as simple SOPs.", category: "Operations", impact: "Enables consistent quality and delegation as you grow." },
+      { priority: "medium", action: auditData.growthPartner ? `Initiate a partnership conversation with a business in your identified partner pool: ${auditData.growthPartner?.slice(0, 60)}.` : `Reach out to one complementary business in ${location} about a referral or co-promotion.`, category: "Growth & Partnerships", impact: "Warm referral partnerships are the most cost-effective growth channel for local businesses." },
+      { priority: "low", action: "Build a 3-month cash flow forecast using last 90 days of revenue and expenses.", category: "Financial Health", impact: "Reduces financial surprises and gives you a decision framework for investments." },
+    ],
+  };
+}
 
 export async function generateComprehensiveBusinessAuditAI(
   auditData: Record<string, string>,
 ): Promise<ComprehensiveAuditResult> {
-  if (!isClaudeConfigured()) return FALLBACK_AUDIT;
+  const profileFallback = buildProfileFallback(auditData);
+  if (!isClaudeConfigured()) return profileFallback;
 
-  const auditText = Object.entries(auditData)
-    .filter(([, v]) => typeof v === "string" && v.trim())
-    .map(([k, v]) => `${k}: ${v}`)
-    .join("\n");
+  const hasResearch = ["onlineReviews", "competitors", "onlineChannels", "brandPercep", "mktTrend"]
+    .some((k) => Boolean(auditData[k]?.trim()));
 
-  // Use claudeComplete (not claudeJSON) so we can do robust indexOf extraction
-  // rather than relying on a clean JSON-only response.
+  const researchSummary = hasResearch
+    ? Object.entries({
+        "Online channels found": auditData.onlineChannels,
+        "Reviews found": auditData.onlineReviews,
+        "Brand perception": auditData.brandPercep,
+        "Named competitors": auditData.competitors,
+        "Industry trend": auditData.mktTrend,
+        "Market opportunity": auditData.mktOpportunity,
+        "Customer profile": auditData.custTarget,
+        "Acquisition channels": auditData.custAcquisition,
+        "Customer pain points": auditData.custPain,
+        "Partnership targets": auditData.growthPartner,
+        "Contact email found": auditData.contactEmail,
+        "Contact discoverability": auditData.contactDiscoverability,
+      })
+        .filter(([, v]) => v?.trim())
+        .map(([k, v]) => `${k}: ${v}`)
+        .join("\n")
+    : "";
+
+  const profileSummary = [
+    `Business: ${auditData.businessName}`,
+    `Category: ${auditData.category}`,
+    `Location: ${auditData.location || "not specified"}`,
+    auditData.description ? `Description: ${auditData.description}` : "",
+    auditData.tagline ? `Tagline: ${auditData.tagline}` : "",
+    auditData.services ? `Services/products listed: ${auditData.services}` : "Services: none listed",
+    auditData.website ? `Website: ${auditData.website}` : "Website: not provided",
+    auditData.phone ? `Phone: ${auditData.phone}` : "Phone: not listed",
+    auditData.hours ? `Hours: ${auditData.hours}` : "Hours: not listed",
+    `Hiring: ${auditData.isHiring}`,
+  ].filter(Boolean).join("\n");
+
+  const system = `You are a senior business strategy consultant producing a real, evidence-based business audit. Your output will be read directly by the business owner — it must be specific to them, not generic.
+
+MANDATORY RULES:
+1. NEVER write generic template content. Every finding must cite something specific from the profile or research data provided.
+2. Every strength must name something concrete (a specific service, a found URL, a real rating, a named competitor, an identified customer segment).
+3. Every gap must explain WHY it matters for THIS business in THIS market — not for a generic business.
+4. Every action must be immediately executable by this specific business — not vague advice.
+5. Scores must reflect the actual evidence: if no website is found, Brand scores 20-40. If reviews exist with high ratings, Brand scores 60-80. Zero reviews = maximum 50 for Brand.
+6. The executive summary must name specific findings: actual competitor names, actual review ratings, actual channel URLs, actual market opportunities.
+7. FORBIDDEN phrases: "your team", "your customers", "clear service delivery", "consistent voice", "word-of-mouth referrals", "committed team", "strong domain expertise" — these are generic placeholders.
+
+SCORING RUBRICS:
+- Operations (0–100): Evidence of process documentation +20, online booking/scheduling +15, active hiring +10, defined SOPs/workflows +20. Default base: 35.
+- Financial Health (0–100): Transparent pricing online +25, defined service tiers +15, competitive market exists +10, payment methods clear +15. Default base: 30.
+- Team & Culture (0–100): Visible team page +20, credentials listed +15, active hiring +15, reviews mention staff +20. Default base: 25.
+- Products & Services (0–100): Services listed with prices +30, description >100 chars +20, 3+ services +15, clear value prop in tagline +15. Default base: 25.
+- Market & Competition (0–100): Named competitors found +25, industry trend identified +20, clear niche +15, market opportunity identified +15. Default base: 25.
+- Customers & Audience (0–100): Customer profile researchable +20, acquisition channels identified +20, reviews mention customer type +20, pain point clear +15. Default base: 25.
+- Brand & Presence (0–100): Website found +25, 2+ social channels +20, Google reviews >5 +20, consistent branding +15. Default base: 15.
+- Growth & Partnerships (0–100): Partner targets identified +25, market opportunity clear +20, hiring signals growth +15, trend positions them well +15. Default base: 25.`;
+
+  const user = `BUSINESS PROFILE:
+${profileSummary}
+
+${hasResearch ? `WEB RESEARCH FINDINGS (cite these directly in your findings):
+${researchSummary}` : "NOTE: No web research data was gathered — base your audit on the profile data and what its absence implies."}
+
+Produce a complete audit JSON. Every field must be specific to ${auditData.businessName} — zero generic content allowed. Cite specific findings by name (competitor names, URLs, ratings, market opportunities found in research).
+
+Return ONLY this JSON (no markdown, no commentary):
+{
+  "overallScore": <weighted average of all 8 section scores>,
+  "internalScore": <average of operations, finance, team, products>,
+  "externalScore": <average of market, customers, brand, growth>,
+  "executiveSummary": "<3-4 sentences citing specific findings — name real competitors, actual review ratings, found URLs, specific market opportunity>",
+  "sections": [
+    {
+      "id": "operations",
+      "label": "Operations & Processes",
+      "phase": "internal",
+      "score": <0-100 per rubric>,
+      "summary": "<one sentence citing specific operational evidence>",
+      "strengths": ["<specific strength citing profile or research data>", "<another specific strength>"],
+      "gaps": ["<specific gap with business-specific consequence>", "<another gap>"],
+      "actions": ["<immediately executable action specific to this business>", "<another action>"]
+    },
+    {"id":"finance","label":"Financial Health","phase":"internal","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
+    {"id":"team","label":"Team & Culture","phase":"internal","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
+    {"id":"products","label":"Products & Services","phase":"internal","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
+    {"id":"market","label":"Market & Competition","phase":"external","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
+    {"id":"customers","label":"Customers & Audience","phase":"external","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
+    {"id":"brand","label":"Brand & Presence","phase":"external","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
+    {"id":"growth","label":"Growth & Partnerships","phase":"external","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]}
+  ],
+  "priorityActions": [
+    {"priority":"high","action":"<specific action for this business>","category":"<section label>","impact":"<concrete result — not generic>"},
+    {"priority":"high","action":"","category":"","impact":""},
+    {"priority":"high","action":"","category":"","impact":""},
+    {"priority":"medium","action":"","category":"","impact":""},
+    {"priority":"medium","action":"","category":"","impact":""},
+    {"priority":"low","action":"","category":"","impact":""}
+  ]
+}`;
+
   const text = await claudeComplete({
-    system: `You are a senior business strategy consultant. Analyze the business data (which includes live web research findings) and produce a thorough internal + external audit. Score each of the 8 sections honestly (0–100). Reference specific data points — real competitors, actual review ratings, discovered URLs. Be direct, specific, and actionable. Return ONLY valid JSON, no preamble, no fences.`,
-    user: `Business data (includes web research):\n\n${auditText}\n\nReturn this JSON structure — fill every field with real, specific content:\n{"overallScore":0,"internalScore":0,"externalScore":0,"executiveSummary":"3-4 sentences citing specific findings","sections":[{"id":"operations","label":"Operations & Processes","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"finance","label":"Financial Health","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"team","label":"Team & Culture","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"products","label":"Products & Services","phase":"internal","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"market","label":"Market & Competition","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"customers","label":"Customers & Audience","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"brand","label":"Brand & Presence","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]},{"id":"growth","label":"Growth & Partnerships","phase":"external","score":0,"summary":"","strengths":["",""],"gaps":["",""],"actions":["",""]}],"priorityActions":[{"priority":"high","action":"","category":"","impact":""},{"priority":"high","action":"","category":"","impact":""},{"priority":"high","action":"","category":"","impact":""},{"priority":"medium","action":"","category":"","impact":""},{"priority":"medium","action":"","category":"","impact":""},{"priority":"low","action":"","category":"","impact":""}]}`,
-    maxTokens: 5000,
-    temperature: 0.3,
+    system,
+    user,
+    maxTokens: 8000,
+    temperature: 0.2,
   });
 
-  if (!text) return FALLBACK_AUDIT;
+  if (!text) {
+    console.error("[audit] Claude returned null");
+    return profileFallback;
+  }
 
   try {
     const start = text.indexOf("{");
     const end = text.lastIndexOf("}");
     if (start === -1 || end === -1) {
-      console.error("[audit] No JSON object found in response");
-      return FALLBACK_AUDIT;
+      console.error("[audit] No JSON braces found in response:", text.slice(0, 200));
+      return profileFallback;
     }
     const parsed = JSON.parse(text.slice(start, end + 1)) as ComprehensiveAuditResult;
-    if (!Array.isArray(parsed.sections) || parsed.sections.length === 0) return FALLBACK_AUDIT;
+    if (!Array.isArray(parsed.sections) || parsed.sections.length < 8) {
+      console.error("[audit] Incomplete sections in response");
+      return profileFallback;
+    }
     return parsed;
   } catch (e) {
-    console.error("[audit] JSON parse failed:", e, text.slice(0, 300));
-    return FALLBACK_AUDIT;
+    console.error("[audit] JSON parse failed:", e, "\nRaw snippet:", text.slice(0, 400));
+    return profileFallback;
   }
 }
 
