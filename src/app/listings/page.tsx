@@ -78,11 +78,18 @@ export default async function ListingsPage({
       }
     : null;
 
+  // Push intent-based filters to the DB query to avoid over-fetching
+  const intentFilter =
+    statusFilter === "b2b" || statusFilter === "contract" || statusFilter === "proposal"
+      ? statusFilter
+      : undefined;
+
   const allBusinesses = await getBusinesses({
     query: query || undefined,
     category: categoryFilter,
     discoveryRadius: discoveryFilter,
     viewer,
+    intent: intentFilter as import("@/lib/types").BusinessIntent | undefined,
   });
 
   const businessIds = allBusinesses.map((b) => b.id);
@@ -96,10 +103,9 @@ export default async function ListingsPage({
     if (minRating !== null) {
       if (b.ratingCount === 0 || b.ratingAvg < minRating) return false;
     }
+    // Hiring: use the explicit isHiring flag only — job posts alone don't qualify
     if (statusFilter === "hiring") {
-      const posts = latestPosts.get(b.id) ?? [];
-      const hasJobPost = posts.some((p) => p.postType === "job");
-      if (!b.isHiring && !hasJobPost) return false;
+      if (!b.isHiring) return false;
     }
     if (statusFilter === "deals") {
       const posts = latestPosts.get(b.id) ?? [];
@@ -108,15 +114,11 @@ export default async function ListingsPage({
     if (statusFilter === "events") {
       if (!businessIdsWithEvents.has(b.id)) return false;
     }
-    if (statusFilter === "b2b") {
-      if (!b.intents.includes("b2b")) return false;
-    }
-    if (statusFilter === "contract") {
-      if (!b.intents.includes("contract")) return false;
-    }
-    if (statusFilter === "proposal") {
-      if (!b.intents.includes("proposal")) return false;
-    }
+    // b2b / contract / proposal already filtered at DB level via intent param above;
+    // re-check here as safety net for the mock-data path
+    if (statusFilter === "b2b" && !b.intents.includes("b2b")) return false;
+    if (statusFilter === "contract" && !b.intents.includes("contract")) return false;
+    if (statusFilter === "proposal" && !b.intents.includes("proposal")) return false;
     return true;
   });
 
