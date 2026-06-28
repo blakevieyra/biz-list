@@ -92,6 +92,11 @@ export async function POST(req: Request) {
     partnershipOpportunities: toStr(research?.growthPartner),
     contactEmail: toStr(research?.emailAddress),
     contactDiscoverability: toStr(research?.contactDiscoverability),
+    websitePricing: toStr(research?.websitePricing),
+    websiteSocial: toStr(research?.websiteSocial),
+    websiteTeam: toStr(research?.websiteTeam),
+    websiteServices: toStr(research?.websiteServices),
+    websiteRawText: toStr(research?.websiteRawText),
   };
 
   try {

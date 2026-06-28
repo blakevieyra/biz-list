@@ -16,6 +16,8 @@ function Avatar({
   avatarUrl?: string;
   size?: number;
 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
   const initials = name
     .split(" ")
     .map((p) => p[0])
@@ -23,7 +25,7 @@ function Avatar({
     .slice(0, 2)
     .toUpperCase();
 
-  if (avatarUrl) {
+  if (avatarUrl && !imgFailed) {
     return (
       <Image
         src={avatarUrl}
@@ -32,6 +34,7 @@ function Avatar({
         height={size}
         className="rounded-full object-cover shrink-0"
         style={{ width: size, height: size }}
+        onError={() => setImgFailed(true)}
       />
     );
   }

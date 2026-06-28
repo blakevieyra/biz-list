@@ -35,6 +35,7 @@ const STEPS: StepDef[] = [
   { icon: "📊", label: "Identifying local competitors", phase: "research" },
   { icon: "📈", label: "Analyzing industry trends & customers", phase: "research" },
   { icon: "📧", label: "Finding public contact email address", phase: "research" },
+  { icon: "🌐", label: "Reading your website — extracting pricing & services", phase: "research" },
   { icon: "👥", label: "Profiling customer base & opportunities", phase: "generate" },
   { icon: "🧠", label: "Scoring all 8 audit sections", phase: "generate" },
   { icon: "📝", label: "Writing comprehensive report", phase: "generate" },
@@ -257,7 +258,7 @@ export default function AuditClient({
       const streamRes = await fetch("/api/audit/research-stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessName: businessName.trim(), category: category.trim(), cityState: cityState.trim() }),
+        body: JSON.stringify({ businessName: businessName.trim(), category: category.trim(), cityState: cityState.trim(), website: profile.website?.trim() || "" }),
       });
 
       if (streamRes.ok && streamRes.body) {
@@ -303,11 +304,11 @@ export default function AuditClient({
       // Research failed — continue to generate with profile data only
     }
 
-    // ── Phase 2: Generate report (steps 5-7) ─────────────────────────────────
-    for (let i = 5; i <= 7; i++) {
+    // ── Phase 2: Generate report (steps 6-8) ─────────────────────────────────
+    for (let i = 6; i <= 8; i++) {
       setActiveStep(i);
       setStep(i, { state: "analyzing" });
-      if (i < 7) await new Promise((r) => setTimeout(r, 4000));
+      if (i < 8) await new Promise((r) => setTimeout(r, 4000));
     }
 
     try {

@@ -350,14 +350,14 @@ function collaborationsForBusinessPair(bizA, bizB) {
   ];
 }
 
-function notificationsForOwner(ownerId, bizName) {
+function notificationsForOwner(ownerId, bizName, blakeUserId) {
   return [
     {
       user_id: ownerId,
       type: 'follow',
       title: 'New follower',
       body: `Blake Vieyra started following ${bizName}. Say hello!`,
-      link: '/dashboard/followers',
+      link: blakeUserId ? `/listings/people/${blakeUserId}` : '/feed',
       read: false,
     },
     {
@@ -373,7 +373,7 @@ function notificationsForOwner(ownerId, bizName) {
       type: 'collaboration',
       title: 'New partnership request',
       body: `A local business has sent a collaboration proposal to ${bizName}. Review and respond.`,
-      link: '/dashboard/collaborations',
+      link: '/partnerships',
       read: false,
     },
     {
@@ -586,7 +586,7 @@ async function main() {
 
     // 7f. Notifications for owner
     if (!ownerIsBlake) {
-      const notifs = notificationsForOwner(ownerId, name);
+      const notifs = notificationsForOwner(ownerId, name, BLAKE_ID);
       for (const notif of notifs) {
         // Check for duplicate by type + user_id + body snippet
         const { data: existing } = await supabase

@@ -89,7 +89,7 @@ async function searchStep(
     console.error(`[research-stream] ${stepName}: web search returned non-JSON:`, webText.slice(0, 200));
   }
 
-  // 2. Fallback: knowledge-based research using the configured model (claude-sonnet-4-6)
+  // 2. Fallback: knowledge-based research using the configured model
   const fallbackModel = getClaudeModel();
   console.log(`[research-stream] ${stepName}: falling back to ${fallbackModel}`);
   const fallbackText = await callClaude(apiKey, fallbackModel, fallbackPrompt);
@@ -99,9 +99,7 @@ async function searchStep(
       console.log(`[research-stream] ${stepName}: fallback OK`);
       return parsed;
     }
-    console.error(`[research-stream] ${stepName}: fallback returned non-JSON:`, fallbackText.slice(0, 200));
-
-    // 3. Last resort: ask Claude to produce exactly one JSON object with no prose
+    // 3. Last resort: strict JSON mode
     const strictPrompt = `You are a JSON API. Respond with ONLY a valid JSON object — no prose, no markdown fences, no explanation. The object must have a "finding" key. Prompt: ${fallbackPrompt}`;
     const strictText = await callClaude(apiKey, fallbackModel, strictPrompt);
     if (strictText) {
@@ -110,17 +108,118 @@ async function searchStep(
         console.log(`[research-stream] ${stepName}: strict fallback OK`);
         return parsed2;
       }
-      console.error(`[research-stream] ${stepName}: strict fallback also non-JSON:`, strictText.slice(0, 200));
     }
   }
 
-  console.error(`[research-stream] ${stepName}: all attempts failed`);
   return { finding: "Research unavailable — report will use profile data only" };
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function fetchPage(url: string, timeoutMs = 8000): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BizList-Audit/1.0)" },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("text")) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+async function websiteStep(
+  apiKey: string,
+  website: string,
+): Promise<StepResult> {
+  const fallback: StepResult = {
+    finding: "Website could not be read — report will use profile data",
+    websitePricing: "",
+    websiteSocial: "",
+    websiteTeam: "",
+    websiteServices: "",
+    websiteRawText: "",
+  };
+
+  // Normalise URL
+  let base = website.trim();
+  if (!base) return fallback;
+  if (!/^https?:\/\//i.test(base)) base = `https://${base}`;
+  base = base.replace(/\/$/, "");
+
+  // Fetch homepage + /services in parallel
+  const [homeHtml, servicesHtml] = await Promise.all([
+    fetchPage(base),
+    fetchPage(`${base}/services`),
+  ]);
+
+  if (!homeHtml && !servicesHtml) {
+    console.error(`[research-stream] website-step: both pages failed for ${base}`);
+    return fallback;
+  }
+
+  const homeText = homeHtml ? stripHtml(homeHtml).slice(0, 4000) : "";
+  const servText = servicesHtml ? stripHtml(servicesHtml).slice(0, 4000) : "";
+  const combined = [
+    homeText ? `=== HOMEPAGE (${base}) ===\n${homeText}` : "",
+    servText ? `=== SERVICES PAGE (${base}/services) ===\n${servText}` : "",
+  ].filter(Boolean).join("\n\n").slice(0, 7000);
+
+  const extractPrompt = `You are a data extractor. Read this website content and return a JSON object with ONLY what you find verbatim — do NOT invent anything.
+
+JSON fields to fill (use empty string "" if not found):
+{
+  "finding": "one sentence: what pricing/services/social info was found",
+  "websitePricing": "exact pricing tiers and amounts found on the page, e.g. 'Starter $99/mo, Pro $199/mo, Enterprise custom'",
+  "websiteSocial": "all social media URLs or handles found: Instagram, LinkedIn, Facebook, Twitter/X, YouTube, TikTok",
+  "websiteTeam": "team member names, roles, or owner info found",
+  "websiteServices": "exact list of services with any descriptions found",
+  "websiteRawText": "verbatim excerpt (under 300 chars) most useful for the audit"
+}
+
+Website content:
+${combined}`;
+
+  const fallbackModel = getClaudeModel();
+  const text = await callClaude(apiKey, fallbackModel, extractPrompt);
+  if (!text) return fallback;
+
+  const parsed = extractJSON(text);
+  if (!parsed) {
+    console.error("[research-stream] website-step: parse failed:", text.slice(0, 200));
+    return fallback;
+  }
+
+  return {
+    finding: parsed.finding || `Website read at ${base}`,
+    websitePricing: parsed.websitePricing ?? "",
+    websiteSocial: parsed.websiteSocial ?? "",
+    websiteTeam: parsed.websiteTeam ?? "",
+    websiteServices: parsed.websiteServices ?? "",
+    websiteRawText: parsed.websiteRawText ?? "",
+  };
 }
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
-  const { businessName, category, cityState } = body ?? {};
+  const { businessName, category, cityState, website } = body ?? {};
 
   if (!businessName || !category) {
     return new Response("Missing businessName or category", { status: 400 });
@@ -196,6 +295,12 @@ export async function POST(req: Request) {
       );
       Object.assign(research, r4);
       emit({ step: 4, status: "found", finding: r4.finding });
+
+      // Step 5 — Read the business website directly
+      emit({ step: 5, status: "searching" });
+      const r5 = await websiteStep(apiKey, website ?? "");
+      Object.assign(research, r5);
+      emit({ step: 5, status: "found", finding: r5.finding });
 
       emit({ done: true, research });
       controller.close();

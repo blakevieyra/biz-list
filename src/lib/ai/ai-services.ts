@@ -328,12 +328,22 @@ export async function generateComprehensiveBusinessAuditAI(
   const hasResearch = ["onlineReviews", "competitors", "onlineChannels", "brandPercep", "mktTrend"]
     .some((k) => Boolean(auditData[k]?.trim()));
 
-  const researchSummary = hasResearch
+  const hasWebsiteData = ["websitePricing", "websiteSocial", "websiteTeam", "websiteServices"]
+    .some((k) => Boolean(auditData[k]?.trim()));
+
+  const researchSummary = (hasResearch || hasWebsiteData)
     ? Object.entries({
-        "Online channels found": auditData.onlineChannels,
-        "Reviews found": auditData.onlineReviews,
-        "Brand perception": auditData.brandPercep,
-        "Named competitors": auditData.competitors,
+        // --- Verified from actual website ---
+        "WEBSITE PRICING (verified from live website)": auditData.websitePricing,
+        "WEBSITE SOCIAL LINKS (verified from live website)": auditData.websiteSocial,
+        "WEBSITE TEAM INFO (verified from live website)": auditData.websiteTeam,
+        "WEBSITE SERVICES (verified from live website)": auditData.websiteServices,
+        "WEBSITE VERBATIM EXCERPT": auditData.websiteRawText,
+        // --- Web search research ---
+        "Online channels found (web search)": auditData.onlineChannels,
+        "Reviews found (web search)": auditData.onlineReviews,
+        "Brand perception (web search)": auditData.brandPercep,
+        "Named competitors (web search)": auditData.competitors,
         "Industry trend": auditData.mktTrend,
         "Market opportunity": auditData.mktOpportunity,
         "Customer profile": auditData.custTarget,
@@ -365,47 +375,55 @@ export async function generateComprehensiveBusinessAuditAI(
 
 MANDATORY RULES:
 1. NEVER write generic template content. Every finding must cite something specific from the profile or research data provided.
-2. Every strength must name something concrete (a specific service, a found URL, a real rating, a named competitor, an identified customer segment).
-3. Every gap must explain WHY it matters for THIS business in THIS market — not for a generic business.
-4. Every action must be immediately executable by this specific business — not vague advice.
-5. Scores must reflect the actual evidence: if no website is found, Brand scores 20-40. If reviews exist with high ratings, Brand scores 60-80. Zero reviews = maximum 50 for Brand.
-6. The executive summary must name specific findings: actual competitor names, actual review ratings, actual channel URLs, actual market opportunities.
-7. FORBIDDEN phrases: "your team", "your customers", "clear service delivery", "consistent voice", "word-of-mouth referrals", "committed team", "strong domain expertise" — these are generic placeholders.
+2. WEBSITE DATA IS GROUND TRUTH: If "WEBSITE PRICING (verified from live website)" is provided, use those exact prices — do NOT say "no pricing found". If social links are in "WEBSITE SOCIAL LINKS", list them by name — do NOT say "no social channels found".
+3. Every strength must name something concrete (a specific service, a found URL, a real price, a named competitor, an identified customer segment).
+4. Every gap must explain WHY it matters for THIS business in THIS market — not for a generic business.
+5. Every action must be immediately executable AND include the score impact in parentheses, e.g. "(+15 pts on next audit)" — so the owner knows re-auditing will show improvement.
+6. Scores must reflect the actual evidence: if website pricing IS found, Financial Health starts at 55+. If social links ARE verified, Brand starts at 50+.
+7. The executive summary must name specific findings: actual prices found, actual social channels found, actual competitor names, actual review ratings.
+8. FORBIDDEN phrases: "your team", "your customers", "clear service delivery", "consistent voice", "word-of-mouth referrals", "committed team", "strong domain expertise", "no pricing found" (if website data shows pricing).
 
-SCORING RUBRICS:
+SCORING RUBRICS (apply to the verified data, not absence of data):
 - Operations (0–100): Evidence of process documentation +20, online booking/scheduling +15, active hiring +10, defined SOPs/workflows +20. Default base: 35.
-- Financial Health (0–100): Transparent pricing online +25, defined service tiers +15, competitive market exists +10, payment methods clear +15. Default base: 30.
+- Financial Health (0–100): Transparent pricing on website +30, defined service tiers +20, competitive pricing found +10, payment methods clear +10. Default base: 25. IMPORTANT: If websitePricing has content, minimum score is 55.
 - Team & Culture (0–100): Visible team page +20, credentials listed +15, active hiring +15, reviews mention staff +20. Default base: 25.
-- Products & Services (0–100): Services listed with prices +30, description >100 chars +20, 3+ services +15, clear value prop in tagline +15. Default base: 25.
+- Products & Services (0–100): Services listed with prices +30, description >100 chars +20, 3+ services +15, clear value prop in tagline +15. Default base: 25. If websiteServices has content, minimum score is 50.
 - Market & Competition (0–100): Named competitors found +25, industry trend identified +20, clear niche +15, market opportunity identified +15. Default base: 25.
 - Customers & Audience (0–100): Customer profile researchable +20, acquisition channels identified +20, reviews mention customer type +20, pain point clear +15. Default base: 25.
-- Brand & Presence (0–100): Website found +25, 2+ social channels +20, Google reviews >5 +20, consistent branding +15. Default base: 15.
+- Brand & Presence (0–100): Website found +20, 2+ verified social channels +25, Google reviews >5 +20, consistent branding +15. Default base: 15. If websiteSocial has links, minimum score is 50.
 - Growth & Partnerships (0–100): Partner targets identified +25, market opportunity clear +20, hiring signals growth +15, trend positions them well +15. Default base: 25.`;
 
   const user = `BUSINESS PROFILE:
 ${profileSummary}
 
-${hasResearch ? `WEB RESEARCH FINDINGS (cite these directly in your findings):
-${researchSummary}` : "NOTE: No web research data was gathered — base your audit on the profile data and what its absence implies."}
+${(hasResearch || hasWebsiteData) ? `RESEARCH & WEBSITE EVIDENCE (treat "WEBSITE ... (verified from live website)" fields as ground truth — they were read directly from the live site):
+${researchSummary}` : "NOTE: No web research or website data was gathered — base your audit on the profile data and what its absence implies."}
 
-Produce a complete audit JSON. Every field must be specific to ${auditData.businessName} — zero generic content allowed. Cite specific findings by name (competitor names, URLs, ratings, market opportunities found in research).
+CRITICAL INSTRUCTIONS:
+- If "WEBSITE PRICING" has content → Financial Health score MUST be ≥55, and you MUST quote the actual prices in that section.
+- If "WEBSITE SOCIAL LINKS" has content → Brand score MUST be ≥50, and you MUST list each social channel by name.
+- If "WEBSITE SERVICES" has content → Products & Services score MUST be ≥50, and you MUST cite those services.
+- Every action item MUST end with a score-improvement note like "(+10–20 pts on next audit)" so the owner knows re-auditing will show progress.
+- Actions must be specific, named steps — not generic advice. Include the exact URL, platform name, or person to contact where applicable.
+
+Produce a complete audit JSON. Every field must be specific to ${auditData.businessName} — zero generic content allowed.
 
 Return ONLY this JSON (no markdown, no commentary):
 {
   "overallScore": <weighted average of all 8 section scores>,
   "internalScore": <average of operations, finance, team, products>,
   "externalScore": <average of market, customers, brand, growth>,
-  "executiveSummary": "<3-4 sentences citing specific findings — name real competitors, actual review ratings, found URLs, specific market opportunity>",
+  "executiveSummary": "<3-4 sentences citing specific findings — quote actual prices if found, list actual social channels, name real competitors, state specific market opportunity>",
   "sections": [
     {
       "id": "operations",
       "label": "Operations & Processes",
       "phase": "internal",
       "score": <0-100 per rubric>,
-      "summary": "<one sentence citing specific operational evidence>",
-      "strengths": ["<specific strength citing profile or research data>", "<another specific strength>"],
-      "gaps": ["<specific gap with business-specific consequence>", "<another gap>"],
-      "actions": ["<immediately executable action specific to this business>", "<another action>"]
+      "summary": "<one sentence citing specific operational evidence found>",
+      "strengths": ["<specific strength with evidence source>", "<second strength>"],
+      "gaps": ["<specific gap with business-specific consequence>", "<second gap>"],
+      "actions": ["<specific executable action> (+X–Y pts on next audit)", "<second action> (+X–Y pts on next audit)"]
     },
     {"id":"finance","label":"Financial Health","phase":"internal","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
     {"id":"team","label":"Team & Culture","phase":"internal","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]},
@@ -416,7 +434,7 @@ Return ONLY this JSON (no markdown, no commentary):
     {"id":"growth","label":"Growth & Partnerships","phase":"external","score":0,"summary":"","strengths":[],"gaps":[],"actions":[]}
   ],
   "priorityActions": [
-    {"priority":"high","action":"<specific action for this business>","category":"<section label>","impact":"<concrete result — not generic>"},
+    {"priority":"high","action":"<specific action citing the exact gap it closes> (+X pts on next audit)","category":"<section label>","impact":"<concrete measurable result>"},
     {"priority":"high","action":"","category":"","impact":""},
     {"priority":"high","action":"","category":"","impact":""},
     {"priority":"medium","action":"","category":"","impact":""},

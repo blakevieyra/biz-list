@@ -26,6 +26,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "i.pravatar.cc" },
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "52mb",

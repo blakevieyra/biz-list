@@ -468,7 +468,7 @@ export async function toggleFollowBusiness(businessId: string) {
           type: "follow",
           title: "New follower",
           body: `${followerName} followed ${business.name}`,
-          link: `/listings/${businessId}`,
+          link: `/listings/people/${user.id}`,
           actorName: followerName,
           businessName: business.name,
         });
