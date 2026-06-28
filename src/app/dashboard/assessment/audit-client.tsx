@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader, Card } from "@/components/ui";
 import type { ComprehensiveAuditResult, ComprehensiveAuditSection } from "@/lib/ai/ai-services";
 
@@ -237,6 +237,23 @@ export default function AuditClient({
     });
   }
 
+  // Request notification permission when audit starts
+  useEffect(() => {
+    if (running && typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, [running]);
+
+  function fireNotification(score: number) {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    try {
+      new Notification("BizList Audit Complete!", {
+        body: `Your ${businessName} audit is ready — overall score ${score}/100. Click to view your report.`,
+        icon: "/favicon.ico",
+      });
+    } catch {}
+  }
+
   async function handleRun() {
     if (!businessName.trim() || !category.trim()) {
       setError("Business name and category are required.");
@@ -352,6 +369,7 @@ export default function AuditClient({
 
       if (genData.result) {
         setStep(7, { state: "found", finding: "Report complete" });
+        fireNotification(genData.result.overallScore);
         await new Promise((r) => setTimeout(r, 600));
         setResult(genData.result);
       }
@@ -388,19 +406,43 @@ export default function AuditClient({
 
   // ── Progress view ─────────────────────────────────────────────────────────────
   if (running) {
-    const researchDone = steps.slice(0, 5).every((s) => s.state === "found");
+    const researchDone = steps.slice(0, 6).every((s) => s.state === "found");
+    const progressPct = Math.round(((activeStep + (researchDone ? 1 : 0)) / STEPS.length) * 100);
     return (
       <>
         <PageHeader title="AI Business Audit" description={`Analyzing ${businessName}…`} />
         <Card>
-          <div className="pb-6 pt-2 text-center">
+          <div className="pb-4 pt-2 text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
             <h2 className="text-lg font-bold">Running full AI audit</h2>
             <p className="mt-1 text-sm text-muted">
               {!researchDone
-                ? "Searching the web for live data about your business…"
-                : "Analyzing all 8 sections and writing your report…"}
+                ? "Searching the web and reading your website for live data…"
+                : "Scoring all 11 dimensions and writing your report…"}
             </p>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mb-2 px-1">
+            <div className="flex items-center justify-between text-xs text-muted mb-1">
+              <span>Step {Math.min(activeStep + 1, STEPS.length)} of {STEPS.length}</span>
+              <span>{progressPct}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-700"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Safe to navigate away notice */}
+          <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            <span className="mt-0.5 shrink-0">⚠️</span>
+            <span>
+              <strong>Keep this tab open.</strong> This audit runs in your browser and takes 60–90 seconds.
+              We&apos;ll show a browser notification when your report is ready — you can switch to another tab, just don&apos;t close this one.
+            </span>
           </div>
 
           <div className="space-y-2">

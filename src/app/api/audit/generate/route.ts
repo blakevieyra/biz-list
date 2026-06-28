@@ -10,7 +10,22 @@ const MONTHLY_LIMIT = 5;
 function toStr(v: unknown): string {
   if (v == null) return "";
   if (typeof v === "string") return v;
-  if (Array.isArray(v)) return v.map(String).join(", ");
+  if (Array.isArray(v)) {
+    return v
+      .map((item) => {
+        if (item == null) return "";
+        if (typeof item === "string") return item;
+        if (typeof item === "object") {
+          // Turn competitor/partner objects into readable text instead of [object Object]
+          return Object.values(item as Record<string, unknown>)
+            .filter((val) => typeof val === "string" && (val as string).trim())
+            .join(" — ");
+        }
+        return String(item);
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
 }
