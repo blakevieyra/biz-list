@@ -13,6 +13,7 @@ import type {
 type ConversationPreview = {
   id: string;
   otherUserName: string;
+  otherUserAvatarUrl?: string;
   otherUserIsSeekingWork?: boolean;
   otherUserPlanTier?: string;
   businessIsHiring?: boolean;
@@ -20,6 +21,29 @@ type ConversationPreview = {
   lastMessageAt?: string;
   unreadCount: number;
 };
+
+function AvatarCircle({ name, src }: { name: string; src?: string }) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .toUpperCase();
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        className="h-9 w-9 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">
+      {initials || "?"}
+    </div>
+  );
+}
 
 const tabs = [
   { id: "overview", label: "Overview" },
@@ -108,25 +132,36 @@ export function FollowingList({ businesses }: { businesses: FollowedBusiness[] }
   return (
     <div className="space-y-3">
       {businesses.map((business) => (
-        <Card key={business.id}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <Link href={`/listings/${business.id}`} className="font-semibold text-accent hover:underline">
-                {business.name}
-              </Link>
-              <p className="mt-1 text-sm text-muted">
-                {business.category}
-                {business.subcategory ? ` · ${business.subcategory}` : ""} · {business.city}, {business.state}
-              </p>
-              <p className="mt-1 text-xs text-muted">Following since {formatDate(business.followedAt)}</p>
+        <Link key={business.id} href={`/listings/${business.id}`}>
+          <Card className="transition hover:border-accent/40 hover:shadow-sm">
+            <div className="flex items-center gap-3">
+              {business.mediaUrl ? (
+                <img
+                  src={business.mediaUrl}
+                  alt={business.name}
+                  className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xs font-bold text-accent">
+                  {business.name[0]}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-accent">{business.name}</p>
+                <p className="mt-0.5 text-sm text-muted">
+                  {business.category}
+                  {business.subcategory ? ` · ${business.subcategory}` : ""} · {business.city}, {business.state}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">Following since {formatDate(business.followedAt)}</p>
+              </div>
+              {business.isHiring && (
+                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                  Hiring
+                </span>
+              )}
             </div>
-            {business.isHiring && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                Hiring
-              </span>
-            )}
-          </div>
-        </Card>
+          </Card>
+        </Link>
       ))}
     </div>
   );
@@ -186,15 +221,16 @@ export function MessagesPreview({ conversations }: { conversations: Conversation
       {conversations.map((conversation) => (
         <Link key={conversation.id} href={`/messages/${conversation.id}`}>
           <Card className="transition hover:border-accent/40 hover:shadow-md">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <AvatarCircle name={conversation.otherUserName} src={conversation.otherUserAvatarUrl} />
+              <div className="min-w-0 flex-1">
                 <p className="font-medium">{conversation.otherUserName}</p>
-                <p className="mt-1 line-clamp-1 text-sm text-muted">
+                <p className="mt-0.5 line-clamp-1 text-sm text-muted">
                   {conversation.lastMessage ?? "Start the conversation"}
                 </p>
               </div>
               {conversation.unreadCount > 0 && (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
+                <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-accent px-1 text-xs text-white">
                   {conversation.unreadCount}
                 </span>
               )}
@@ -217,14 +253,27 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
 
   return (
     <div className="space-y-3">
-      {notifications.slice(0, 12).map((notification) => (
-        <Card key={notification.id} className={notification.read ? "opacity-75" : "border-accent/30"}>
-          <p className="font-medium">{notification.title}</p>
-          <p className="mt-1 text-sm text-muted">{notification.body}</p>
-          <p className="mt-2 text-xs text-muted">{formatDate(notification.createdAt)}</p>
-        </Card>
-      ))}
-      <Link href="/messages" className="inline-block text-sm text-accent hover:underline">
+      {notifications.slice(0, 12).map((notification) => {
+        const safeLink = getSafeAppLink(notification.link);
+        const inner = (
+          <Card
+            className={`transition ${notification.read ? "opacity-70" : "border-accent/30"} ${safeLink ? "hover:border-accent/50 hover:shadow-sm" : ""}`}
+          >
+            <p className="font-medium text-sm">{notification.title}</p>
+            <p className="mt-0.5 text-sm text-muted">{notification.body}</p>
+            <div className="mt-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs text-muted">{formatDate(notification.createdAt)}</p>
+              {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
+            </div>
+          </Card>
+        );
+        return safeLink ? (
+          <Link key={notification.id} href={safeLink}>{inner}</Link>
+        ) : (
+          <div key={notification.id}>{inner}</div>
+        );
+      })}
+      <Link href="/profile?tab=alerts" className="inline-block text-sm text-accent hover:underline">
         View all alerts
       </Link>
     </div>
@@ -368,7 +417,8 @@ export function MessagesHubSection({
             {conversations.map((c) => (
               <Link key={c.id} href={`/messages/${c.id}`}>
                 <Card className="group transition hover:border-accent/40 hover:shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <AvatarCircle name={c.otherUserName} src={c.otherUserAvatarUrl} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <p className="font-medium group-hover:text-accent">{c.otherUserName}</p>
