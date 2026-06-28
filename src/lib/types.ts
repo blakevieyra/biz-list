@@ -185,7 +185,8 @@ export interface ServiceOrder {
   serviceName: string;
   message: string;
   quantity: string;
-  status: "pending" | "reviewed" | "accepted" | "declined";
+  status: "pending" | "reviewed" | "in_progress" | "accepted" | "shipped" | "complete" | "declined";
+  noteText?: string;
   createdAt: string;
 }
 

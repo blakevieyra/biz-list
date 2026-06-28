@@ -848,29 +848,111 @@ export async function submitServiceOrder(input: {
   }
 }
 
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  reviewed: "Reviewed",
+  in_progress: "In Progress",
+  accepted: "Accepted",
+  shipped: "Shipped",
+  complete: "Complete",
+  declined: "Declined",
+};
+
+const VALID_ORDER_STATUSES = new Set([
+  "reviewed", "in_progress", "accepted", "shipped", "complete", "declined",
+]);
+
 export async function updateServiceOrderStatus(input: {
   orderId: string;
   businessId: string;
-  status: "reviewed" | "accepted" | "declined";
+  status: string;
+  noteText?: string;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to update orders." };
+  if (!VALID_ORDER_STATUSES.has(input.status)) return { error: "Invalid status." };
 
   try {
     const { supabase } = await requireBusinessOwner(input.businessId);
 
+    const { data: order, error: fetchErr } = await supabase
+      .from("service_orders")
+      .select("id, customer_id, service_name")
+      .eq("id", input.orderId)
+      .eq("business_id", input.businessId)
+      .single();
+
+    if (fetchErr || !order) return { error: fetchErr?.message ?? "Order not found." };
+
+    const updateData: Record<string, unknown> = { status: input.status };
+    if (input.noteText !== undefined) updateData.note_text = input.noteText;
+
     const { error } = await supabase
       .from("service_orders")
-      .update({ status: input.status })
+      .update(updateData)
       .eq("id", input.orderId)
       .eq("business_id", input.businessId);
 
     if (error) return { error: error.message };
+
+    const { data: biz } = await supabase
+      .from("businesses")
+      .select("name")
+      .eq("id", input.businessId)
+      .single();
+
+    if (order.customer_id && biz?.name) {
+      const label = ORDER_STATUS_LABELS[input.status] ?? input.status;
+      await supabase.from("notifications").insert({
+        user_id: order.customer_id,
+        type: "connection",
+        title: `Order update: ${order.service_name}`,
+        body: `${biz.name} marked your order as "${label}".${input.noteText ? " Note: " + input.noteText : ""}`,
+        link: `/messages`,
+        read: false,
+      });
+    }
 
     revalidatePath("/dashboard/orders");
     revalidatePath("/dashboard");
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update order." };
+  }
+}
+
+export async function getOrderConversationId(input: {
+  customerId: string;
+  businessId: string;
+}): Promise<{ conversationId?: string; error?: string }> {
+  if (!isSupabaseConfigured()) return { error: "Not configured." };
+  try {
+    const { supabase, user } = await requireUser();
+    const admin = getSupabaseAdmin();
+    if (!admin) return { error: "Admin not available." };
+
+    const [pA, pB] = user.id < input.customerId
+      ? [user.id, input.customerId]
+      : [input.customerId, user.id];
+
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("participant_a", pA)
+      .eq("participant_b", pB)
+      .maybeSingle();
+
+    if (existing) return { conversationId: existing.id };
+
+    const { data: created, error } = await admin
+      .from("conversations")
+      .insert({ participant_a: pA, participant_b: pB, business_id: input.businessId })
+      .select("id")
+      .single();
+
+    if (error || !created) return { error: error?.message ?? "Could not create conversation." };
+    return { conversationId: created.id };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed." };
   }
 }
 

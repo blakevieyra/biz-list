@@ -770,6 +770,7 @@ type ServiceOrderRow = {
   message: string;
   quantity: string;
   status: ServiceOrder["status"];
+  note_text?: string | null;
   created_at: string;
   profiles?: { display_name: string } | { display_name: string }[] | null;
 };
@@ -804,6 +805,7 @@ export async function getServiceOrdersForBusiness(
     message: row.message,
     quantity: row.quantity,
     status: row.status,
+    noteText: row.note_text ?? undefined,
     createdAt: row.created_at,
   }));
 }

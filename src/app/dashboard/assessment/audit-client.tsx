@@ -494,7 +494,9 @@ export default function AuditClient({
 
       <Card>
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">🤖</div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 overflow-hidden">
+            <img src="/bizlist-logo.png" alt="BizList" className="h-8 w-8 object-contain" />
+          </div>
           <div>
             <p className="font-semibold">Fully automated audit</p>
             <p className="mt-0.5 text-sm text-muted">
