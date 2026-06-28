@@ -40,7 +40,7 @@ export function BusinessListingCard({
   const cover = business.mediaUrls[0];
   const topServices = business.services.filter((s) => s.name.trim()).slice(0, 2);
   const isOwner = currentUserId === business.ownerId;
-  const latestPost = latestPosts[0];
+  const topPosts = latestPosts.slice(0, 2);
 
   function handleFollow(e: React.MouseEvent) {
     e.preventDefault();
@@ -213,15 +213,20 @@ export function BusinessListingCard({
             )}
 
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Latest update</p>
-              {latestPost ? (
-                <Link
-                  href={`/listings/${business.id}#post-${latestPost.id}`}
-                  className="block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
-                >
-                  <p className="line-clamp-2 text-xs font-medium leading-snug">{latestPost.title}</p>
-                  <p className="mt-0.5 text-[11px] text-muted">{formatPostDateTime(latestPost.createdAt)}</p>
-                </Link>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Latest updates</p>
+              {topPosts.length > 0 ? (
+                <div className="space-y-1.5">
+                  {topPosts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/listings/${business.id}#post-${post.id}`}
+                      className="block rounded-lg border border-border bg-slate-50/80 px-2.5 py-2 transition hover:border-accent/40"
+                    >
+                      <p className="line-clamp-1 text-xs font-medium leading-snug">{post.title}</p>
+                      <p className="mt-0.5 text-[11px] text-muted">{formatPostDateTime(post.createdAt)}</p>
+                    </Link>
+                  ))}
+                </div>
               ) : (
                 <p className="text-xs text-muted">No posts yet.</p>
               )}
