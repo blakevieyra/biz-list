@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import { PageHeader, Card } from "@/components/ui";
 import type { ComprehensiveAuditResult, ComprehensiveAuditSection } from "@/lib/ai/ai-services";
 import { emailAuditReport } from "@/lib/actions/pro";
@@ -287,6 +287,8 @@ export default function AuditClient({
   const [steps, setSteps] = useState<StepInfo[]>(STEPS.map(() => ({ state: "waiting" })));
   const [activeStep, setActiveStep] = useState(0);
   const [result, setResult] = useState<ComprehensiveAuditResult | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const [viewingAudit, setViewingAudit] = useState<PastAudit | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usedThisMonth, setUsedThisMonth] = useState(initialUsed);
@@ -304,6 +306,22 @@ export default function AuditClient({
     if (running && typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
+  }, [running]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!running) {
+      setElapsed(0);
+      startTimeRef.current = null;
+      return;
+    }
+    startTimeRef.current = Date.now();
+    const interval = setInterval(() => {
+      if (startTimeRef.current) {
+        setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }
+    }, 1000);
+    return () => clearInterval(interval);
   }, [running]);
 
   function fireNotification(score: number) {
@@ -469,7 +487,19 @@ export default function AuditClient({
   // ── Progress view ─────────────────────────────────────────────────────────────
   if (running) {
     const researchDone = steps.slice(0, 6).every((s) => s.state === "found");
-    const progressPct = Math.round(((activeStep + (researchDone ? 1 : 0)) / STEPS.length) * 100);
+    const progressPct = Math.min(
+      Math.round(((activeStep + (researchDone ? 1 : 0)) / STEPS.length) * 100),
+      95,
+    );
+    const ESTIMATED_SECS = 90;
+    const remaining = Math.max(0, ESTIMATED_SECS - elapsed);
+    const timeLabel =
+      remaining >= 60
+        ? `~${Math.ceil(remaining / 60)}m remaining`
+        : remaining > 0
+        ? `~${remaining}s remaining`
+        : "Finalizing report…";
+
     return (
       <>
         <PageHeader title="AI Business Audit" description={`Analyzing ${businessName}…`} />
@@ -488,7 +518,10 @@ export default function AuditClient({
           <div className="mb-2 px-1">
             <div className="flex items-center justify-between text-xs text-muted mb-1">
               <span>Step {Math.min(activeStep + 1, STEPS.length)} of {STEPS.length}</span>
-              <span>{progressPct}%</span>
+              <div className="flex items-center gap-3">
+                <span className="text-muted/70">{timeLabel}</span>
+                <span className="font-medium">{progressPct}%</span>
+              </div>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div

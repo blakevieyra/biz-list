@@ -26,7 +26,14 @@ function toStr(v: unknown): string {
       .filter(Boolean)
       .join("; ");
   }
-  if (typeof v === "object") return JSON.stringify(v);
+  if (typeof v === "object") {
+    // Extract readable string values instead of serializing as JSON
+    const obj = v as Record<string, unknown>;
+    const texts = Object.values(obj)
+      .filter((val) => typeof val === "string" && (val as string).trim().length > 5)
+      .map((val) => val as string);
+    return texts.join("; ") || "";
+  }
   return String(v);
 }
 
