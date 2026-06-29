@@ -45,9 +45,9 @@ export const DISCOVERY_RADIUS_LABELS: Record<DiscoveryRadius, string> = {
 
 export const FEED_SCOPE_LABELS = DISCOVERY_RADIUS_LABELS;
 
-export const DEFAULT_DISCOVERY_RADIUS: AreaScope = "city";
+export const DEFAULT_DISCOVERY_RADIUS: AreaScope = "nation";
 export const DEFAULT_MILE_RADIUS: MileRadius = "25";
-export const DEFAULT_DISCOVERY_FILTER: DiscoveryRadius = "25";
+export const DEFAULT_DISCOVERY_FILTER: DiscoveryRadius = "nation";
 
 export const DISCOVERY_FILTER_OPTIONS: DiscoveryRadius[] = [
   ...MILE_RADIUS_OPTIONS,

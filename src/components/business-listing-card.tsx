@@ -10,6 +10,7 @@ import { displayCategoryLabel } from "@/lib/industries";
 import type { BusinessPost, BusinessProfile } from "@/lib/types";
 import { INTENT_LABELS } from "@/lib/types";
 import { Card, formatPostDateTime, StarRating } from "@/components/ui";
+import { offeringActionLabel } from "@/lib/service-types";
 
 const actionButtonClass =
   "inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-sm font-medium disabled:opacity-50";
@@ -94,12 +95,12 @@ export function BusinessListingCard({
               </p>
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                 <Link href={`/listings/${business.id}`}>
-                  <h3 className="text-sm font-bold leading-snug group-hover:text-accent sm:text-xl">
+                  <h3 className="text-base font-bold leading-snug group-hover:text-accent sm:text-2xl">
                     {business.name}
                   </h3>
                 </Link>
                 {business.ratingCount > 0 && (
-                  <StarRating rating={business.ratingAvg} count={business.ratingCount} size="md" />
+                  <StarRating rating={business.ratingAvg} count={business.ratingCount} size="lg" />
                 )}
               </div>
               {business.tagline && (
@@ -261,8 +262,8 @@ export function BusinessListingCard({
             </div>
           </div>
 
-          {/* Footer: location */}
-          <div className="mt-auto mt-2 border-t border-border pt-2 sm:pt-3">
+          {/* Footer: location + CTA */}
+          <div className="mt-auto mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 sm:pt-3">
             <Link
               href={`/listings/${business.id}`}
               className="text-xs text-muted hover:text-accent"
@@ -270,6 +271,15 @@ export function BusinessListingCard({
               {formatLocation(business)}
               <span className="ml-1 text-accent">· View listing →</span>
             </Link>
+            {!isOwner && topServices.length > 0 && (
+              <Link
+                href={`/listings/${business.id}#offerings`}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center rounded-full bg-accent px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-accent-hover"
+              >
+                {offeringActionLabel(topServices[0].serviceType)}
+              </Link>
+            )}
             {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
           </div>
         </div>

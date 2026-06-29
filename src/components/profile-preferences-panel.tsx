@@ -59,7 +59,7 @@ export function ProfilePreferencesPanel({
     skills: profile.skills.join(", "),
     resumeUrl: profile.resumeUrl ?? "",
     zipCode: profile.zipCode ?? "",
-    discoveryRadius: (profile.discoveryRadius ?? "25") as DiscoveryRadius,
+    discoveryRadius: (profile.discoveryRadius ?? "nation") as DiscoveryRadius,
   });
 
   const previewResume = buildResumeSnapshot({

@@ -26,10 +26,7 @@ function RsvpBtn({
     variant === "going"
       ? "border border-accent bg-blue-50 text-accent"
       : "border border-accent bg-blue-50 text-accent";
-  const inactiveClass =
-    variant === "going"
-      ? "bg-accent text-white hover:bg-accent-hover"
-      : "border border-border bg-card text-muted hover:border-accent hover:text-accent";
+  const inactiveClass = "border border-border bg-card text-muted hover:border-accent hover:text-accent";
 
   return (
     <button

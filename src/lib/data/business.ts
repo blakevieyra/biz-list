@@ -452,7 +452,7 @@ export async function getFeedBusinessPosts(options: {
 }): Promise<BusinessPost[]> {
   const limit = options.limit ?? 40;
   const viewer = options.viewer;
-  const discoveryRadius = options.discoveryRadius ?? options.mileRadius ?? options.areaScope ?? "city";
+  const discoveryRadius = options.discoveryRadius ?? options.mileRadius ?? options.areaScope ?? "nation";
   const typeSet = options.postTypes ? new Set(options.postTypes) : null;
   const userCtx: FeedUserContext = {
     interestTags: options.userInterestTags ?? [],

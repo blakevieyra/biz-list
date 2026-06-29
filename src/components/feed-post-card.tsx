@@ -97,7 +97,7 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start">
 
         {/* ── Left: business content ── */}
         <div className="flex min-w-0 flex-col border-b border-border lg:border-b-0 lg:border-r">
@@ -128,22 +128,22 @@ export function FeedPostCard({
                 </span>
               </div>
 
-              {/* Business name — prominent */}
-              <Link
-                href={`/listings/${post.businessId}`}
-                className="text-lg font-bold leading-tight text-foreground hover:text-accent sm:text-xl"
-              >
-                {post.businessName ?? "Local business"}
-              </Link>
-
-              {/* Rating row */}
-              {(post.businessRatingCount ?? 0) > 0 && (
-                <StarRating
-                  rating={post.businessRatingAvg ?? 0}
-                  count={post.businessRatingCount}
-                  size="md"
-                />
-              )}
+              {/* Business name + rating inline */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <Link
+                  href={`/listings/${post.businessId}`}
+                  className="text-lg font-bold leading-tight text-foreground hover:text-accent sm:text-xl"
+                >
+                  {post.businessName ?? "Local business"}
+                </Link>
+                {(post.businessRatingCount ?? 0) > 0 && (
+                  <StarRating
+                    rating={post.businessRatingAvg ?? 0}
+                    count={post.businessRatingCount}
+                    size="sm"
+                  />
+                )}
+              </div>
 
               {/* Category + stats */}
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">

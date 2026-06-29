@@ -234,7 +234,7 @@ export async function getBusinessEvents(filters?: {
   userId?: string | null;
 }): Promise<BusinessEvent[]> {
   const discoveryRadius =
-    filters?.discoveryRadius ?? filters?.mileRadius ?? filters?.areaScope ?? "city";
+    filters?.discoveryRadius ?? filters?.mileRadius ?? filters?.areaScope ?? "nation";
   const supabase = await createClient();
   if (!supabase) return filterSeedEvents({ ...filters, discoveryRadius });
 
