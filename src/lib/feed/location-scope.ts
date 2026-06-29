@@ -97,8 +97,8 @@ export function isAreaFilterActive(miles?: string, scope?: string): boolean {
   return scope !== undefined && scope !== "";
 }
 
-export function discoveryFilterHrefValue(value: DiscoveryRadius): string | undefined {
-  return value === DEFAULT_DISCOVERY_FILTER ? undefined : value;
+export function discoveryFilterHrefValue(value: DiscoveryRadius): string {
+  return value;
 }
 
 const MILE_VALUES = new Set<string>(MILE_RADIUS_OPTIONS);

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createBusinessEvent } from "@/lib/actions/events";
 import { INDUSTRY_OPTIONS } from "@/lib/industries";
+import { EVENT_PURPOSE_OPTIONS } from "@/lib/event-purposes";
 
 export function EventPublishForm({ businessId }: { businessId: string }) {
   const [pending, setPending] = useState(false);
@@ -27,6 +28,7 @@ export function EventPublishForm({ businessId }: { businessId: string }) {
           state: String(formData.get("state") ?? ""),
           zipCode: String(formData.get("zipCode") ?? ""),
           category: String(formData.get("category") ?? ""),
+          purpose: String(formData.get("purpose") ?? "") || undefined,
           imageUrl: String(formData.get("imageUrl") ?? ""),
           startsAt: String(formData.get("startsAt") ?? ""),
           endsAt: String(formData.get("endsAt") ?? "") || undefined,
@@ -89,6 +91,17 @@ export function EventPublishForm({ businessId }: { businessId: string }) {
           <select name="category" className="mt-1 w-full rounded-xl border border-border px-3 py-2 text-sm">
             <option value="">Select industry</option>
             {INDUSTRY_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium">Purpose</span>
+          <select name="purpose" className="mt-1 w-full rounded-xl border border-border px-3 py-2 text-sm">
+            <option value="">Select purpose</option>
+            {EVENT_PURPOSE_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>

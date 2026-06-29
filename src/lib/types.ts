@@ -493,5 +493,6 @@ export interface BusinessEvent {
   goingCount: number;
   interestedCount: number;
   userRsvp?: EventRsvpStatus | null;
+  purpose?: string | null;
   createdAt: string;
 }

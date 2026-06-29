@@ -28,6 +28,7 @@ type EventRow = {
   ends_at?: string | null;
   capacity?: number | null;
   status: string;
+  purpose?: string | null;
   created_at: string;
   businesses?: {
     name: string;
@@ -86,6 +87,7 @@ export function mapEventRow(
     goingCount: extras.goingCount ?? 0,
     interestedCount: extras.interestedCount ?? 0,
     userRsvp: extras.userRsvp ?? null,
+    purpose: row.purpose ?? null,
     createdAt: row.created_at,
   };
 }
@@ -157,6 +159,7 @@ function matchesEventFilters(
   filters: {
     query?: string;
     category?: string;
+    purpose?: string;
   },
 ): boolean {
   if (filters.query) {
@@ -175,6 +178,7 @@ function matchesEventFilters(
   }
 
   if (filters.category && event.category !== filters.category) return false;
+  if (filters.purpose && event.purpose !== filters.purpose) return false;
 
   return true;
 }
@@ -182,6 +186,7 @@ function matchesEventFilters(
 async function filterSeedEvents(filters?: {
   query?: string;
   category?: string;
+  purpose?: string;
   discoveryRadius?: DiscoveryRadius;
   viewer?: DiscoveryViewer | null;
   businessId?: string;
@@ -203,6 +208,7 @@ async function filterSeedEvents(filters?: {
     matchesEventFilters(event, {
       query: filters?.query,
       category: filters?.category,
+      purpose: filters?.purpose,
     }),
   );
 
@@ -224,6 +230,7 @@ async function filterSeedEvents(filters?: {
 export async function getBusinessEvents(filters?: {
   query?: string;
   category?: string;
+  purpose?: string;
   areaScope?: AreaScope;
   mileRadius?: MileRadius;
   discoveryRadius?: DiscoveryRadius;
@@ -269,6 +276,7 @@ export async function getBusinessEvents(filters?: {
     matchesEventFilters(event, {
       query: filters?.query,
       category: filters?.category,
+      purpose: filters?.purpose,
     }),
   );
 

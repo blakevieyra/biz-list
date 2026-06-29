@@ -38,9 +38,11 @@ function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; busines
 export function EventCard({
   event,
   currentUserId,
+  showRsvp = true,
 }: {
   event: BusinessEvent;
   currentUserId?: string | null;
+  showRsvp?: boolean;
 }) {
   const when = formatPostDateTime(event.startsAt);
   const where = [event.location || event.address, event.city, event.state]
@@ -78,10 +80,6 @@ export function EventCard({
         </p>
         <h3 className="mt-1 font-semibold leading-snug">{event.title}</h3>
 
-        {event.description && (
-          <p className="mt-1.5 line-clamp-2 text-sm text-muted">{event.description}</p>
-        )}
-
         <p className="mt-2 text-sm text-muted">{when}</p>
         {where && <p className="mt-1 text-sm text-muted">{where}</p>}
 
@@ -92,16 +90,18 @@ export function EventCard({
 
       {/* Footer: RSVP buttons + View details — all above the overlay */}
       <div className="relative z-[1] flex items-center justify-between border-t border-border px-4 py-2.5 gap-3">
-        <EventRsvpButton
-          eventId={event.id}
-          initialGoing={going}
-          initialInterested={interested}
-          requiresAuth={!currentUserId}
-          size="sm"
-        />
+        {showRsvp && (
+          <EventRsvpButton
+            eventId={event.id}
+            initialGoing={going}
+            initialInterested={interested}
+            requiresAuth={!currentUserId}
+            size="sm"
+          />
+        )}
         <Link
           href={`/events/${event.id}`}
-          className="shrink-0 text-xs font-medium text-accent hover:underline"
+          className="shrink-0 text-xs font-medium text-accent hover:underline ml-auto"
         >
           View details →
         </Link>

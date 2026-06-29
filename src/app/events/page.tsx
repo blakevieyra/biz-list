@@ -13,6 +13,7 @@ import {
   resolveDiscoveryFilter,
 } from "@/lib/feed/location-scope";
 import { INDUSTRY_OPTIONS, isIndustryOption } from "@/lib/industries";
+import { EVENT_PURPOSE_OPTIONS } from "@/lib/event-purposes";
 
 export default async function EventsPage({
   searchParams,
@@ -23,6 +24,7 @@ export default async function EventsPage({
     near?: string;
     q?: string;
     category?: string;
+    purpose?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -34,6 +36,9 @@ export default async function EventsPage({
   );
   const query = params.q ?? "";
   const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
+  const purposeFilter = EVENT_PURPOSE_OPTIONS.includes(params.purpose as typeof EVENT_PURPOSE_OPTIONS[number])
+    ? params.purpose
+    : undefined;
 
   const viewer = profile
     ? {
@@ -53,6 +58,7 @@ export default async function EventsPage({
     discoveryRadius: discoveryFilter,
     query: query || undefined,
     category: categoryFilter,
+    purpose: purposeFilter,
     userId,
     limit: 60,
   });
@@ -63,6 +69,7 @@ export default async function EventsPage({
     const merged: Record<string, string | undefined> = {
       q: query || undefined,
       category: categoryFilter,
+      purpose: purposeFilter,
       near: discoveryFilterHrefValue(discoveryFilter),
       ...next,
     };
@@ -133,7 +140,7 @@ export default async function EventsPage({
         </div>
       </section>
 
-      <section className="mb-6">
+      <section className="mb-4">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Industry</span>
           <Link href={buildHref({ category: undefined })}
@@ -144,6 +151,22 @@ export default async function EventsPage({
             <Link key={category} href={buildHref({ category })}
               className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${categoryFilter === category ? "bg-accent text-white" : "border border-border bg-card text-muted hover:text-foreground"}`}>
               {category}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-6">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted">Purpose</span>
+          <Link href={buildHref({ purpose: undefined })}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${!purposeFilter ? "bg-accent text-white" : "border border-border bg-card text-muted hover:text-foreground"}`}>
+            All
+          </Link>
+          {EVENT_PURPOSE_OPTIONS.map((purpose) => (
+            <Link key={purpose} href={buildHref({ purpose })}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${purposeFilter === purpose ? "bg-accent text-white" : "border border-border bg-card text-muted hover:text-foreground"}`}>
+              {purpose}
             </Link>
           ))}
         </div>

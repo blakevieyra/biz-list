@@ -120,6 +120,7 @@ export async function createBusinessEvent(input: {
   county?: string;
   zipCode?: string;
   category?: string;
+  purpose?: string;
   imageUrl?: string;
   startsAt: string;
   endsAt?: string;
@@ -178,6 +179,7 @@ export async function createBusinessEvent(input: {
         longitude,
         category,
         image_url: (input.imageUrl ?? "").trim().slice(0, 500),
+        purpose: input.purpose?.trim() || null,
         starts_at: startsAt.toISOString(),
         ends_at: input.endsAt ? new Date(input.endsAt).toISOString() : null,
         capacity: input.capacity ?? null,

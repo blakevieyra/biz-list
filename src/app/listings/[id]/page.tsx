@@ -248,7 +248,7 @@ export default async function BusinessDetailPage({
                 <AffiliateButton businessId={business.id} status={affiliationStatus} />
               )}
 
-              {/* Likes · Followers · Website · Social links */}
+              {/* Likes · Followers · Social links */}
               <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">
 
                 {business.likeCount > 0 && (
@@ -257,20 +257,6 @@ export default async function BusinessDetailPage({
 
                 {business.followerIds.length > 0 && (
                   <span>{business.followerIds.length} {business.followerIds.length === 1 ? "follower" : "followers"}</span>
-                )}
-
-                {business.website && (
-
-                  <SafeExternalLink
-
-                    url={business.website}
-
-                    label="Visit website"
-
-                    className="font-medium text-accent hover:underline"
-
-                  />
-
                 )}
 
                 {socialEntries.map(([network, url]) => (
@@ -290,6 +276,14 @@ export default async function BusinessDetailPage({
                 ))}
 
               </div>
+
+              {business.website && (
+                <SafeExternalLink
+                  url={business.website}
+                  label="Visit website →"
+                  className="text-sm font-semibold text-accent hover:underline"
+                />
+              )}
 
             </div>
 
@@ -363,7 +357,7 @@ export default async function BusinessDetailPage({
 
                   {events.map((event) => (
 
-                    <EventCard key={event.id} event={event} />
+                    <EventCard key={event.id} event={event} showRsvp={false} />
 
                   ))}
 
