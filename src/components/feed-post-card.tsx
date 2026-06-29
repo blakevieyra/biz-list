@@ -97,10 +97,11 @@ export function FeedPostCard({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]">
+      {/* relative wrapper: left drives height, right is absolutely overlaid */}
+      <div className="relative">
 
-        {/* ── Left: self-start so it — not the comments — dictates card height ── */}
-        <div className="flex min-w-0 flex-col border-b border-border lg:self-start lg:border-b-0 lg:border-r">
+        {/* ── Left: natural height — this is what sizes the card ── */}
+        <div className="flex min-w-0 flex-col border-b border-border lg:mr-[33.333%] lg:border-b-0 lg:border-r">
 
           {/* Business identity header */}
           <div className="flex border-b border-border">
@@ -218,8 +219,8 @@ export function FeedPostCard({
           </div>
         </div>
 
-        {/* ── Right: fills left's height, comments scroll inside ── */}
-        <div className="flex flex-col overflow-hidden bg-slate-50/60">
+        {/* ── Right: absolutely fills card height — never stretches the card ── */}
+        <div className="flex flex-col overflow-hidden border-t border-border bg-slate-50/60 lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/3 lg:border-l lg:border-t-0">
           <p className="shrink-0 border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
             Comments
           </p>
