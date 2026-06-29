@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { SEED_BUSINESS_EVENTS, SEED_EVENT_COMMENTS } from "@/lib/mock-data";
 import {
   type DiscoveryViewer,
 } from "@/lib/feed/location-scope";
@@ -200,53 +199,6 @@ function matchesEventFilters(
   return true;
 }
 
-async function filterSeedEvents(filters?: {
-  query?: string;
-  category?: string;
-  purpose?: string;
-  discoveryRadius?: DiscoveryRadius;
-  viewer?: DiscoveryViewer | null;
-  businessId?: string;
-  upcomingOnly?: boolean;
-  limit?: number;
-}): Promise<BusinessEvent[]> {
-  let events = SEED_BUSINESS_EVENTS.filter((e) => e.status === "published");
-
-  if (filters?.businessId) {
-    events = events.filter((e) => e.businessId === filters.businessId);
-  }
-
-  if (filters?.upcomingOnly !== false) {
-    const now = Date.now();
-    events = events.filter((e) => new Date(e.startsAt).getTime() >= now);
-  }
-
-  events = events.filter((event) =>
-    matchesEventFilters(event, {
-      query: filters?.query,
-      category: filters?.category,
-      purpose: filters?.purpose,
-    }),
-  );
-
-  if (filters?.discoveryRadius && filters.viewer) {
-    events = await filterEventsByDiscovery(events, filters.viewer, filters.discoveryRadius);
-  }
-
-  const viewer = filters?.viewer ?? null;
-  events.sort((a, b) => {
-    const diff = scoreEvent(b, viewer) - scoreEvent(a, viewer);
-    if (diff !== 0) return diff;
-    return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
-  });
-
-  if (filters?.limit) {
-    events = events.slice(0, filters.limit);
-  }
-
-  return events;
-}
-
 export async function getBusinessEvents(filters?: {
   query?: string;
   category?: string;
@@ -263,7 +215,7 @@ export async function getBusinessEvents(filters?: {
   const discoveryRadius =
     filters?.discoveryRadius ?? filters?.mileRadius ?? filters?.areaScope ?? "nation";
   const supabase = await createClient();
-  if (!supabase) return filterSeedEvents({ ...filters, discoveryRadius });
+  if (!supabase) return [];
 
   let query = supabase
     .from("business_events")
@@ -358,9 +310,7 @@ export async function getBusinessEventById(
   userId?: string | null,
 ): Promise<BusinessEvent | null> {
   const supabase = await createClient();
-  if (!supabase) {
-    return SEED_BUSINESS_EVENTS.find((e) => e.id === id && e.status === "published") ?? null;
-  }
+  if (!supabase) return null;
 
   const { data: row } = await supabase
     .from("business_events")
@@ -369,9 +319,7 @@ export async function getBusinessEventById(
     .eq("status", "published")
     .maybeSingle();
 
-  if (!row) {
-    return SEED_BUSINESS_EVENTS.find((e) => e.id === id && e.status === "published") ?? null;
-  }
+  if (!row) return null;
 
   const [event] = await attachRsvpCounts([mapEventRow(row as EventRow)], userId);
   return event ?? null;
@@ -396,9 +344,7 @@ function commentAuthorName(
 
 export async function getEventComments(eventId: string): Promise<import("@/lib/types").EventComment[]> {
   const supabase = await createClient();
-  if (!supabase) {
-    return SEED_EVENT_COMMENTS.filter((comment) => comment.eventId === eventId);
-  }
+  if (!supabase) return [];
 
   const { data: rows } = await supabase
     .from("event_comments")
@@ -420,14 +366,7 @@ export async function getEventsForBusinessOwner(
   ownerId: string,
 ): Promise<BusinessEvent[]> {
   const supabase = await createClient();
-  if (!supabase) {
-    const { SEED_BUSINESSES } = await import("@/lib/mock-data");
-    const business = SEED_BUSINESSES.find((b) => b.ownerId === ownerId);
-    if (!business) return [];
-    return SEED_BUSINESS_EVENTS.filter((e) => e.businessId === business.id).sort(
-      (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime(),
-    );
-  }
+  if (!supabase) return [];
 
   const { data: business } = await supabase
     .from("businesses")

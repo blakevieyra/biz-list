@@ -13,7 +13,6 @@ import {
 import { getTrendingBusinessPosts } from "@/lib/data/business";
 import { getBusinessEvents } from "@/lib/data/events";
 import { resolveAreaScope } from "@/lib/feed/location-scope";
-import { SEED_BUSINESS_EVENTS } from "@/lib/mock-data";
 import { StarRating } from "@/components/ui";
 
 const features = [
@@ -51,13 +50,12 @@ export default async function HomePage() {
 
   const areaScope = resolveAreaScope(undefined, undefined);
 
-  const [businesses, collaborations, trendingPosts, dbEvents] = await Promise.all([
+  const [businesses, collaborations, trendingPosts, events] = await Promise.all([
     getBusinesses({ areaScope, viewer: null }),
     getCollaborations(),
     getTrendingBusinessPosts(3),
     getBusinessEvents({ limit: 2 }),
   ]);
-  const events = dbEvents.length > 0 ? dbEvents : SEED_BUSINESS_EVENTS.slice(0, 2);
 
   return (
     <>

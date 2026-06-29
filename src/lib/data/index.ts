@@ -1,11 +1,3 @@
-import {
-  SEED_BUSINESSES,
-  SEED_COLLABORATIONS,
-  SEED_COLLABORATION_COMMENTS,
-  SEED_COMMENTS,
-  SEED_POSTS,
-  SEED_USERS,
-} from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/server";
 import type {
   BusinessConnectionState,
@@ -74,7 +66,7 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
 
 export async function getProfileById(id: string): Promise<UserProfile | null> {
   const supabase = await getSupabase();
-  if (!supabase) return SEED_USERS.find((u) => u.id === id) ?? null;
+  if (!supabase) return null;
 
   const { data } = await supabase.from("profiles").select("*").eq("id", id).single();
   return data ? mapProfile(data as ProfileRow) : null;
@@ -82,9 +74,7 @@ export async function getProfileById(id: string): Promise<UserProfile | null> {
 
 export async function getBusinessByOwnerId(ownerId: string): Promise<BusinessProfile | null> {
   const supabase = await getSupabase();
-  if (!supabase) {
-    return SEED_BUSINESSES.find((b) => b.ownerId === ownerId) ?? null;
-  }
+  if (!supabase) return null;
 
   const { data: row } = await supabase
     .from("businesses")
@@ -113,26 +103,7 @@ export async function getListingsMembers(filters?: {
   const scope = filters?.scope ?? DEFAULT_DISCOVERY_RADIUS;
   const viewer = filters?.viewer;
 
-  if (!supabase) {
-    return SEED_USERS.filter((u) => {
-      if (u.role !== "customer") return false;
-      if (filters?.seekingWork && !u.isSeekingWork) return false;
-      if (viewer && !matchesFeedScope(viewer, u, scope)) return false;
-      const q = filters?.query?.toLowerCase() ?? "";
-      if (!q) return true;
-      return (
-        u.displayName.toLowerCase().includes(q) ||
-        u.bio.toLowerCase().includes(q) ||
-        u.headline.toLowerCase().includes(q) ||
-        u.city.toLowerCase().includes(q) ||
-        u.skills.some((s) => s.toLowerCase().includes(q))
-      );
-    }).sort((a, b) => {
-      const scoreA = (a.isSeekingWork ? 10 : 0) + a.skills.length * 2;
-      const scoreB = (b.isSeekingWork ? 10 : 0) + b.skills.length * 2;
-      return scoreB - scoreA;
-    });
-  }
+  if (!supabase) return [];
 
   let query = supabase
     .from("profiles")
@@ -242,38 +213,7 @@ export async function getBusinesses(filters?: {
     return b.services.some((s) => serviceMatchesFilters(s, q));
   }
 
-  if (!supabase) {
-    let result = SEED_BUSINESSES.filter((b) => {
-      const matchesIntent = !filters?.intent || b.intents.includes(filters.intent);
-      const matchesCategory = !filters?.category || b.category === filters.category;
-      const matchesSubcategory =
-        !filters?.subcategory || b.subcategory === filters.subcategory;
-      const q = filters?.query?.toLowerCase() ?? "";
-      const matchesQuery =
-        filters?.searchType === "products" || productType
-          ? matchesProductFilters(b, q)
-          : !q ||
-            b.name.toLowerCase().includes(q) ||
-            b.description.toLowerCase().includes(q) ||
-            b.city.toLowerCase().includes(q) ||
-            b.zipCode.includes(q) ||
-            b.category.toLowerCase().includes(q) ||
-            (b.subcategory?.toLowerCase().includes(q) ?? false) ||
-            b.services.some(
-              (s) =>
-                s.name.toLowerCase().includes(q) ||
-                s.description.toLowerCase().includes(q) ||
-                (s.serviceType?.toLowerCase().includes(q) ?? false),
-            );
-      return matchesIntent && matchesCategory && matchesSubcategory && matchesQuery;
-    });
-
-    if (viewer) {
-      result = await filterByDiscoveryRadius(result, viewer, discoveryRadius);
-    }
-
-    return rankBusinesses(result);
-  }
+  if (!supabase) return [];
 
   let query = supabase.from("businesses").select("*").order("created_at", { ascending: false });
 
@@ -344,7 +284,7 @@ export async function getBusinesses(filters?: {
 
 export async function getBusinessById(id: string): Promise<BusinessProfile | null> {
   const supabase = await getSupabase();
-  if (!supabase) return SEED_BUSINESSES.find((b) => b.id === id) ?? null;
+  if (!supabase) return null;
 
   const { data: row } = await supabase.from("businesses").select("*").eq("id", id).single();
   if (!row) return null;
@@ -425,12 +365,7 @@ export async function getBusinessConnectionState(
 export async function getForumPosts(category?: ForumCategory, userId?: string | null): Promise<ForumPost[]> {
   try {
     const supabase = await getSupabase();
-    if (!supabase) {
-      const posts = category
-        ? SEED_POSTS.filter((p) => p.category === category)
-        : SEED_POSTS;
-      return posts;
-    }
+    if (!supabase) return [];
 
     let query = supabase
       .from("forum_posts")
@@ -477,7 +412,7 @@ export async function getForumPosts(category?: ForumCategory, userId?: string | 
 
 export async function getForumPostById(id: string, userId?: string | null): Promise<ForumPost | null> {
   const supabase = await getSupabase();
-  if (!supabase) return SEED_POSTS.find((p) => p.id === id) ?? null;
+  if (!supabase) return null;
 
   const { data: row } = await supabase
     .from("forum_posts")
@@ -504,7 +439,7 @@ export async function getForumPostById(id: string, userId?: string | null): Prom
 
 export async function getCommentsForPost(postId: string): Promise<Comment[]> {
   const supabase = await getSupabase();
-  if (!supabase) return SEED_COMMENTS.filter((c) => c.postId === postId);
+  if (!supabase) return [];
 
   const { data: rows } = await supabase
     .from("forum_comments")
@@ -551,17 +486,7 @@ async function attachCollaborationInterests(
 }
 
 function enrichCollaborationWithBusiness(idea: CollaborationIdea): CollaborationIdea {
-  if (!idea.businessId || idea.businessName) return idea;
-  const business = SEED_BUSINESSES.find((item) => item.id === idea.businessId);
-  if (!business) return idea;
-  return {
-    ...idea,
-    businessName: business.name,
-    businessCategory: business.category,
-    businessMediaUrl: business.mediaUrls[0],
-    businessRatingAvg: business.ratingAvg,
-    businessRatingCount: business.ratingCount,
-  };
+  return idea;
 }
 
 export async function getCollaborations(
@@ -573,24 +498,7 @@ export async function getCollaborations(
   const viewer = options?.viewer ?? null;
   const radius = options?.discoveryRadius ?? "nation";
 
-  if (!supabase) {
-    let seed = type
-      ? SEED_COLLABORATIONS.filter((item) => item.collaborationType === type)
-      : SEED_COLLABORATIONS;
-    seed = seed.filter((item) => Boolean(item.businessId));
-    const enriched = seed.map(enrichCollaborationWithBusiness);
-    if (viewer && radius !== "nation") {
-      const filtered: typeof enriched = [];
-      for (const collab of enriched) {
-        const biz = SEED_BUSINESSES.find((b) => b.id === collab.businessId);
-        if (!biz) continue;
-        const [match] = await filterByDiscoveryRadius([biz], viewer, radius);
-        if (match) filtered.push(collab);
-      }
-      return filtered;
-    }
-    return enriched;
-  }
+  if (!supabase) return [];
 
   let query = supabase
     .from("collaborations")
@@ -658,10 +566,7 @@ export async function getCollaborationById(
   userId?: string | null,
 ): Promise<CollaborationIdea | null> {
   const supabase = await getSupabase();
-  if (!supabase) {
-    const idea = SEED_COLLABORATIONS.find((item) => item.id === id);
-    return idea ? enrichCollaborationWithBusiness(idea) : null;
-  }
+  if (!supabase) return null;
 
   const { data: row } = await supabase
     .from("collaborations")
@@ -703,15 +608,7 @@ export async function getCollaborationCommentsByIds(
   if (!collaborationIds.length) return result;
 
   const supabase = await getSupabase();
-  if (!supabase) {
-    for (const id of collaborationIds) {
-      result.set(
-        id,
-        SEED_COLLABORATION_COMMENTS.filter((c) => c.collaborationId === id),
-      );
-    }
-    return result;
-  }
+  if (!supabase) return result;
 
   const { data: rows } = await supabase
     .from("collaboration_comments")
@@ -803,19 +700,7 @@ export async function getUnreadMessageCount(userId: string): Promise<number> {
 
 export async function getFollowedBusinesses(userId: string): Promise<FollowedBusiness[]> {
   const supabase = await getSupabase();
-  if (!supabase) {
-    return SEED_BUSINESSES.filter((b) => b.followerIds.includes(userId)).map((b) => ({
-      id: b.id,
-      name: b.name,
-      category: b.category,
-      subcategory: b.subcategory,
-      city: b.city,
-      state: b.state,
-      isHiring: b.isHiring,
-      followedAt: b.createdAt,
-      mediaUrl: b.mediaUrls[0],
-    }));
-  }
+  if (!supabase) return [];
 
   const { data: rows } = await supabase
     .from("business_follows")
@@ -865,25 +750,7 @@ export async function getPartnerBusinesses(
   limit = 12,
 ): Promise<PartnerBusiness[]> {
   const supabase = await getSupabase();
-  if (!supabase) {
-    // Mock: mutual followerIds cross-matching ownerId
-    const biz = SEED_BUSINESSES.find((b) => b.id === businessId);
-    if (!biz) return [];
-    return SEED_BUSINESSES.filter(
-      (b) =>
-        b.id !== businessId &&
-        biz.followerIds.includes(b.ownerId) &&
-        b.followerIds.includes(ownerId),
-    ).map((b) => ({
-      id: b.id,
-      name: b.name,
-      category: b.category,
-      subcategory: b.subcategory,
-      city: b.city,
-      state: b.state,
-      mediaUrl: b.mediaUrls[0],
-    }));
-  }
+  if (!supabase) return [];
 
   // Step 1: find all user IDs who follow this business
   const { data: followers } = await supabase

@@ -114,8 +114,6 @@ export default async function ListingsPage({
     if (statusFilter === "events") {
       if (!businessIdsWithEvents.has(b.id)) return false;
     }
-    // b2b / contract / proposal already filtered at DB level via intent param above;
-    // re-check here as safety net for the mock-data path
     if (statusFilter === "b2b" && !b.intents.includes("b2b")) return false;
     if (statusFilter === "contract" && !b.intents.includes("contract")) return false;
     if (statusFilter === "proposal" && !b.intents.includes("proposal")) return false;

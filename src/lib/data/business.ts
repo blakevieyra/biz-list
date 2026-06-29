@@ -1,11 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import {
-  getBusinessPostsForBusiness,
-  getBusinessReviewsForBusiness,
-  getBusinessPostCommentsForPost,
-  SEED_BUSINESSES,
-  SEED_BUSINESS_POSTS,
-} from "@/lib/mock-data";
 import type {
   AreaScope,
   BusinessPost,
@@ -210,7 +203,7 @@ export async function getBusinessPosts(
   userId: string | null = null,
 ): Promise<BusinessPost[]> {
   const supabase = await createClient();
-  if (!supabase) return getBusinessPostsForBusiness(businessId);
+  if (!supabase) return [];
 
   const { data: businessRow } = await supabase
     .from("businesses")
@@ -226,7 +219,7 @@ export async function getBusinessPosts(
     .eq("business_id", businessId)
     .order("created_at", { ascending: false });
 
-  if (!rows?.length) return getBusinessPostsForBusiness(businessId);
+  if (!rows?.length) return [];
 
   const postIds = rows.map((r) => r.id);
   const { data: comments } = await supabase
@@ -254,7 +247,7 @@ export async function getBusinessPosts(
 
 export async function getBusinessReviews(businessId: string): Promise<BusinessReview[]> {
   const supabase = await createClient();
-  if (!supabase) return getBusinessReviewsForBusiness(businessId);
+  if (!supabase) return [];
 
   const { data: rows } = await supabase
     .from("business_reviews")
@@ -262,7 +255,7 @@ export async function getBusinessReviews(businessId: string): Promise<BusinessRe
     .eq("business_id", businessId)
     .order("created_at", { ascending: false });
 
-  if (!rows?.length) return getBusinessReviewsForBusiness(businessId);
+  if (!rows?.length) return [];
 
   return ((rows as ReviewRow[] | null) ?? []).map((row) => ({
     id: row.id,
@@ -277,7 +270,7 @@ export async function getBusinessReviews(businessId: string): Promise<BusinessRe
 
 export async function getRecentListingsPosts(limit = 12): Promise<BusinessPost[]> {
   const supabase = await createClient();
-  if (!supabase) return SEED_BUSINESS_POSTS.slice(0, limit);
+  if (!supabase) return [];
 
   const { data: rows } = await supabase
     .from("business_posts")
@@ -303,7 +296,7 @@ export async function getRecentListingsPosts(limit = 12): Promise<BusinessPost[]
 
 export async function getTrendingBusinessPosts(limit = 10): Promise<BusinessPost[]> {
   const supabase = await createClient();
-  if (!supabase) return SEED_BUSINESS_POSTS.filter((p) => p.isTrending).slice(0, limit);
+  if (!supabase) return [];
 
   const { data: rows } = await supabase
     .from("business_posts")
@@ -461,55 +454,7 @@ export async function getFeedBusinessPosts(options: {
 
   const supabase = await createClient();
 
-  if (!supabase) {
-    let posts = [...SEED_BUSINESS_POSTS];
-    if (typeSet) posts = posts.filter((p) => typeSet.has(p.postType));
-
-    const candidates: BusinessPost[] = [];
-    for (const post of posts) {
-      const business = SEED_BUSINESSES.find((b) => b.id === post.businessId);
-      if (!business) continue;
-
-      const isFollowed = options.userId
-        ? business.followerIds.includes(options.userId)
-        : false;
-      candidates.push({
-        ...post,
-        businessName: business.name,
-        businessCategory: business.category,
-        businessMediaUrl: business.mediaUrls[0],
-        businessRatingAvg: business.ratingAvg,
-        businessRatingCount: business.ratingCount,
-        businessLikeCount: business.likeCount,
-        businessFollowerCount: business.followerIds.length,
-        isFollowed,
-        recentComments: getBusinessPostCommentsForPost(post.id, business.ownerId),
-        commentCount:
-          getBusinessPostCommentsForPost(post.id, business.ownerId).length ||
-          post.commentCount,
-        feedBadge: assignFeedBadge(
-          { ...post, isFollowed },
-          business.likeCount,
-          business.ratingAvg,
-          business.ratingCount,
-        ),
-      });
-    }
-
-    if (viewer) {
-      const businessById = new Map(SEED_BUSINESSES.map((b) => [b.id, b]));
-      const filtered: BusinessPost[] = [];
-      for (const post of candidates) {
-        const business = businessById.get(post.businessId);
-        if (!business) continue;
-        const [match] = await filterByDiscoveryRadius([business], viewer, discoveryRadius);
-        if (match) filtered.push(post);
-      }
-      return sortFeedPosts(filtered, userCtx).slice(0, limit);
-    }
-
-    return sortFeedPosts(candidates, userCtx).slice(0, limit);
-  }
+  if (!supabase) return [];
 
   let followedIds = new Set<string>();
   if (options.userId) {
@@ -633,13 +578,7 @@ export async function getLatestPostsForBusinessIds(
   if (!businessIds.length) return map;
 
   const supabase = await createClient();
-  if (!supabase) {
-    for (const id of businessIds) {
-      const posts = getBusinessPostsForBusiness(id).slice(0, limitPerBusiness);
-      if (posts.length) map.set(id, posts);
-    }
-    return map;
-  }
+  if (!supabase) return map;
 
   const { data: rows } = await supabase
     .from("business_posts")
