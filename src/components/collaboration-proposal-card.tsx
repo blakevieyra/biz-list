@@ -86,26 +86,25 @@ export function CollaborationProposalCard({
         {/* ── Left: collaboration content (2/3) ── */}
         <div className="md:col-span-2 flex flex-col">
 
-          {/* Top bar: business identity + status badges + interested button */}
-          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              {/* Business image (tiny) */}
+          {/* Top bar: business identity + status badges */}
+          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
               {idea.businessMediaUrl && (
                 <img
                   src={idea.businessMediaUrl}
                   alt={idea.businessName ?? ""}
-                  className="h-6 w-6 shrink-0 rounded object-cover"
+                  className="h-4 w-4 shrink-0 rounded object-cover opacity-80"
                 />
               )}
               {idea.businessId ? (
                 <Link
                   href={`/listings/${idea.businessId}`}
-                  className="text-sm font-semibold text-foreground hover:text-accent truncate"
+                  className="text-xs font-medium text-muted hover:text-accent truncate"
                 >
                   {idea.businessName ?? idea.authorName}
                 </Link>
               ) : (
-                <span className="text-sm font-semibold text-foreground truncate">
+                <span className="text-xs font-medium text-muted truncate">
                   {idea.businessName ?? idea.authorName}
                 </span>
               )}
@@ -114,10 +113,11 @@ export function CollaborationProposalCard({
                   rating={idea.businessRatingAvg ?? 0}
                   count={idea.businessRatingCount}
                   size="sm"
+                  compact
                 />
               )}
               {idea.businessCategory && (
-                <span className="text-xs text-muted">{idea.businessCategory}</span>
+                <span className="text-[11px] text-muted/70">{idea.businessCategory}</span>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
@@ -133,12 +133,12 @@ export function CollaborationProposalCard({
           {/* Main content */}
           <div className="flex flex-1 flex-col px-4 py-3">
             <Link href={`/partnerships/${idea.id}`} className="group block">
-              <h3 className="text-xl font-bold leading-snug group-hover:text-accent sm:text-2xl">
+              <h3 className="text-2xl font-bold leading-snug group-hover:text-accent sm:text-3xl">
                 {idea.title}
               </h3>
             </Link>
 
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80 sm:text-base">
+            <p className="mt-2 text-base leading-relaxed text-foreground/80 sm:text-lg">
               {idea.summary}
             </p>
 
