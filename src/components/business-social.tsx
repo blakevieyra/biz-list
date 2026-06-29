@@ -108,7 +108,7 @@ export function BusinessReviewsSection({
       <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:items-start">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Customer reviews</p>
-          <ul className="mt-3 space-y-4">
+          <ul className="mt-3 max-h-72 space-y-4 overflow-y-auto overscroll-contain pr-1">
             {reviews.length === 0 && (
               <li className="text-sm text-muted">No reviews yet. Be the first to share feedback.</li>
             )}
