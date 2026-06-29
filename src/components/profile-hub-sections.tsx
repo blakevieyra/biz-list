@@ -261,13 +261,17 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
             className={`relative transition ${notification.read ? "opacity-70" : "border-accent/30"} ${safeLink ? "hover:border-accent/50 hover:shadow-sm" : ""}`}
           >
             {safeLink && (
-              <Link href={safeLink} className="absolute inset-0 rounded-[inherit]" aria-label={notification.title} />
+              <Link href={safeLink} className="absolute inset-0 z-0 rounded-[inherit]" aria-label={notification.title} />
             )}
-            <p className="relative font-medium text-sm">{notification.title}</p>
-            <p className="relative mt-0.5 text-sm text-muted">{notification.body}</p>
-            <div className="relative mt-1.5 flex items-center justify-between gap-2">
+            <p className="relative z-[1] font-medium text-sm">{notification.title}</p>
+            <p className="relative z-[1] mt-0.5 text-sm text-muted">{notification.body}</p>
+            <div className="relative z-[1] mt-1.5 flex items-center justify-between gap-2">
               <p className="text-xs text-muted">{formatDate(notification.createdAt)}</p>
-              {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
+              {safeLink && (
+                <Link href={safeLink} className="text-xs font-medium text-accent hover:underline">
+                  View →
+                </Link>
+              )}
             </div>
           </Card>
         );
@@ -357,9 +361,9 @@ export function MessagesHubSection({
               return (
                 <Card key={n.id} className={`relative ${cardClass}`}>
                   {safeLink && (
-                    <Link href={safeLink} className="absolute inset-0 rounded-[inherit]" aria-label={n.title} />
+                    <Link href={safeLink} className="absolute inset-0 z-0 rounded-[inherit]" aria-label={n.title} />
                   )}
-                  <div className="relative flex items-start justify-between gap-3">
+                  <div className="relative z-[1] flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         {isOrder && !n.read && (
@@ -372,7 +376,11 @@ export function MessagesHubSection({
                       <p className="mt-0.5 text-sm text-muted">{n.body}</p>
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <p className="text-xs text-muted">{formatDate(n.createdAt)}</p>
-                        {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
+                        {safeLink && (
+                          <Link href={safeLink} className="text-xs font-medium text-accent hover:underline">
+                            View →
+                          </Link>
+                        )}
                       </div>
                     </div>
                     {!n.read && (

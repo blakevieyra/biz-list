@@ -7,6 +7,9 @@ import { CollaborationInterestedButton } from "@/components/collaboration-intere
 import {
   submitCollaborationOffer,
   deleteCollaboration,
+  commentOnCollaboration,
+  deleteCollaborationComment,
+  editCollaborationComment,
 } from "@/lib/actions/social";
 import { uploadCollaborationAttachment } from "@/lib/actions/upload";
 import { ReportButton } from "@/components/report-button";
@@ -214,6 +217,13 @@ export function CollaborationDetailCard({
   const [offerSent, setOfferSent] = useState(false);
   const [offerError, setOfferError] = useState<string | null>(null);
 
+  const [commentBody, setCommentBody] = useState("");
+  const [commentPending, startCommentTransition] = useTransition();
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentBody, setEditCommentBody] = useState("");
+  const [commentActionPending, startCommentAction] = useTransition();
+
   const isAuthor = currentUserId === idea.authorId;
   const interestCount = idea.interestedCount ?? 0;
   const type = idea.collaborationType;
@@ -239,6 +249,36 @@ export function CollaborationDetailCard({
       setOfferText("");
       setOfferAttachments([]);
       setOfferSent(true);
+      router.refresh();
+    });
+  }
+
+  function handleComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!commentBody.trim()) return;
+    if (!currentUserId) { router.push("/auth/login"); return; }
+    startCommentTransition(async () => {
+      setCommentError(null);
+      const result = await commentOnCollaboration(idea.id, commentBody.trim());
+      if (result.error) { setCommentError(result.error); return; }
+      setCommentBody("");
+      router.refresh();
+    });
+  }
+
+  function handleDeleteComment(commentId: string) {
+    if (!confirm("Delete this comment?")) return;
+    startCommentAction(async () => {
+      await deleteCollaborationComment(commentId);
+      router.refresh();
+    });
+  }
+
+  function handleEditCommentSave(e: React.FormEvent, commentId: string) {
+    e.preventDefault();
+    startCommentAction(async () => {
+      await editCollaborationComment(commentId, editCommentBody);
+      setEditingCommentId(null);
       router.refresh();
     });
   }
@@ -422,6 +462,76 @@ export function CollaborationDetailCard({
           )}
         </Card>
       )}
+
+      {/* Discussion / comments */}
+      <Card>
+        <h2 className="font-semibold">Discussion</h2>
+        <p className="mt-0.5 text-xs text-muted">
+          {comments.length === 0 ? "No comments yet — be the first to start the conversation." : `${comments.length} comment${comments.length === 1 ? "" : "s"}`}
+        </p>
+
+        {comments.length > 0 && (
+          <ul className="mt-4 space-y-3">
+            {comments.map((c) => {
+              const isOwn = currentUserId === c.authorId;
+              return (
+                <li key={c.id} className="rounded-xl border border-border p-3">
+                  {editingCommentId === c.id ? (
+                    <form onSubmit={(e) => handleEditCommentSave(e, c.id)} className="flex gap-2">
+                      <input
+                        value={editCommentBody}
+                        onChange={(e) => setEditCommentBody(e.target.value)}
+                        className="min-w-0 flex-1 rounded-lg border border-border px-2.5 py-1.5 text-sm focus:border-accent focus:outline-none"
+                        autoFocus
+                      />
+                      <button type="submit" disabled={commentActionPending} className="shrink-0 text-sm font-medium text-accent hover:underline disabled:opacity-50">Save</button>
+                      <button type="button" onClick={() => setEditingCommentId(null)} className="shrink-0 text-sm text-muted hover:underline">Cancel</button>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium">{c.authorName}</span>
+                        <span className="ml-1.5 text-xs text-muted">{formatPostDateTime(c.createdAt)}</span>
+                        <p className="mt-1 text-sm text-foreground/80">{c.body}</p>
+                        {c.attachmentUrls?.length > 0 && <AttachmentList urls={c.attachmentUrls} />}
+                      </div>
+                      {isOwn && (
+                        <div className="flex shrink-0 gap-2 pt-0.5">
+                          <button type="button" onClick={() => { setEditingCommentId(c.id); setEditCommentBody(c.body); }} className="text-xs text-muted hover:text-foreground">Edit</button>
+                          <button type="button" onClick={() => handleDeleteComment(c.id)} disabled={commentActionPending} className="text-xs text-muted hover:text-red-600 disabled:opacity-50">Delete</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {currentUserId ? (
+          <form onSubmit={handleComment} className="mt-4 flex gap-2">
+            <input
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              placeholder="Add a comment…"
+              className="min-w-0 flex-1 rounded-xl border border-border px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="submit"
+              disabled={commentPending || !commentBody.trim()}
+              className="shrink-0 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+            >
+              {commentPending ? "Posting…" : "Post"}
+            </button>
+          </form>
+        ) : (
+          <p className="mt-4 text-sm text-muted">
+            <Link href="/auth/login" className="text-accent hover:underline">Sign in</Link> to join the discussion.
+          </p>
+        )}
+        {commentError && <p className="mt-2 text-sm text-red-600">{commentError}</p>}
+      </Card>
 
     </div>
   );
