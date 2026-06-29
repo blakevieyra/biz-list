@@ -314,18 +314,10 @@ export function MessagesHubSection({
   const unreadAlerts = notifications.filter((n) => !n.read).length;
   const hasAnyUnread = unreadAlerts > 0;
 
-  // Sort: unread orders first (business users), then unread messages, then other unread, then read
+  // Sort: unread first, then newest first within each group
   const sorted = [...notifications].sort((a, b) => {
-    const aOrder = isBusinessUser && alertIsOrder(a);
-    const bOrder = isBusinessUser && alertIsOrder(b);
-    if (aOrder && !bOrder) return -1;
-    if (!aOrder && bOrder) return 1;
-    const aMsg = alertIsMessage(a);
-    const bMsg = alertIsMessage(b);
     if (!a.read && b.read) return -1;
     if (a.read && !b.read) return 1;
-    if (aMsg && !bMsg) return -1;
-    if (!aMsg && bMsg) return 1;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
