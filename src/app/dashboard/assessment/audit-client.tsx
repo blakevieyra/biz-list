@@ -73,37 +73,40 @@ function ScoreCard({ label, value, sub }: { label: string; value: number; sub?: 
 function SectionCard({ section }: { section: ComprehensiveAuditSection }) {
   const c = scoreColor(section.score);
   const [open, setOpen] = useState(false);
+  const tier = section.score >= 75 ? "green" : section.score >= 55 ? "amber" : "red";
   return (
-    <div className={`audit-section rounded-xl border p-4 ${c.ring}`}>
+    <div className={`audit-section ${tier} rounded-xl border p-4 ${c.ring}`}>
+      {/* Screen: toggle button */}
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-4 text-left"
+        className="audit-section-header flex w-full items-center justify-between gap-4 text-left"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="flex items-center gap-3">
-          <span className={`text-2xl font-bold ${c.text}`}>{section.score}</span>
+          <span className={`audit-section-score ${tier} text-2xl font-bold ${c.text}`}>{section.score}</span>
           <div>
-            <p className="font-semibold">{section.label}</p>
-            <p className="audit-section-label text-xs text-muted">{section.summary}</p>
+            <p className="audit-section-title font-semibold">{section.label}</p>
+            <p className="audit-section-summary text-xs text-muted">{section.summary}</p>
           </div>
         </div>
         <span className="audit-section-toggle shrink-0 text-muted">{open ? "▲" : "▼"}</span>
       </button>
+      {/* Body — hidden on screen until open; always shown in print */}
       <div className={`audit-section-body mt-4 gap-4 border-t border-border pt-4 sm:grid-cols-3 ${open ? "grid" : "hidden"}`}>
-        <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
+        <div className="audit-section-col strengths">
+          <span className="audit-section-col-label green mb-1.5 block text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</span>
           <ul className="space-y-1">
             {section.strengths.map((s) => <li key={s} className="text-sm text-muted">• {s}</li>)}
           </ul>
         </div>
-        <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-red-600">Gaps & Risks</p>
+        <div className="audit-section-col gaps">
+          <span className="audit-section-col-label red mb-1.5 block text-xs font-semibold uppercase tracking-wide text-red-600">Gaps &amp; Risks</span>
           <ul className="space-y-1">
             {section.gaps.map((g) => <li key={g} className="text-sm text-muted">• {g}</li>)}
           </ul>
         </div>
-        <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-accent">Action Items</p>
+        <div className="audit-section-col actions">
+          <span className="audit-section-col-label blue mb-1.5 block text-xs font-semibold uppercase tracking-wide text-accent">Action Items</span>
           <ul className="space-y-1">
             {section.actions.map((a) => <li key={a} className="text-sm text-muted">→ {a}</li>)}
           </ul>
@@ -149,45 +152,310 @@ function ReportView({
     });
   }
 
+  const generatedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
   return (
     <>
       <style>{`
+        /* ── Print reset ────────────────────────────────── */
         @media print {
+          @page { margin: 0.55in 0.6in 0.6in 0.6in; size: letter; }
+
+          *, *::before, *::after { box-sizing: border-box !important; }
+
           nav, header, aside, footer,
           [data-sidebar], [data-nav],
           .print\\:hidden { display: none !important; }
 
-          body { background: #fff !important; color: #001B44 !important; font-family: Arial, sans-serif; }
-
-          .print-header {
-            display: block !important;
-            text-align: center;
-            padding: 12px 0 20px;
-            border-bottom: 2px solid #e2e8f0;
-            margin-bottom: 20px;
+          body {
+            background: #fff !important;
+            color: #001B44 !important;
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 8.5pt !important;
+            line-height: 1.35 !important;
           }
 
-          /* Force all accordion sections open */
-          .audit-section-body { display: grid !important; }
-          .audit-section-toggle { display: none !important; }
-          .audit-section-label { font-size: 10px !important; }
+          /* ── Running page header (repeats on every page) */
+          .audit-running-header {
+            display: flex !important;
+            position: fixed !important;
+            top: -0.55in !important;
+            left: -0.6in !important;
+            right: -0.6in !important;
+            height: 34px !important;
+            background: #001B44 !important;
+            color: #fff !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 20px !important;
+            z-index: 9999 !important;
+          }
+          .audit-running-header-left {
+            font-size: 7pt !important;
+            font-weight: 700 !important;
+            letter-spacing: 1.5px !important;
+            text-transform: uppercase !important;
+            color: #fff !important;
+          }
+          .audit-running-header-right {
+            font-size: 7pt !important;
+            color: #94a3b8 !important;
+          }
 
-          /* Section headers are screen-only UI */
+          /* ── Running footer */
+          .audit-running-footer {
+            display: flex !important;
+            position: fixed !important;
+            bottom: -0.6in !important;
+            left: -0.6in !important;
+            right: -0.6in !important;
+            height: 26px !important;
+            background: #F1F5F9 !important;
+            border-top: 1px solid #E2E8F0 !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 20px !important;
+          }
+          .audit-running-footer span {
+            font-size: 6.5pt !important;
+            color: #64748B !important;
+          }
+          .audit-running-footer-page::after {
+            content: counter(page) !important;
+          }
+
+          /* ── Cover block */
+          .audit-cover-accent { border-top: 4px solid #2563EB !important; padding-top: 16px !important; margin-bottom: 10px !important; }
+          .audit-cover-title { font-size: 22pt !important; font-weight: 800 !important; color: #001B44 !important; margin: 0 0 4px !important; }
+          .audit-cover-sub { font-size: 11pt !important; color: #64748B !important; margin: 0 0 2px !important; }
+          .audit-cover-date { font-size: 8pt !important; color: #94a3b8 !important; margin: 0 0 14px !important; }
+          .audit-cover-divider { border: none !important; border-top: 1px solid #E2E8F0 !important; margin: 0 0 18px !important; }
+
+          /* ── Score cards */
+          .audit-score-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
+            gap: 10px !important;
+            margin-bottom: 16px !important;
+          }
+          .audit-score-card {
+            border-radius: 12px !important;
+            border-width: 1.5px !important;
+            border-style: solid !important;
+            padding: 14px 10px !important;
+            text-align: center !important;
+          }
+          .audit-score-card.green  { background: #ECFDF5 !important; border-color: #6EE7B7 !important; }
+          .audit-score-card.amber  { background: #FFFBEB !important; border-color: #FCD34D !important; }
+          .audit-score-card.red    { background: #FEF2F2 !important; border-color: #FCA5A5 !important; }
+          .audit-score-num { font-size: 28pt !important; font-weight: 800 !important; line-height: 1.1 !important; }
+          .audit-score-num.green { color: #059669 !important; }
+          .audit-score-num.amber { color: #D97706 !important; }
+          .audit-score-num.red   { color: #DC2626 !important; }
+          .audit-score-label { font-size: 7.5pt !important; font-weight: 700 !important; color: #001B44 !important; margin-top: 3px !important; }
+          .audit-score-sub { font-size: 6pt !important; color: #64748B !important; margin-top: 2px !important; }
+
+          /* ── Exec summary box */
+          .audit-exec-box {
+            background: #F8FAFC !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 8px !important;
+            padding: 12px 14px !important;
+            margin-bottom: 14px !important;
+          }
+          .audit-exec-box h2 { font-size: 9pt !important; font-weight: 700 !important; margin: 0 0 5px !important; color: #001B44 !important; }
+          .audit-exec-box p  { font-size: 8pt !important; color: #001B44 !important; margin: 0 !important; line-height: 1.4 !important; }
+
+          /* ── Priority action plan */
+          .audit-priority-box {
+            background: #F8FAFC !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 8px !important;
+            padding: 12px 14px !important;
+            margin-bottom: 14px !important;
+          }
+          .audit-priority-box h2  { font-size: 9pt !important; font-weight: 700 !important; margin: 0 0 2px !important; }
+          .audit-priority-box > p { font-size: 7.5pt !important; color: #64748B !important; margin: 0 0 8px !important; }
+          .audit-priority-row {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+            padding: 7px 8px !important;
+            border-radius: 8px !important;
+            margin-bottom: 5px !important;
+            border-width: 0.8px !important;
+            border-style: solid !important;
+          }
+          .audit-priority-row.high   { background: #FEF2F2 !important; border-color: #FCA5A5 !important; }
+          .audit-priority-row.medium { background: #FFFBEB !important; border-color: #FCD34D !important; }
+          .audit-priority-row.low    { background: #F8FAFC !important; border-color: #E2E8F0 !important; }
+          .audit-priority-badge {
+            border-radius: 999px !important;
+            padding: 2px 7px !important;
+            font-size: 6.5pt !important;
+            font-weight: 700 !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+          }
+          .audit-priority-badge.high   { background: #DC2626 !important; color: #fff !important; }
+          .audit-priority-badge.medium { background: #D97706 !important; color: #fff !important; }
+          .audit-priority-badge.low    { background: #64748B !important; color: #fff !important; }
+          .audit-priority-cat  { font-size: 7pt !important; color: #64748B !important; flex-shrink: 0 !important; width: 90px !important; padding-top: 1px !important; }
+          .audit-priority-text p:first-child { font-size: 8pt !important; font-weight: 600 !important; color: #001B44 !important; margin: 0 0 1px !important; }
+          .audit-priority-text p:last-child  { font-size: 7pt !important; color: #64748B !important; margin: 0 !important; }
+
+          /* ── Phase separator */
+          .audit-phase-separator {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin: 18px 0 10px !important;
+          }
+          .audit-phase-separator-line { flex: 1 !important; border: none !important; border-top: 2px solid #2563EB !important; }
+          .audit-phase-separator-label {
+            font-size: 7.5pt !important;
+            font-weight: 700 !important;
+            color: #2563EB !important;
+            letter-spacing: 0.8px !important;
+            text-transform: uppercase !important;
+            white-space: nowrap !important;
+          }
           .audit-phase-heading { display: none !important; }
 
-          * { page-break-inside: avoid; }
-          .audit-section { page-break-inside: avoid; break-inside: avoid; }
+          /* ── Section cards */
+          .audit-section {
+            border-width: 1.2px !important;
+            border-style: solid !important;
+            border-radius: 10px !important;
+            margin-bottom: 8px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            overflow: hidden !important;
+          }
+          .audit-section.green { background: #ECFDF5 !important; border-color: #6EE7B7 !important; }
+          .audit-section.amber { background: #FFFBEB !important; border-color: #FCD34D !important; }
+          .audit-section.red   { background: #FEF2F2 !important; border-color: #FCA5A5 !important; }
+
+          .audit-section-header { display: flex !important; align-items: flex-start !important; gap: 10px !important; padding: 10px 12px !important; }
+          .audit-section-score { font-size: 18pt !important; font-weight: 800 !important; line-height: 1 !important; flex-shrink: 0 !important; }
+          .audit-section-score.green { color: #059669 !important; }
+          .audit-section-score.amber { color: #D97706 !important; }
+          .audit-section-score.red   { color: #DC2626 !important; }
+          .audit-section-title   { font-size: 9.5pt !important; font-weight: 700 !important; color: #001B44 !important; margin: 1px 0 2px !important; }
+          .audit-section-summary { font-size: 7pt !important; color: #64748B !important; line-height: 1.3 !important; }
+          .audit-section-toggle  { display: none !important; }
+
+          /* Force body open */
+          .audit-section-body {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
+            gap: 0 !important;
+            border-top: 1px solid rgba(0,0,0,0.08) !important;
+          }
+          .audit-section-col {
+            padding: 9px 11px !important;
+            border-right: 1px solid rgba(0,0,0,0.08) !important;
+          }
+          .audit-section-col:last-child { border-right: none !important; }
+          .audit-section-col-label {
+            font-size: 6pt !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.8px !important;
+            margin-bottom: 5px !important;
+            display: block !important;
+          }
+          .audit-section-col-label.green { color: #065F46 !important; }
+          .audit-section-col-label.red   { color: #991B1B !important; }
+          .audit-section-col-label.blue  { color: #1E40AF !important; }
+          .audit-section-col li {
+            font-size: 7.5pt !important;
+            line-height: 1.35 !important;
+            margin-bottom: 4px !important;
+            list-style: none !important;
+            padding-left: 0 !important;
+          }
+          .audit-section-col.strengths li { color: #064E3B !important; }
+          .audit-section-col.gaps li      { color: #7F1D1D !important; }
+          .audit-section-col.actions li   { color: #1E3A8A !important; }
         }
 
-        @media screen { .print-header { display: none; } }
+        @media screen {
+          .audit-running-header,
+          .audit-running-footer,
+          .audit-cover-accent,
+          .audit-cover-title,
+          .audit-cover-sub,
+          .audit-cover-date,
+          .audit-cover-divider,
+          .audit-score-grid,
+          .audit-exec-box,
+          .audit-priority-box,
+          .audit-phase-separator { display: none; }
+        }
       `}</style>
 
-      <div className="print-header">
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "#007BFF" }}>BizList · AI Business Audit Report</p>
-        <p style={{ margin: "4px 0 0", fontSize: 22, fontWeight: 800, color: "#001B44" }}>{businessName}</p>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+      {/* ── Print-only running header (repeats on every page) ── */}
+      <div className="audit-running-header">
+        <span className="audit-running-header-left">BizList · AI Business Audit Report</span>
+        <span className="audit-running-header-right">{businessName}</span>
       </div>
 
+      {/* ── Print-only running footer ── */}
+      <div className="audit-running-footer">
+        <span>Generated {generatedDate} · Confidential — {businessName}</span>
+        <span>Page <span className="audit-running-footer-page" /></span>
+      </div>
+
+      {/* ── Print-only cover block ── */}
+      <div className="audit-cover-accent">
+        <p className="audit-cover-title">{businessName}</p>
+        <p className="audit-cover-sub">AI Business Audit Report</p>
+        <p className="audit-cover-date">Generated {generatedDate}</p>
+      </div>
+      <hr className="audit-cover-divider" />
+
+      {/* ── Print-only score grid ── */}
+      <div className="audit-score-grid">
+        {[
+          { label: "Overall Score", value: result.overallScore, sub: "Weighted average" },
+          { label: "Internal Health", value: result.internalScore, sub: "Operations · Finance · Team · Products" },
+          { label: "External Positioning", value: result.externalScore, sub: "Market · Customers · Brand · Growth" },
+        ].map(({ label, value, sub }) => {
+          const tier = value >= 75 ? "green" : value >= 55 ? "amber" : "red";
+          return (
+            <div key={label} className={`audit-score-card ${tier}`}>
+              <div className={`audit-score-num ${tier}`}>{value}</div>
+              <div className="audit-score-label">{label}</div>
+              <div className="audit-score-sub">{sub}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Print-only exec summary ── */}
+      <div className="audit-exec-box">
+        <h2>Executive Summary</h2>
+        <p>{result.executiveSummary}</p>
+      </div>
+
+      {/* ── Print-only priority actions ── */}
+      <div className="audit-priority-box">
+        <h2>Priority Action Plan</h2>
+        <p>Ranked by impact — tackle High items first.</p>
+        {result.priorityActions.map((a, i) => (
+          <div key={i} className={`audit-priority-row ${a.priority}`}>
+            <span className={`audit-priority-badge ${a.priority}`}>{a.priority.toUpperCase()}</span>
+            <span className="audit-priority-cat">{a.category}</span>
+            <div className="audit-priority-text">
+              <p>{a.action}</p>
+              <p>{a.impact}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Screen-only report header ── */}
       <PageHeader
         title="Business Audit Report"
         description={`${businessName} · Full internal & external AI audit`}
@@ -204,7 +472,7 @@ function ReportView({
             <button
               type="button"
               onClick={handlePrint}
-              className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-accent/40"
+              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
             >
               Export PDF
             </button>
@@ -219,6 +487,7 @@ function ReportView({
         }
       />
 
+      {/* ── Screen score cards ── */}
       <div className="grid gap-4 sm:grid-cols-3">
         <ScoreCard label="Overall Score" value={result.overallScore} sub="Weighted average" />
         <ScoreCard label="Internal Health" value={result.internalScore} sub="Operations · Finance · Team · Products" />
@@ -251,15 +520,29 @@ function ReportView({
         </div>
       </Card>
 
+      {/* ── Internal sections ── */}
       <div className="mt-6">
         <h2 className="audit-phase-heading mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
+        {/* Print-only phase separator */}
+        <div className="audit-phase-separator">
+          <div className="audit-phase-separator-line" />
+          <span className="audit-phase-separator-label">Internal Audit — Operations, Finance, Team, Products, Legal &amp; Credibility</span>
+          <div className="audit-phase-separator-line" />
+        </div>
         <div className="space-y-3">
           {internalSections.map((s) => <SectionCard key={s.id} section={s} />)}
         </div>
       </div>
 
+      {/* ── External sections ── */}
       <div className="mt-6">
         <h2 className="audit-phase-heading mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
+        {/* Print-only phase separator */}
+        <div className="audit-phase-separator">
+          <div className="audit-phase-separator-line" />
+          <span className="audit-phase-separator-label">External Audit — Market, Customers, Brand, Growth &amp; Digital Activity</span>
+          <div className="audit-phase-separator-line" />
+        </div>
         <div className="space-y-3">
           {externalSections.map((s) => <SectionCard key={s.id} section={s} />)}
         </div>
