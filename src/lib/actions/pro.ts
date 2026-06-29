@@ -258,6 +258,19 @@ async function loadOwnerBusiness(userId: string) {
   return business;
 }
 
+async function checkDailyAILimit(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, action: string, maxPerDay: number): Promise<boolean> {
+  if (!supabase) return false;
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  const { count } = await supabase
+    .from("marketing_campaigns")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("channel", action)
+    .gte("created_at", since.toISOString());
+  return (count ?? 0) < maxPerDay;
+}
+
 export async function generatePlatinumPost(): Promise<{ message?: string; error?: string }> {
   if (!isSupabaseConfigured()) {
     return { message: "Demo: automated post drafted and published." };
@@ -266,6 +279,10 @@ export async function generatePlatinumPost(): Promise<{ message?: string; error?
   try {
     const { supabase, user } = await requireUserWithPlan("automatedMarketing");
     const business = await loadOwnerBusiness(user.id);
+
+    if (!(await checkDailyAILimit(supabase, user.id, "auto_post", 5))) {
+      return { error: "Daily automated post limit reached (5/day). Try again tomorrow." };
+    }
     const draft = await generateFreshAutomatedPostAI(business);
 
     const { error } = await supabase.from("business_posts").insert({
@@ -307,8 +324,12 @@ export async function automatePlatinumOutreach(): Promise<{ message?: string; er
   }
 
   try {
-    const { user } = await requireUserWithPlan("virtualAgent");
+    const { supabase, user } = await requireUserWithPlan("virtualAgent");
     const business = await loadOwnerBusiness(user.id);
+
+    if (!(await checkDailyAILimit(supabase, user.id, "outreach", 3))) {
+      return { error: "Daily outreach limit reached (3/day). Try again tomorrow." };
+    }
     const leads = (await getLocalLeads(user.id)).slice(0, 3);
     if (!leads.length) return { error: "No matched leads to contact yet." };
 
@@ -338,6 +359,10 @@ export async function runPlatinumOnboarding(): Promise<{ message?: string; error
   try {
     const { supabase, user } = await requireUserWithPlan("virtualAgent");
     const business = await loadOwnerBusiness(user.id);
+
+    if (!(await checkDailyAILimit(supabase, user.id, "onboarding", 2))) {
+      return { error: "Daily onboarding limit reached (2/day). Try again tomorrow." };
+    }
 
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: follows } = await supabase
@@ -514,11 +539,18 @@ export async function saveAgentInstructions(input: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Sign in required.");
 
+    // Cap field lengths to prevent oversized payloads
+    const safeInstructions = input.instructions.trim().slice(0, 3000);
+    const safeTopicRules = input.topicRules.slice(0, 20).map((r) => ({
+      topic: r.topic.slice(0, 200),
+      response: r.response.slice(0, 500),
+    }));
+
     const { error } = await supabase
       .from("businesses")
       .update({
-        agent_instructions: input.instructions.trim(),
-        agent_topic_rules: input.topicRules,
+        agent_instructions: safeInstructions,
+        agent_topic_rules: safeTopicRules,
         ...(input.automations !== undefined ? { agent_automations: input.automations } : {}),
       })
       .eq("owner_id", user.id);

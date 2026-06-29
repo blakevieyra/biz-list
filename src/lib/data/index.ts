@@ -662,7 +662,8 @@ export async function getCollaborationCommentsByIds(
     .from("collaboration_comments")
     .select("*, profiles(display_name)")
     .in("collaboration_id", collaborationIds)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(500);
 
   for (const id of collaborationIds) {
     result.set(id, []);

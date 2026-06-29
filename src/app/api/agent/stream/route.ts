@@ -13,6 +13,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing businessId or message." }, { status: 400 });
   }
 
+  // Cap message length to prevent prompt stuffing
+  const safeMessage = String(message).slice(0, 1000);
+
   const supabase = await createClient();
   if (!supabase) {
     // Demo fallback
@@ -98,7 +101,7 @@ Currently hiring: ${business.is_hiring ? "Yes" : "No"}`;
       agentInstructions,
       agentTopicRules,
     };
-    const fallback = generateVirtualAgentReply(ctx, message);
+    const fallback = generateVirtualAgentReply(ctx, safeMessage);
     return new Response(
       `data: ${JSON.stringify({ type: "text", text: fallback })}\ndata: [DONE]\n\n`,
       { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },
@@ -123,7 +126,7 @@ Currently hiring: ${business.is_hiring ? "Yes" : "No"}`;
       temperature: 0.6,
       stream: true,
       system: systemPrompt,
-      messages: [{ role: "user", content: `${businessContext}\n\nCustomer question: ${message}` }],
+      messages: [{ role: "user", content: `${businessContext}\n\nCustomer question: ${safeMessage}` }],
     }),
   }).catch((e) => { console.error("[agent/stream] fetch error:", e); return null; });
 
@@ -146,7 +149,7 @@ Currently hiring: ${business.is_hiring ? "Yes" : "No"}`;
       agentInstructions,
       agentTopicRules,
     };
-    const fallback = generateVirtualAgentReply(ctx, message);
+    const fallback = generateVirtualAgentReply(ctx, safeMessage);
     return new Response(
       `data: ${JSON.stringify({ type: "text", text: fallback })}\ndata: [DONE]\n\n`,
       { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } },

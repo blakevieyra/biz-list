@@ -149,10 +149,29 @@ export async function respondToAffiliation(
 export async function removeAffiliation(affiliateId: string): Promise<{ error?: string }> {
   if (!isSupabaseConfigured()) return { error: "Supabase not configured." };
   try {
-    const { supabase } = await requireUser();
+    const { supabase, user } = await requireUser();
+
+    // Fetch the record first to verify ownership — prevents IDOR
+    const { data: row } = await supabase
+      .from("business_affiliates")
+      .select("id, marketer_id, business_id, businesses(owner_id)")
+      .eq("id", affiliateId)
+      .single();
+
+    if (!row) return { error: "Affiliation not found." };
+
+    const biz = Array.isArray(row.businesses) ? row.businesses[0] : row.businesses;
+    const isBusinessOwner = (biz as { owner_id?: string } | null)?.owner_id === user.id;
+    const isMarketer = row.marketer_id === user.id;
+
+    if (!isBusinessOwner && !isMarketer) {
+      return { error: "Only the business owner or marketer can remove this affiliation." };
+    }
+
     await supabase.from("business_affiliates").delete().eq("id", affiliateId);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/affiliates");
+    revalidatePath(`/listings/${row.business_id}`);
     return {};
   } catch (e) {
     return { error: String(e) };
@@ -198,6 +217,18 @@ export async function getBusinessAffiliates(businessId: string): Promise<Busines
   if (!isSupabaseConfigured()) return [];
   const supabase = await createClient();
   if (!supabase) return [];
+
+  // Require auth and verify caller owns the business — prevents IDOR
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("owner_id")
+    .eq("id", businessId)
+    .maybeSingle();
+
+  if (!biz || biz.owner_id !== user.id) return [];
 
   const { data } = await supabase
     .from("business_affiliates")

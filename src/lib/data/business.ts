@@ -455,7 +455,7 @@ export async function getFeedBusinessPosts(options: {
     )
     .not("business_id", "is", null)
     .order("created_at", { ascending: false })
-    .limit(Math.max(limit * 3, 60));
+    .limit(Math.min(Math.max(limit * 3, 60), 300));
 
   if (typeSet) {
     query = query.in("post_type", [...typeSet]);

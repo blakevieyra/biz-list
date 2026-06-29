@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getBusinessById } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +7,7 @@ import AuditClient, { type AuditProfileData, type PastAudit } from "./audit-clie
 
 export default async function DashboardAssessmentPage() {
   const userId = await getAuthUserId();
+  if (!userId) redirect("/auth/login");
 
   const profile: AuditProfileData = {
     businessName: "",
