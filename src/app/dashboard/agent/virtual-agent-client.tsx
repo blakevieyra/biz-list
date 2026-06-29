@@ -216,6 +216,9 @@ export default function VirtualAgentClient({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [newTopic, setNewTopic] = useState("");
   const [newResponse, setNewResponse] = useState("");
+  const [editingRuleIndex, setEditingRuleIndex] = useState<number | null>(null);
+  const [editTopic, setEditTopic] = useState("");
+  const [editResponse, setEditResponse] = useState("");
   const [smokeResults, setSmokeResults] = useState<SmokeResult[] | null>(null);
   const [smokePending, setSmokePending] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -582,19 +585,71 @@ export default function VirtualAgentClient({
             {topicRules.length > 0 && (
               <div className="mb-4 space-y-2">
                 {topicRules.map((rule, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-slate-50/80 p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-accent capitalize">{rule.topic}</p>
-                      <p className="mt-0.5 text-xs text-muted">{rule.response}</p>
+                  editingRuleIndex === i ? (
+                    <div key={i} className="space-y-2 rounded-xl border border-accent/40 bg-accent/5 p-3">
+                      <input
+                        value={editTopic}
+                        onChange={(e) => setEditTopic(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+                        placeholder="Topic"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-accent"
+                      />
+                      <textarea
+                        value={editResponse}
+                        onChange={(e) => setEditResponse(e.target.value)}
+                        rows={2}
+                        placeholder="Response…"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-accent"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={!editTopic.trim() || !editResponse.trim()}
+                          onClick={() => {
+                            setTopicRules((prev) => prev.map((r, idx) => idx === i ? { topic: editTopic.trim(), response: editResponse.trim() } : r));
+                            setEditingRuleIndex(null);
+                          }}
+                          className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-40"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingRuleIndex(null)}
+                          className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted hover:text-foreground"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeTopicRule(i)}
-                      className="shrink-0 text-xs text-red-500 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
+                  ) : (
+                    <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-slate-50/80 p-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-accent capitalize">{rule.topic}</p>
+                        <p className="mt-0.5 text-xs text-muted">{rule.response}</p>
+                      </div>
+                      <div className="flex shrink-0 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingRuleIndex(i);
+                            setEditTopic(rule.topic);
+                            setEditResponse(rule.response);
+                          }}
+                          className="text-xs text-accent hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeTopicRule(i)}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  )
                 ))}
               </div>
             )}

@@ -54,6 +54,20 @@ export default async function ProfileHubPage({
   const isBusinessAccount =
     profile.role === "business" || profile.role === "organization" || profile.role === "marketer";
 
+  // Business users are managed from the dashboard — redirect with tab mapping
+  if (isBusinessAccount) {
+    const tabRedirects: Record<string, string> = {
+      messages: "/messages",
+      plans: "/pricing",
+      growth: "/dashboard/leads",
+      following: "/dashboard/following",
+      alerts: "/dashboard/alerts",
+      partnerships: "/partnerships",
+    };
+    const dest = tabRedirects[params.tab ?? ""] ?? "/dashboard";
+    redirect(dest);
+  }
+
   const [following, applications, conversations, notifications, unreadMessages, unreadAlerts, latestAudit, leads, myCollaborations] =
     await Promise.all([
       getFollowedBusinesses(userId),

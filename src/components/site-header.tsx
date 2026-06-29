@@ -16,7 +16,8 @@ export async function SiteHeader() {
   const userId = await getAuthUserId();
   const profile = await getCurrentProfile();
   const notificationCount = userId ? await getUnreadNotificationCount(userId) : 0;
-  const profileHref = profile ? "/profile" : "/profile/create";
+  const isBusiness = profile?.role === "business" || profile?.role === "organization" || profile?.role === "marketer";
+  const profileHref = !profile ? "/profile/create" : isBusiness ? "/dashboard/profile" : "/profile";
   const messageCount = userId ? await getUnreadMessageCount(userId) : 0;
 
   return (

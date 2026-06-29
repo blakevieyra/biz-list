@@ -46,7 +46,8 @@ export function MobileNav({
   displayName?: string | null;
   profileRole?: UserRole | null;
 }) {
-  const profileHref = profileRole ? "/profile" : "/profile/create";
+  const isBusinessRole = profileRole === "business" || profileRole === "organization" || profileRole === "marketer";
+  const profileHref = !profileRole ? "/profile/create" : isBusinessRole ? "/dashboard/profile" : "/profile";
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
