@@ -255,22 +255,21 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
     <div className="space-y-3">
       {notifications.slice(0, 12).map((notification) => {
         const safeLink = getSafeAppLink(notification.link);
-        const inner = (
+        return (
           <Card
-            className={`transition ${notification.read ? "opacity-70" : "border-accent/30"} ${safeLink ? "hover:border-accent/50 hover:shadow-sm" : ""}`}
+            key={notification.id}
+            className={`relative transition ${notification.read ? "opacity-70" : "border-accent/30"} ${safeLink ? "hover:border-accent/50 hover:shadow-sm" : ""}`}
           >
-            <p className="font-medium text-sm">{notification.title}</p>
-            <p className="mt-0.5 text-sm text-muted">{notification.body}</p>
-            <div className="mt-1.5 flex items-center justify-between gap-2">
+            {safeLink && (
+              <Link href={safeLink} className="absolute inset-0 rounded-[inherit]" aria-label={notification.title} />
+            )}
+            <p className="relative font-medium text-sm">{notification.title}</p>
+            <p className="relative mt-0.5 text-sm text-muted">{notification.body}</p>
+            <div className="relative mt-1.5 flex items-center justify-between gap-2">
               <p className="text-xs text-muted">{formatDate(notification.createdAt)}</p>
               {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
             </div>
           </Card>
-        );
-        return safeLink ? (
-          <Link key={notification.id} href={safeLink}>{inner}</Link>
-        ) : (
-          <div key={notification.id}>{inner}</div>
         );
       })}
       <Link href="/profile?tab=alerts" className="inline-block text-sm text-accent hover:underline">
@@ -355,38 +354,36 @@ export function MessagesHubSection({
               const safeLink = getSafeAppLink(n.link);
               const isOrder = isBusinessUser && alertIsOrder(n);
               const cardClass = `transition ${n.read ? "opacity-70" : isOrder ? "border-emerald-300 bg-emerald-50/40" : "border-accent/30"} ${safeLink ? "hover:border-accent/50 hover:shadow-sm" : ""}`;
-              const inner = (
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {isOrder && !n.read && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-                          Order
-                        </span>
-                      )}
-                      <p className="font-medium text-sm">{n.title}</p>
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted">{n.body}</p>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <p className="text-xs text-muted">{formatDate(n.createdAt)}</p>
-                      {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
-                    </div>
-                  </div>
-                  {!n.read && (
-                    <form action={markNotificationRead.bind(null, n.id)} onClick={(e) => e.stopPropagation()}>
-                      <button type="submit" className="shrink-0 text-xs text-muted hover:text-accent">
-                        Mark read
-                      </button>
-                    </form>
+              return (
+                <Card key={n.id} className={`relative ${cardClass}`}>
+                  {safeLink && (
+                    <Link href={safeLink} className="absolute inset-0 rounded-[inherit]" aria-label={n.title} />
                   )}
-                </div>
-              );
-              return safeLink ? (
-                <Link key={n.id} href={safeLink}>
-                  <Card className={cardClass}>{inner}</Card>
-                </Link>
-              ) : (
-                <Card key={n.id} className={cardClass}>{inner}</Card>
+                  <div className="relative flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isOrder && !n.read && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                            Order
+                          </span>
+                        )}
+                        <p className="font-medium text-sm">{n.title}</p>
+                      </div>
+                      <p className="mt-0.5 text-sm text-muted">{n.body}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted">{formatDate(n.createdAt)}</p>
+                        {safeLink && <span className="text-xs font-medium text-accent">View →</span>}
+                      </div>
+                    </div>
+                    {!n.read && (
+                      <form action={async () => { await markNotificationRead(n.id); }} className="relative z-10">
+                        <button type="submit" className="shrink-0 text-xs text-muted hover:text-accent">
+                          Mark read
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </Card>
               );
             })}
           </div>

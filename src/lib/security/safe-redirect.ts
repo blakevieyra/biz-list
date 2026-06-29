@@ -9,6 +9,8 @@ const ALLOWED_NEXT_PATHS = [
   "/partnerships",
   "/groups",
   "/auth/check-email",
+  "/applications",
+  "/events",
 ];
 
 export function getSafeRedirectPath(next: string | null, fallback = "/listings"): string {
