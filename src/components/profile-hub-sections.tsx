@@ -49,6 +49,7 @@ const tabs = [
   { id: "overview", label: "Overview" },
   { id: "plans", label: "Plans" },
   { id: "growth", label: "Growth", businessOnly: true },
+  { id: "partnerships", label: "Partnerships", businessOnly: true },
   { id: "following", label: "Following" },
   { id: "applications", label: "Applications", customerOnly: true },
   { id: "messages", label: "Messages" },
@@ -65,6 +66,8 @@ export function ProfileHubNav({
   unreadAlerts,
   showGrowthTab = false,
   leadCount = 0,
+  showPartnershipsTab = false,
+  partnershipCount = 0,
   basePath = "/profile",
 }: {
   active: HubTab;
@@ -74,6 +77,8 @@ export function ProfileHubNav({
   unreadAlerts: number;
   showGrowthTab?: boolean;
   leadCount?: number;
+  showPartnershipsTab?: boolean;
+  partnershipCount?: number;
   basePath?: string;
 }) {
   const counts: Partial<Record<string, number>> = {
@@ -82,6 +87,7 @@ export function ProfileHubNav({
     messages: unreadMessages,
     alerts: unreadAlerts,
     growth: leadCount,
+    partnerships: partnershipCount,
   };
 
   function tabHref(tabId: HubTab) {
@@ -94,6 +100,7 @@ export function ProfileHubNav({
       {tabs
         .filter((tab) => {
           if (tab.id === "growth" && !showGrowthTab) return false;
+          if (tab.id === "partnerships" && !showPartnershipsTab) return false;
           if ("customerOnly" in tab && tab.customerOnly && showGrowthTab) return false;
           return true;
         })

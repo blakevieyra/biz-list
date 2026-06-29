@@ -16,6 +16,7 @@ import { getAuthUserId } from "@/lib/actions/auth";
 import {
   getCurrentProfile,
   getFollowedBusinesses,
+  getMyCollaborations,
   getNotifications,
   getUnreadMessageCount,
   getUnreadNotificationCount,
@@ -33,6 +34,7 @@ const validTabs = new Set<HubTab>([
   "messages",
   "alerts",
   "growth",
+  "partnerships",
 ]);
 
 export default async function ProfileHubPage({
@@ -52,7 +54,7 @@ export default async function ProfileHubPage({
   const isBusinessAccount =
     profile.role === "business" || profile.role === "organization" || profile.role === "marketer";
 
-  const [following, applications, conversations, notifications, unreadMessages, unreadAlerts, latestAudit, leads] =
+  const [following, applications, conversations, notifications, unreadMessages, unreadAlerts, latestAudit, leads, myCollaborations] =
     await Promise.all([
       getFollowedBusinesses(userId),
       profile.role === "customer" ? getJobApplicationsForApplicant(userId) : Promise.resolve([]),
@@ -66,6 +68,7 @@ export default async function ProfileHubPage({
       isBusinessAccount && canAccess(profile.planTier, "localLeads")
         ? getLocalLeads(userId)
         : Promise.resolve([]),
+      isBusinessAccount ? getMyCollaborations(userId) : Promise.resolve([]),
     ]);
 
   return (
@@ -93,6 +96,8 @@ export default async function ProfileHubPage({
         unreadAlerts={unreadAlerts}
         showGrowthTab={isBusinessAccount}
         leadCount={leads.length}
+        showPartnershipsTab={isBusinessAccount}
+        partnershipCount={myCollaborations.length}
       />
 
       {tab === "overview" && (
@@ -167,6 +172,61 @@ export default async function ProfileHubPage({
             </p>
           </Card>
         ))}
+      {tab === "partnerships" && (
+        isBusinessAccount ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted">
+                {myCollaborations.length === 0
+                  ? "You haven't posted any partnership opportunities yet."
+                  : `${myCollaborations.length} partnership ${myCollaborations.length === 1 ? "opportunity" : "opportunities"} posted`}
+              </p>
+              <Link
+                href="/partnerships/new"
+                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+              >
+                + New
+              </Link>
+            </div>
+            {myCollaborations.map((collab) => (
+              <Link key={collab.id} href={`/partnerships/${collab.id}`} className="block">
+                <Card className="hover:border-accent/40 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent capitalize">
+                          {collab.collaborationType.replace("_", " ")}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                          collab.status === "open" ? "bg-emerald-100 text-emerald-800" :
+                          collab.status === "in_discussion" ? "bg-amber-100 text-amber-800" :
+                          "bg-slate-100 text-slate-600"
+                        }`}>
+                          {collab.status.replace("_", " ")}
+                        </span>
+                      </div>
+                      <p className="font-semibold leading-snug">{collab.title}</p>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted">{collab.summary}</p>
+                    </div>
+                    <div className="shrink-0 text-right text-xs text-muted">
+                      <p>{collab.interestedCount} interested</p>
+                      {collab.deadline && (
+                        <p className="mt-0.5">
+                          Due {new Date(collab.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <p className="text-sm text-muted">Partnership tools are available on business accounts.</p>
+          </Card>
+        )
+      )}
       {tab === "messages" && <MessagesPreview conversations={conversations} />}
       {tab === "alerts" && <AlertsPreview notifications={notifications} />}
     </div>

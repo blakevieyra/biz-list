@@ -598,6 +598,19 @@ export async function getCollaborations(
   );
 }
 
+export async function getMyCollaborations(userId: string): Promise<CollaborationIdea[]> {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+  const { data: rows } = await supabase
+    .from("collaborations")
+    .select(
+      "*, profiles(display_name, avatar_url, role), businesses(name, category, media_urls, rating_avg, rating_count)",
+    )
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false });
+  return (rows as CollaborationRow[] | null)?.map(mapCollaboration) ?? [];
+}
+
 export async function getCollaborationById(
   id: string,
   userId?: string | null,

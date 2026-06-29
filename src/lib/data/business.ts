@@ -364,13 +364,79 @@ function assignFeedBadge(
   return undefined;
 }
 
-function sortFeedPosts(posts: BusinessPost[]): BusinessPost[] {
-  return [...posts].sort((a, b) => {
-    if (Boolean(a.isFollowed) !== Boolean(b.isFollowed)) {
-      return a.isFollowed ? -1 : 1;
-    }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+interface FeedUserContext {
+  interestTags: string[];
+  industryInterests: string[];
+}
+
+function recencyBoost(createdAt: string): number {
+  const ageHours = (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
+  if (ageHours < 1) return 30;
+  if (ageHours < 6) return 25;
+  if (ageHours < 24) return 20;
+  if (ageHours < 72) return 10;
+  if (ageHours < 168) return 5;
+  return 0;
+}
+
+function categoryRelevance(
+  businessCategory: string | undefined,
+  ctx: FeedUserContext,
+): number {
+  if (!businessCategory) return 0;
+  const cat = businessCategory.toLowerCase();
+  const allInterests = [...ctx.interestTags, ...ctx.industryInterests].map((s) =>
+    s.toLowerCase(),
+  );
+  if (!allInterests.length) return 0;
+
+  for (const interest of allInterests) {
+    if (cat.includes(interest) || interest.includes(cat)) return 1.0;
+    const catWords = cat.split(/[\s,&/]+/);
+    const intWords = interest.split(/[\s,&/]+/);
+    if (catWords.some((w) => w.length > 3 && intWords.includes(w))) return 0.7;
+    if (
+      catWords.some((w) =>
+        w.length > 3 && intWords.some((iw) => iw.includes(w) || w.includes(iw)),
+      )
+    )
+      return 0.4;
+  }
+  return 0;
+}
+
+function scoreFeedPost(post: BusinessPost, ctx: FeedUserContext): number {
+  let score = 0;
+
+  // Tier 1 — Following: always surfaces first
+  if (post.isFollowed) score += 1000;
+
+  // Tier 2 — Trending: strong editorial signal
+  if (post.isTrending) score += 200;
+
+  // Tier 3 — Profile relevance: category match against user interests
+  score += categoryRelevance(post.businessCategory, ctx) * 150;
+
+  // Tier 4 — Business quality
+  if ((post.businessRatingCount ?? 0) >= 3 && (post.businessRatingAvg ?? 0) >= 4.5)
+    score += 100;
+  if ((post.businessLikeCount ?? 0) >= 8) score += 60;
+
+  // Tier 5 — Post engagement
+  score += Math.min(((post.commentCount ?? 0) + (post.likeCount ?? 0)) * 3, 30);
+  score += Math.min((post.engagementScore ?? 0) / 5, 20);
+
+  // Tier 6 — Recency: fresh content gets a boost within each tier
+  score += recencyBoost(post.createdAt);
+
+  return score;
+}
+
+function sortFeedPosts(posts: BusinessPost[], ctx?: FeedUserContext): BusinessPost[] {
+  const context: FeedUserContext = ctx ?? { interestTags: [], industryInterests: [] };
+  return [...posts].sort(
+    (a, b) => scoreFeedPost(b, context) - scoreFeedPost(a, context),
+  );
 }
 
 export async function getFeedBusinessPosts(options: {
@@ -381,11 +447,17 @@ export async function getFeedBusinessPosts(options: {
   userId?: string | null;
   postTypes?: BusinessPostType[];
   limit?: number;
+  userInterestTags?: string[];
+  userIndustryInterests?: string[];
 }): Promise<BusinessPost[]> {
   const limit = options.limit ?? 40;
   const viewer = options.viewer;
   const discoveryRadius = options.discoveryRadius ?? options.mileRadius ?? options.areaScope ?? "city";
   const typeSet = options.postTypes ? new Set(options.postTypes) : null;
+  const userCtx: FeedUserContext = {
+    interestTags: options.userInterestTags ?? [],
+    industryInterests: options.userIndustryInterests ?? [],
+  };
 
   const supabase = await createClient();
 
@@ -433,10 +505,10 @@ export async function getFeedBusinessPosts(options: {
         const [match] = await filterByDiscoveryRadius([business], viewer, discoveryRadius);
         if (match) filtered.push(post);
       }
-      return sortFeedPosts(filtered).slice(0, limit);
+      return sortFeedPosts(filtered, userCtx).slice(0, limit);
     }
 
-    return sortFeedPosts(candidates).slice(0, limit);
+    return sortFeedPosts(candidates, userCtx).slice(0, limit);
   }
 
   let followedIds = new Set<string>();
@@ -550,7 +622,7 @@ export async function getFeedBusinessPosts(options: {
     };
   });
 
-  return sortFeedPosts(posts);
+  return sortFeedPosts(posts, userCtx);
 }
 
 export async function getLatestPostsForBusinessIds(

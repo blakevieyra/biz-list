@@ -122,3 +122,29 @@ export const BIZLIST_PLUS_FEATURES = [
   "Notifications when followed businesses publish local events",
   "Everything in free Community membership",
 ] as const;
+
+export const BUSINESS_FREE_FEATURES = [
+  "Directory listing and public business profile",
+  "Unlimited business posts (updates, jobs, deals, events)",
+  "Direct messaging and networking",
+  "Work groups and service listings",
+  "Customer likes, reviews, and ratings",
+] as const;
+
+export const BUSINESS_PRO_FEATURES = [
+  "Everything in Community",
+  "Local leads dashboard — discover customers near you",
+  "AI Business Audit — get a scored report with action items",
+  "Trending boost — your posts surface higher in the feed",
+  "Analytics — track views, clicks, and engagement",
+  "BizList Plus perks included for your team",
+] as const;
+
+export const BUSINESS_PLATINUM_FEATURES = [
+  "Everything in Pro",
+  "Marketing automation — AI-powered post and outreach generation",
+  "Virtual AI Agent — embedded chat widget on your listing",
+  "Affiliate marketer program — let marketers promote your business",
+  "Onboarding automation for new leads and followers",
+  "Priority placement in search and listings",
+] as const;

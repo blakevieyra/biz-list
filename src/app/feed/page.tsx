@@ -8,6 +8,7 @@ import {
 import { PageHeader } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getFeedBusinessPosts } from "@/lib/data/business";
+import { getCurrentProfile } from "@/lib/data";
 import { DEFAULT_DISCOVERY_RADIUS } from "@/lib/feed/location-scope";
 
 export default async function FeedPage({
@@ -21,6 +22,7 @@ export default async function FeedPage({
   }>;
 }) {
   const [userId, params] = await Promise.all([getAuthUserId(), searchParams]);
+  const profile = userId ? await getCurrentProfile() : null;
 
   const tab: ActivityTab = ACTIVITY_TABS.some((t) => t.id === params.tab)
     ? (params.tab as ActivityTab)
@@ -32,6 +34,8 @@ export default async function FeedPage({
     userId,
     postTypes: ACTIVITY_TAB_POST_TYPES[tab],
     limit: 40,
+    userInterestTags: profile?.interestTags ?? [],
+    userIndustryInterests: profile?.industryInterests ?? [],
   });
 
   const posts = query

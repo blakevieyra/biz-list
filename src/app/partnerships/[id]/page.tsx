@@ -30,6 +30,7 @@ export default async function CollaborationDetailPage({
           comments={comments}
           currentUserId={userId}
           currentUserName={profile?.displayName ?? null}
+          currentUserRole={profile?.role ?? null}
         />
       </div>
     </div>

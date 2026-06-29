@@ -203,11 +203,13 @@ export function CollaborationDetailCard({
   comments,
   currentUserId,
   currentUserName,
+  currentUserRole,
 }: {
   idea: CollaborationIdea;
   comments: CollaborationComment[];
   currentUserId: string | null;
   currentUserName: string | null;
+  currentUserRole?: string | null;
 }) {
   const router = useRouter();
   const [offerPending, startOfferTransition] = useTransition();
@@ -225,6 +227,10 @@ export function CollaborationDetailCard({
   const [commentActionPending, startCommentAction] = useTransition();
 
   const isAuthor = currentUserId === idea.authorId;
+  const canSubmitOffer =
+    currentUserRole === "business" ||
+    currentUserRole === "organization" ||
+    currentUserRole === "marketer";
   const interestCount = idea.interestedCount ?? 0;
   const type = idea.collaborationType;
   const businessName = idea.businessName ?? "Local business";
@@ -427,40 +433,69 @@ export function CollaborationDetailCard({
 
       {/* Offer form — shown to non-authors only */}
       {!isAuthor && (
-        <Card>
-          <h2 className="font-semibold">{offerHeading[type] ?? "Submit an offer"}</h2>
-          <p className="mt-1 text-sm text-muted">
-            Your offer will be sent directly to {businessName} and appear in the discussion below.
-          </p>
-          {offerSent ? (
-            <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
-              Your offer was sent! {idea.authorName} has been notified.
-            </div>
-          ) : (
-            <form onSubmit={handleOffer} className="mt-4 space-y-3">
-              <textarea
-                value={offerText}
-                onChange={(e) => setOfferText(e.target.value)}
-                rows={5}
-                placeholder={offerPlaceholder[type] ?? "Describe your offer..."}
-                className="w-full rounded-xl border border-border px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <AttachmentUploader
-                attachmentUrls={offerAttachments}
-                setAttachmentUrls={setOfferAttachments}
-                label="Attach supporting files"
-              />
-              {offerError && <p className="text-sm text-red-600">{offerError}</p>}
-              <button
-                type="submit"
-                disabled={offerPending || !offerText.trim()}
-                className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-              >
-                {offerPending ? "Sending…" : (offerButtonLabel[type] ?? "Submit offer")}
-              </button>
-            </form>
-          )}
-        </Card>
+        canSubmitOffer ? (
+          <Card>
+            <h2 className="font-semibold">{offerHeading[type] ?? "Submit an offer"}</h2>
+            <p className="mt-1 text-sm text-muted">
+              Your offer will be sent directly to {businessName} and appear in the discussion below.
+            </p>
+            {offerSent ? (
+              <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
+                Your offer was sent! {idea.authorName} has been notified.
+              </div>
+            ) : (
+              <form onSubmit={handleOffer} className="mt-4 space-y-3">
+                <textarea
+                  value={offerText}
+                  onChange={(e) => setOfferText(e.target.value)}
+                  rows={5}
+                  placeholder={offerPlaceholder[type] ?? "Describe your offer..."}
+                  className="w-full rounded-xl border border-border px-3 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <AttachmentUploader
+                  attachmentUrls={offerAttachments}
+                  setAttachmentUrls={setOfferAttachments}
+                  label="Attach supporting files"
+                />
+                {offerError && <p className="text-sm text-red-600">{offerError}</p>}
+                <button
+                  type="submit"
+                  disabled={offerPending || !offerText.trim()}
+                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  {offerPending ? "Sending…" : (offerButtonLabel[type] ?? "Submit offer")}
+                </button>
+              </form>
+            )}
+          </Card>
+        ) : currentUserId ? (
+          <Card className="border-dashed">
+            <p className="text-sm font-medium">Business account required</p>
+            <p className="mt-1 text-sm text-muted">
+              Only business and organization accounts can submit offers, bids, or contract responses.
+              Everyone can join the discussion below.
+            </p>
+            <Link
+              href="/profile/create"
+              className="mt-3 inline-block rounded-full border border-accent px-4 py-2 text-sm font-medium text-accent hover:bg-accent/5"
+            >
+              Create a business profile →
+            </Link>
+          </Card>
+        ) : (
+          <Card className="border-dashed">
+            <p className="text-sm font-medium">Sign in to submit an offer</p>
+            <p className="mt-1 text-sm text-muted">
+              Business and organization accounts can submit offers and bids. Everyone can join the discussion.
+            </p>
+            <Link
+              href="/auth/login"
+              className="mt-3 inline-block rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+            >
+              Sign in
+            </Link>
+          </Card>
+        )
       )}
 
       {/* Discussion / comments */}
