@@ -8,14 +8,12 @@ import { ImageUpload } from "@/components/image-upload";
 import { SocialLinksEditor } from "@/components/social-links-editor";
 import { ServicesEditor } from "@/components/services-editor";
 import { CategoryPicker, IndustryPicker } from "@/components/industry-picker";
+import { LocationFields } from "@/components/location-fields";
 import { Card, PageHeader } from "@/components/ui";
-import type { BusinessIntent, BusinessService, BusinessSocialLinks, DiscoveryRadius, ForumCategory, UserRole } from "@/lib/types";
+import type { BusinessIntent, BusinessService, BusinessSocialLinks, DiscoveryRadius, UserRole } from "@/lib/types";
 import { FEED_SCOPE_LABELS } from "@/lib/feed/location-scope";
-import {
-  FORUM_CATEGORY_LABELS,
-  INTENT_LABELS,
-  ROLE_LABELS,
-} from "@/lib/types";
+import { INTENT_LABELS, ROLE_LABELS } from "@/lib/types";
+import { EVENT_PURPOSE_OPTIONS, type EventPurpose } from "@/lib/event-purposes";
 
 type StepId = "welcome" | "about" | "role" | "offerings" | "community" | "review";
 
@@ -66,7 +64,7 @@ type FormState = {
   interestTags: string[];
   industryInterests: string[];
   intents: BusinessIntent[];
-  forumInterests: ForumCategory[];
+  eventInterests: EventPurpose[];
 };
 
 const emptyService = (): BusinessService => ({ name: "", description: "", price: "" });
@@ -112,7 +110,7 @@ export function ProfileCreateWizard({
     interestTags: [],
     industryInterests: [],
     intents: [],
-    forumInterests: [],
+    eventInterests: [],
   });
 
   const isBusiness = form.role === "business" || form.role === "organization" || form.role === "marketer";
@@ -145,12 +143,12 @@ export function ProfileCreateWizard({
     }));
   }
 
-  function toggleForumInterest(category: ForumCategory) {
+  function toggleEventInterest(purpose: EventPurpose) {
     setForm((prev) => ({
       ...prev,
-      forumInterests: prev.forumInterests.includes(category)
-        ? prev.forumInterests.filter((c) => c !== category)
-        : [...prev.forumInterests, category],
+      eventInterests: prev.eventInterests.includes(purpose)
+        ? prev.eventInterests.filter((c) => c !== purpose)
+        : [...prev.eventInterests, purpose],
     }));
   }
 
@@ -216,7 +214,7 @@ export function ProfileCreateWizard({
         state: form.state.trim(),
         zipCode: form.zipCode.trim(),
         country: form.country.trim() || "US",
-        forumInterests: form.forumInterests,
+        forumInterests: form.eventInterests as never,
         interestTags: form.interestTags,
         industryInterests: form.industryInterests,
         headline: form.headline.trim(),
@@ -359,12 +357,10 @@ export function ProfileCreateWizard({
               onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? "" })}
             />
             <TextArea label="Bio" value={form.bio} onChange={(v) => setForm({ ...form, bio: v })} placeholder="What should locals know about you?" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-              <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} placeholder="TX" />
-              <Field label="Zip code" value={form.zipCode} onChange={(v) => setForm({ ...form, zipCode: v })} placeholder="78701" />
-              <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="US" />
-            </div>
+            <LocationFields
+              values={{ city: form.city, state: form.state, zipCode: form.zipCode, country: form.country || "US" }}
+              onChange={(loc) => setForm({ ...form, ...loc })}
+            />
           </StepBlock>
         )}
 
@@ -489,11 +485,12 @@ export function ProfileCreateWizard({
               </fieldset>
             )}
             <fieldset className={isBusiness ? "mt-4" : ""}>
-              <legend className="text-sm font-medium">Forum interests</legend>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(Object.keys(FORUM_CATEGORY_LABELS) as ForumCategory[]).map((category) => (
-                  <ChipButton key={category} active={form.forumInterests.includes(category)} onClick={() => toggleForumInterest(category)}>
-                    {FORUM_CATEGORY_LABELS[category]}
+              <legend className="text-sm font-medium">Event interests</legend>
+              <p className="mt-1 mb-2 text-xs text-muted">Types of events you want to discover and attend.</p>
+              <div className="flex flex-wrap gap-2">
+                {EVENT_PURPOSE_OPTIONS.map((purpose) => (
+                  <ChipButton key={purpose} active={form.eventInterests.includes(purpose)} onClick={() => toggleEventInterest(purpose)}>
+                    {purpose}
                   </ChipButton>
                 ))}
               </div>

@@ -1,4 +1,5 @@
 import { haversineMiles } from "@/lib/geo/geocode";
+import { normalizeStateName } from "@/lib/geo/us-states";
 import type { AreaScope, DiscoveryRadius, MileRadius, UserProfile } from "@/lib/types";
 
 export type FeedScope = DiscoveryRadius;
@@ -167,6 +168,12 @@ function normalizeLocation(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function normalizeStateForMatch(value: string | undefined): string {
+  if (!value) return "";
+  // Normalize both full names and abbreviations to canonical full name (lowercase)
+  return normalizeStateName(value).toLowerCase();
+}
+
 function normalizeCountry(value: string | undefined): string {
   const raw = (value ?? "US").trim().toUpperCase();
   if (raw === "USA" || raw === "UNITED STATES") return "US";
@@ -197,8 +204,8 @@ export function matchesMileRadius(
 
   const viewerCity = normalizeLocation(viewer.city);
   const targetCity = normalizeLocation(target.city);
-  const viewerState = normalizeLocation(viewer.state);
-  const targetState = normalizeLocation(target.state);
+  const viewerState = normalizeStateForMatch(viewer.state);
+  const targetState = normalizeStateForMatch(target.state);
   if (viewerCity && targetCity && viewerCity === targetCity && viewerState === targetState) {
     return miles === "5" || miles === "10" || miles === "25";
   }
@@ -219,8 +226,9 @@ export function matchesAreaScope(
 
   if (!countriesMatch(viewer, target)) return false;
 
-  const viewerState = normalizeLocation(viewer.state);
-  const targetState = normalizeLocation(target.state);
+  // Normalize state using canonical full names so "CA" matches "California"
+  const viewerState = normalizeStateForMatch(viewer.state);
+  const targetState = normalizeStateForMatch(target.state);
 
   // When both sides have state data, do strict text matching first
   if (viewerState && targetState) {

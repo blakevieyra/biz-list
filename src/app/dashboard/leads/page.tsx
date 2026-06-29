@@ -6,7 +6,6 @@ import { getLocalLeads } from "@/lib/data/pro";
 import { getCurrentProfile } from "@/lib/data";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { canAccess } from "@/lib/plans";
-import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
 export default async function DashboardLeadsPage() {
   const userId = await getAuthUserId();
@@ -78,10 +77,7 @@ export default async function DashboardLeadsPage() {
                   )}
                   {lead.forumInterests.length > 0 && (
                     <p className="mt-2 text-xs text-muted">
-                      Forum interests:{" "}
-                      {lead.forumInterests
-                        .map((interest) => FORUM_CATEGORY_LABELS[interest])
-                        .join(", ")}
+                      Event interests: {lead.forumInterests.join(", ")}
                     </p>
                   )}
                 </div>

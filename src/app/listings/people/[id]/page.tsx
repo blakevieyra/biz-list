@@ -6,6 +6,7 @@ import { Card, PageHeader, formatDate } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getProfileById } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
+import { EVENT_PURPOSE_OPTIONS } from "@/lib/event-purposes";
 import { FORUM_CATEGORY_LABELS } from "@/lib/types";
 
 async function getRecentActivity(userId: string) {
@@ -209,14 +210,16 @@ export default async function PersonDetailPage({
 
           {profile.forumInterests.length > 0 && (
             <Card>
-              <h2 className="font-semibold">Forum topics</h2>
+              <h2 className="font-semibold">Event interests</h2>
               <div className="mt-3 flex flex-wrap gap-2">
-                {profile.forumInterests.map((category) => (
+                {profile.forumInterests.map((interest) => (
                   <span
-                    key={category}
+                    key={interest}
                     className="rounded-full bg-blue-50 px-3 py-1 text-sm text-accent"
                   >
-                    {FORUM_CATEGORY_LABELS[category]}
+                    {(EVENT_PURPOSE_OPTIONS as readonly string[]).includes(interest)
+                      ? interest
+                      : interest}
                   </span>
                 ))}
               </div>

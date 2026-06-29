@@ -8,6 +8,7 @@ import { CategoryPicker, parseStoredCategory } from "@/components/industry-picke
 import { ImageUpload } from "@/components/image-upload";
 import { SocialLinksEditor } from "@/components/social-links-editor";
 import { ServicesEditor } from "@/components/services-editor";
+import { LocationFields } from "@/components/location-fields";
 import { Card } from "@/components/ui";
 import type {
   BusinessIntent,
@@ -139,12 +140,10 @@ export function BusinessProfileEditor({
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
           </label>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-            <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
-            <Field label="Zip code" value={form.zipCode} onChange={(v) => setForm({ ...form, zipCode: v })} placeholder="78701" />
-            <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="US" />
-          </div>
+          <LocationFields
+            values={{ city: form.city, state: form.state, zipCode: form.zipCode, country: form.country || "US" }}
+            onChange={(loc) => setForm({ ...form, ...loc })}
+          />
         </div>
       </Card>
 

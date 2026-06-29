@@ -6,22 +6,11 @@ import { useState, useTransition } from "react";
 import { updateUserProfile } from "@/lib/actions/social";
 import { IndustryPicker } from "@/components/industry-picker";
 import { ImageUpload } from "@/components/image-upload";
+import { LocationFields } from "@/components/location-fields";
 import { Card } from "@/components/ui";
-import type { DiscoveryRadius, ForumCategory, UserProfile } from "@/lib/types";
+import type { DiscoveryRadius, UserProfile } from "@/lib/types";
 import { FEED_SCOPE_LABELS } from "@/lib/feed/location-scope";
-import { FORUM_CATEGORY_LABELS } from "@/lib/types";
-
-const forumCategories: ForumCategory[] = [
-  "general",
-  "lessons_learned",
-  "local",
-  "hiring",
-  "partnerships",
-  "marketing",
-  "tech_tools",
-  "business_tips",
-  "events",
-];
+import { EVENT_PURPOSE_OPTIONS, type EventPurpose } from "@/lib/event-purposes";
 
 export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
   const router = useRouter();
@@ -34,13 +23,13 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
     city: profile.city,
     state: profile.state,
     zipCode: profile.zipCode,
-    country: profile.country,
+    country: profile.country || "US",
     headline: profile.headline,
     skills: profile.skills.join(", "),
     isSeekingWork: profile.isSeekingWork,
     interestTags: profile.interestTags.join(", "),
     industryInterests: profile.industryInterests,
-    forumInterests: profile.forumInterests,
+    eventInterests: profile.forumInterests as string[],
     discoveryRadius: profile.discoveryRadius,
     avatarUrl: profile.avatarUrl ?? "",
   });
@@ -68,7 +57,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
           .map((s) => s.trim())
           .filter(Boolean),
         industryInterests: form.industryInterests,
-        forumInterests: form.forumInterests,
+        forumInterests: form.eventInterests as never,
         discoveryRadius: form.discoveryRadius,
         avatarUrl: form.avatarUrl || null,
       });
@@ -83,12 +72,12 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
     });
   }
 
-  function toggleForumInterest(category: ForumCategory) {
+  function toggleEventInterest(purpose: EventPurpose) {
     setForm((prev) => ({
       ...prev,
-      forumInterests: prev.forumInterests.includes(category)
-        ? prev.forumInterests.filter((c) => c !== category)
-        : [...prev.forumInterests, category],
+      eventInterests: prev.eventInterests.includes(purpose)
+        ? prev.eventInterests.filter((c) => c !== purpose)
+        : [...prev.eventInterests, purpose],
     }));
   }
 
@@ -121,12 +110,10 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
           </label>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-            <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
-            <Field label="Zip code" value={form.zipCode} onChange={(v) => setForm({ ...form, zipCode: v })} placeholder="78701" />
-            <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="US" />
-          </div>
+          <LocationFields
+            values={{ city: form.city, state: form.state, zipCode: form.zipCode, country: form.country }}
+            onChange={(loc) => setForm({ ...form, ...loc })}
+          />
         </div>
       </Card>
 
@@ -163,21 +150,21 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
       </Card>
 
       <Card>
-        <h2 className="font-semibold">Forum interests</h2>
-        <p className="mt-1 text-sm text-muted">Topics you want to follow in the community forum.</p>
+        <h2 className="font-semibold">Event interests</h2>
+        <p className="mt-1 text-sm text-muted">Types of events you want to discover and attend.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {forumCategories.map((category) => (
+          {EVENT_PURPOSE_OPTIONS.map((purpose) => (
             <button
-              key={category}
+              key={purpose}
               type="button"
-              onClick={() => toggleForumInterest(category)}
+              onClick={() => toggleEventInterest(purpose)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                form.forumInterests.includes(category)
+                form.eventInterests.includes(purpose)
                   ? "bg-accent text-white"
                   : "border border-border bg-card text-muted hover:text-foreground"
               }`}
             >
-              {FORUM_CATEGORY_LABELS[category]}
+              {purpose}
             </button>
           ))}
         </div>
@@ -185,7 +172,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
 
       <Card>
         <h2 className="font-semibold">Discovery radius</h2>
-        <p className="mt-1 text-sm text-muted">How far from your location BizList shows listings and feed content.</p>
+        <p className="mt-1 text-sm text-muted">How far from your location AllConnect shows listings and feed content.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {(Object.keys(FEED_SCOPE_LABELS) as DiscoveryRadius[]).map((scope) => (
             <button
