@@ -221,37 +221,44 @@ export function matchesAreaScope(
 
   const viewerState = normalizeLocation(viewer.state);
   const targetState = normalizeLocation(target.state);
-  // If either side has no state we can't verify a city/county/state match — exclude
-  if (!viewerState || !targetState) return false;
 
-  if (scope === "state") {
-    return viewerState === targetState;
-  }
+  // When both sides have state data, do strict text matching first
+  if (viewerState && targetState) {
+    if (scope === "state") return viewerState === targetState;
 
-  if (scope === "county") {
-    const viewerCounty = normalizeLocation(viewer.county);
-    const targetCounty = normalizeLocation(target.county);
-    if (viewerCounty && targetCounty) {
-      return viewerCounty === targetCounty && viewerState === targetState;
+    // County and city scopes require same state
+    if (viewerState !== targetState) return false;
+
+    if (scope === "county") {
+      const viewerCounty = normalizeLocation(viewer.county);
+      const targetCounty = normalizeLocation(target.county);
+      if (viewerCounty && targetCounty) return viewerCounty === targetCounty;
+      // Same state, counties unknown — fall through to coordinate/zip
     }
-    return viewerState === targetState;
+
+    if (scope === "city") {
+      const viewerCity = normalizeLocation(viewer.city);
+      const targetCity = normalizeLocation(target.city);
+      if (viewerCity && targetCity) return viewerCity === targetCity;
+      // Same state, cities unknown — fall through to coordinate/zip
+    }
   }
 
-  const viewerCity = normalizeLocation(viewer.city);
-  const targetCity = normalizeLocation(target.city);
-  if (viewerCity && targetCity) {
-    return viewerCity === targetCity && viewerState === targetState;
-  }
-
+  // Coordinate fallback — enriched by filterByDiscoveryRadius before this call
   if (hasCoordinates(viewer) && hasCoordinates(target)) {
-    return haversineMiles(viewer, target) <= 25;
+    const milesLimit = scope === "state" ? 200 : scope === "county" ? 50 : 25;
+    return haversineMiles(viewer, target) <= milesLimit;
   }
 
+  // ZIP fallback
   const viewerZip = normalizeZipCode(viewer.zipCode ?? "");
   const targetZip = normalizeZipCode(target.zipCode ?? "");
   if (viewerZip && targetZip && viewerZip === targetZip) return true;
 
-  return viewerState === targetState;
+  // If we have state on both sides but no finer data, state-scope still matches
+  if (viewerState && targetState && scope === "state") return viewerState === targetState;
+
+  return false;
 }
 
 export function matchesDiscoveryRadius(
