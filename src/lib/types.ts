@@ -491,6 +491,7 @@ export interface BusinessEvent {
   capacity?: number;
   status: EventStatus;
   goingCount: number;
+  interestedCount: number;
   userRsvp?: EventRsvpStatus | null;
   createdAt: string;
 }

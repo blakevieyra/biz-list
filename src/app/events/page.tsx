@@ -4,6 +4,7 @@ import { PageHeader, Card } from "@/components/ui";
 import { getAuthUserId } from "@/lib/actions/auth";
 import { getCurrentProfile } from "@/lib/data";
 import { getBusinessEvents } from "@/lib/data/events";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SEED_BUSINESS_EVENTS } from "@/lib/mock-data";
 import {
   DISCOVERY_FILTER_OPTIONS,
@@ -55,7 +56,8 @@ export default async function EventsPage({
     userId,
     limit: 60,
   });
-  const events = dbEvents.length > 0 ? dbEvents : SEED_BUSINESS_EVENTS;
+  // Only use mock events when Supabase isn't configured (local dev without DB)
+  const events = isSupabaseConfigured() ? dbEvents : (dbEvents.length > 0 ? dbEvents : SEED_BUSINESS_EVENTS);
 
   function buildHref(next: Record<string, string | undefined>) {
     const merged: Record<string, string | undefined> = {
@@ -79,7 +81,7 @@ export default async function EventsPage({
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <PageHeader
         title="Local events"
-        description="Discover events hosted by businesses near you. Events are published by local businesses — customers can RSVP, save events, and leave comments."
+        description="Your space for business listings, events, and collaboration. Discover upcoming events near you, RSVP, and connect with the businesses behind them."
         action={
           isBusinessAccount ? (
             <Link

@@ -58,7 +58,7 @@ function businessMedia(
 
 export function mapEventRow(
   row: EventRow,
-  extras: { goingCount?: number; userRsvp?: "going" | "interested" | null } = {},
+  extras: { goingCount?: number; interestedCount?: number; userRsvp?: "going" | "interested" | null } = {},
 ): BusinessEvent {
   return {
     id: row.id,
@@ -84,6 +84,7 @@ export function mapEventRow(
     capacity: row.capacity ?? undefined,
     status: row.status as BusinessEvent["status"],
     goingCount: extras.goingCount ?? 0,
+    interestedCount: extras.interestedCount ?? 0,
     userRsvp: extras.userRsvp ?? null,
     createdAt: row.created_at,
   };
@@ -105,11 +106,14 @@ async function attachRsvpCounts(
     .in("event_id", eventIds);
 
   const goingByEvent = new Map<string, number>();
+  const interestedByEvent = new Map<string, number>();
   const userRsvpByEvent = new Map<string, "going" | "interested">();
 
   for (const r of rsvps ?? []) {
     if (r.status === "going") {
       goingByEvent.set(r.event_id, (goingByEvent.get(r.event_id) ?? 0) + 1);
+    } else if (r.status === "interested") {
+      interestedByEvent.set(r.event_id, (interestedByEvent.get(r.event_id) ?? 0) + 1);
     }
     if (userId && r.user_id === userId) {
       userRsvpByEvent.set(r.event_id, r.status as "going" | "interested");
@@ -119,6 +123,7 @@ async function attachRsvpCounts(
   return events.map((event) => ({
     ...event,
     goingCount: goingByEvent.get(event.id) ?? 0,
+    interestedCount: interestedByEvent.get(event.id) ?? 0,
     userRsvp: userRsvpByEvent.get(event.id) ?? null,
   }));
 }

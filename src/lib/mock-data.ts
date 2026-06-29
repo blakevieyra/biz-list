@@ -593,6 +593,7 @@ export const SEED_BUSINESS_EVENTS: BusinessEvent[] = [
     capacity: 40,
     status: "published",
     goingCount: 24,
+    interestedCount: 8,
     createdAt: "2026-06-01T10:00:00Z",
   },
   {
@@ -616,6 +617,7 @@ export const SEED_BUSINESS_EVENTS: BusinessEvent[] = [
     capacity: 50,
     status: "published",
     goingCount: 12,
+    interestedCount: 5,
     createdAt: "2026-06-10T14:00:00Z",
   },
   {
@@ -639,6 +641,7 @@ export const SEED_BUSINESS_EVENTS: BusinessEvent[] = [
     capacity: 40,
     status: "published",
     goingCount: 18,
+    interestedCount: 6,
     createdAt: "2026-06-15T09:00:00Z",
   },
 ];

@@ -216,7 +216,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export async function toggleEventRsvp(eventId: string) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to RSVP." };
-  if (!UUID_RE.test(eventId)) return { error: "RSVP is not available for demo events." };
 
   try {
     const { supabase, user } = await requireUser();
@@ -255,9 +254,48 @@ export async function toggleEventRsvp(eventId: string) {
   }
 }
 
+export async function toggleEventRsvpInterested(eventId: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to save events." };
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: existing } = await supabase
+      .from("event_rsvps")
+      .select("id, status")
+      .eq("event_id", eventId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existing?.status === "interested") {
+      const { error } = await supabase.from("event_rsvps").delete().eq("id", existing.id);
+      if (error) return { error: error.message };
+    } else if (existing) {
+      const { error } = await supabase
+        .from("event_rsvps")
+        .update({ status: "interested" })
+        .eq("id", existing.id);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("event_rsvps").insert({
+        event_id: eventId,
+        user_id: user.id,
+        status: "interested",
+      });
+      if (error) return { error: error.message };
+    }
+
+    revalidatePath(`/events/${eventId}`);
+    revalidatePath("/events");
+    revalidatePath("/home");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update." };
+  }
+}
+
 export async function commentOnEvent(eventId: string, body: string) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to comment on events." };
-  if (!UUID_RE.test(eventId)) return { error: "Comments are not available for demo events." };
 
   try {
     const { supabase, user } = await requireUser();

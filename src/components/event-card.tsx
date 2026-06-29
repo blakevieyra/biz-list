@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Card, formatPostDateTime } from "@/components/ui";
 import type { BusinessEvent } from "@/lib/types";
-import { SaveButton } from "@/components/save-button";
 import { EventRsvpButton } from "@/components/event-rsvp-button";
 
 function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; businessMediaUrl?: string }) {
@@ -39,16 +38,24 @@ function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; busines
 export function EventCard({
   event,
   currentUserId,
-  initialSaved = false,
 }: {
   event: BusinessEvent;
   currentUserId?: string | null;
-  initialSaved?: boolean;
 }) {
   const when = formatPostDateTime(event.startsAt);
   const where = [event.location || event.address, event.city, event.state]
     .filter(Boolean)
     .join(", ");
+
+  const going = event.userRsvp === "going";
+  const interested = event.userRsvp === "interested";
+
+  const attendanceParts: string[] = [];
+  if (event.goingCount > 0) attendanceParts.push(`${event.goingCount} going`);
+  if (event.interestedCount > 0) attendanceParts.push(`${event.interestedCount} interested`);
+  const attendanceLabel = attendanceParts.join(" · ") || "Be the first to RSVP";
+
+  const yourStatus = going ? " · You're going" : interested ? " · You're interested" : "";
 
   return (
     <Card className="relative overflow-hidden p-0">
@@ -59,7 +66,7 @@ export function EventCard({
         aria-label={event.title}
       />
 
-      {/* Image — not interactive, just decoration */}
+      {/* Image */}
       <div className="relative z-[1] pointer-events-none">
         <EventImage imageUrl={event.imageUrl} businessMediaUrl={event.businessMediaUrl} />
       </div>
@@ -71,7 +78,6 @@ export function EventCard({
         </p>
         <h3 className="mt-1 font-semibold leading-snug">{event.title}</h3>
 
-        {/* Short description excerpt */}
         {event.description && (
           <p className="mt-1.5 line-clamp-2 text-sm text-muted">{event.description}</p>
         )}
@@ -80,38 +86,25 @@ export function EventCard({
         {where && <p className="mt-1 text-sm text-muted">{where}</p>}
 
         <p className="mt-2 text-xs text-muted">
-          {event.goingCount} going
-          {event.userRsvp === "going" ? " · You're going" : ""}
+          {attendanceLabel}{yourStatus}
         </p>
       </div>
 
-      {/* Footer: RSVP + Save — both above the overlay */}
+      {/* Footer: RSVP buttons + View details — all above the overlay */}
       <div className="relative z-[1] flex items-center justify-between border-t border-border px-4 py-2.5 gap-3">
         <EventRsvpButton
           eventId={event.id}
-          initialGoing={event.userRsvp === "going"}
+          initialGoing={going}
+          initialInterested={interested}
           requiresAuth={!currentUserId}
           size="sm"
         />
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/events/${event.id}`}
-            className="text-xs font-medium text-accent hover:underline"
-          >
-            View details →
-          </Link>
-          {currentUserId && (
-            <SaveButton
-              itemType="event"
-              itemId={event.id}
-              itemTitle={event.title}
-              itemSubtitle={when}
-              itemUrl={`/events/${event.id}`}
-              initialSaved={initialSaved}
-              size="sm"
-            />
-          )}
-        </div>
+        <Link
+          href={`/events/${event.id}`}
+          className="shrink-0 text-xs font-medium text-accent hover:underline"
+        >
+          View details →
+        </Link>
       </div>
     </Card>
   );
