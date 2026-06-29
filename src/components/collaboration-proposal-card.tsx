@@ -138,10 +138,6 @@ export function CollaborationProposalCard({
               </h3>
             </Link>
 
-            <p className="mt-2 text-base leading-relaxed text-foreground/80 sm:text-lg">
-              {idea.summary}
-            </p>
-
             {idea.lookingFor && (
               <p className="mt-3 text-sm">
                 <span className="font-medium">Looking for:</span>{" "}
