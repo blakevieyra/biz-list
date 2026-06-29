@@ -154,6 +154,23 @@ async function filterEventsByDiscovery(
   return filtered;
 }
 
+function scoreEvent(event: BusinessEvent, viewer: DiscoveryViewer | null | undefined): number {
+  let score = 0;
+
+  // Trending: engagement (each attendee = 5 pts)
+  score += ((event.goingCount ?? 0) + (event.interestedCount ?? 0)) * 5;
+
+  // Category matches viewer's industry interests (+100)
+  if (viewer?.industryInterests?.includes(event.category)) score += 100;
+
+  // Happening soon (+30 within 7 days, +15 within 14)
+  const daysUntil = (new Date(event.startsAt).getTime() - Date.now()) / 86_400_000;
+  if (daysUntil <= 7) score += 30;
+  else if (daysUntil <= 14) score += 15;
+
+  return score;
+}
+
 function matchesEventFilters(
   event: BusinessEvent,
   filters: {
@@ -216,9 +233,12 @@ async function filterSeedEvents(filters?: {
     events = await filterEventsByDiscovery(events, filters.viewer, filters.discoveryRadius);
   }
 
-  events.sort(
-    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-  );
+  const viewer = filters?.viewer ?? null;
+  events.sort((a, b) => {
+    const diff = scoreEvent(b, viewer) - scoreEvent(a, viewer);
+    if (diff !== 0) return diff;
+    return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+  });
 
   if (filters?.limit) {
     events = events.slice(0, filters.limit);
@@ -288,7 +308,17 @@ export async function getBusinessEvents(filters?: {
     events = events.slice(0, filters.limit);
   }
 
-  return attachRsvpCounts(events, filters?.userId);
+  const withCounts = await attachRsvpCounts(events, filters?.userId);
+
+  // Sort by relevance: category match + engagement + upcoming-soon, tiebreak by date
+  const viewer = filters?.viewer ?? null;
+  withCounts.sort((a, b) => {
+    const diff = scoreEvent(b, viewer) - scoreEvent(a, viewer);
+    if (diff !== 0) return diff;
+    return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+  });
+
+  return withCounts;
 }
 
 export async function getUserSavedEvents(
