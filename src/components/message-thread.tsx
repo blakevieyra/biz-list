@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { sendMessage } from "@/lib/actions/social";
 import type { Message } from "@/lib/types";
-import { Card, formatDate } from "./ui";
+import { Card, formatPostDateTime } from "./ui";
 
 function Avatar({
   name,
@@ -129,7 +129,7 @@ export function MessageThread({
                   >
                     <p>{message.body}</p>
                     <p className={`mt-1 text-xs ${isMine ? "text-teal-100" : "text-muted"}`}>
-                      {formatDate(message.createdAt)}
+                      {formatPostDateTime(message.createdAt)}
                     </p>
                   </div>
                 </div>

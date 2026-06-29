@@ -273,7 +273,7 @@ export function AlertsPreview({ notifications }: { notifications: Notification[]
             <p className="relative z-[1] font-medium text-sm">{notification.title}</p>
             <p className="relative z-[1] mt-0.5 text-sm text-muted">{notification.body}</p>
             <div className="relative z-[1] mt-1.5 flex items-center justify-between gap-2">
-              <p className="text-xs text-muted">{formatDate(notification.createdAt)}</p>
+              <p className="text-xs text-muted">{formatPostDateTime(notification.createdAt)}</p>
               {safeLink && (
                 <Link href={safeLink} className="text-xs font-medium text-accent hover:underline">
                   View →
@@ -382,7 +382,7 @@ export function MessagesHubSection({
                       </div>
                       <p className="mt-0.5 text-sm text-muted">{n.body}</p>
                       <div className="mt-1 flex items-center justify-between gap-2">
-                        <p className="text-xs text-muted">{formatDate(n.createdAt)}</p>
+                        <p className="text-xs text-muted">{formatPostDateTime(n.createdAt)}</p>
                         {safeLink && (
                           <Link href={safeLink} className="text-xs font-medium text-accent hover:underline">
                             View →
@@ -450,7 +450,7 @@ export function MessagesHubSection({
                         {c.lastMessage ?? "Start the conversation"}
                       </p>
                       {c.lastMessageAt && (
-                        <p className="mt-0.5 text-xs text-muted">{formatDate(c.lastMessageAt)}</p>
+                        <p className="mt-0.5 text-xs text-muted">{formatPostDateTime(c.lastMessageAt)}</p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

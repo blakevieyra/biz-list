@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteForumComment, editForumComment } from "@/lib/actions/social";
-import { formatDate } from "@/components/ui";
+import { formatPostDateTime } from "@/components/ui";
 import type { Comment } from "@/lib/types";
 
 export function ForumCommentList({
@@ -72,7 +72,7 @@ export function ForumCommentList({
                     </button>
                   </>
                 )}
-                <span className="text-xs text-muted">{formatDate(comment.createdAt)}</span>
+                <span className="text-xs text-muted">{formatPostDateTime(comment.createdAt)}</span>
               </div>
             </div>
             {editingId === comment.id ? (
