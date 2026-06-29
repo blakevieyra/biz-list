@@ -44,12 +44,26 @@ export default async function CollaboratePage({
   const discoveryFilter = resolveActiveDiscoveryFilter({
     miles: undefined,
     scope: params.near,
+    near: params.near,
     profileDefault: profile?.discoveryRadius,
   });
   const categoryFilter = isIndustryOption(params.category ?? "") ? params.category : undefined;
   const query = params.q?.trim() ?? "";
 
-  const collaborations = await getCollaborations(tab, userId);
+  const viewer = profile
+    ? {
+        city: profile.city,
+        state: profile.state,
+        county: profile.county,
+        zipCode: profile.zipCode,
+        country: profile.country,
+        latitude: profile.latitude,
+        longitude: profile.longitude,
+        industryInterests: profile.industryInterests,
+      }
+    : null;
+
+  const collaborations = await getCollaborations(tab, userId, { viewer, discoveryRadius: discoveryFilter });
 
   // Client-side filter by category and search query
   let filtered = collaborations;

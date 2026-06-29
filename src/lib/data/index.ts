@@ -567,21 +567,35 @@ function enrichCollaborationWithBusiness(idea: CollaborationIdea): Collaboration
 export async function getCollaborations(
   type?: CollaborationIdea["collaborationType"],
   userId?: string | null,
+  options?: { viewer?: DiscoveryViewer | null; discoveryRadius?: DiscoveryRadius },
 ): Promise<CollaborationIdea[]> {
   const supabase = await getSupabase();
+  const viewer = options?.viewer ?? null;
+  const radius = options?.discoveryRadius ?? "nation";
+
   if (!supabase) {
-    const seed = type
+    let seed = type
       ? SEED_COLLABORATIONS.filter((item) => item.collaborationType === type)
       : SEED_COLLABORATIONS;
-    return seed
-      .filter((item) => Boolean(item.businessId))
-      .map(enrichCollaborationWithBusiness);
+    seed = seed.filter((item) => Boolean(item.businessId));
+    const enriched = seed.map(enrichCollaborationWithBusiness);
+    if (viewer && radius !== "nation") {
+      const filtered: typeof enriched = [];
+      for (const collab of enriched) {
+        const biz = SEED_BUSINESSES.find((b) => b.id === collab.businessId);
+        if (!biz) continue;
+        const [match] = await filterByDiscoveryRadius([biz], viewer, radius);
+        if (match) filtered.push(collab);
+      }
+      return filtered;
+    }
+    return enriched;
   }
 
   let query = supabase
     .from("collaborations")
     .select(
-      "*, profiles(display_name, avatar_url, role), businesses(name, category, media_urls, rating_avg, rating_count)",
+      "*, profiles(display_name, avatar_url, role), businesses(name, category, media_urls, rating_avg, rating_count, city, state, zip_code, county, country, latitude, longitude)",
     )
     .not("business_id", "is", null)
     .order("created_at", { ascending: false });
@@ -592,10 +606,38 @@ export async function getCollaborations(
 
   const { data: rows } = await query;
   const mapped = (rows as CollaborationRow[] | null)?.map(mapCollaboration) ?? [];
-  return attachCollaborationInterests(
-    mapped.filter((item) => item.businessId),
-    userId,
-  );
+  const withBusiness = mapped.filter((item) => item.businessId);
+
+  // Apply location filter using the business's location
+  let locationFiltered = withBusiness;
+  if (viewer && radius !== "nation") {
+    const collabRows = (rows as CollaborationRow[] | null) ?? [];
+    const rowById = new Map(collabRows.map((r) => [r.id, r]));
+    const result: typeof withBusiness = [];
+    for (const collab of withBusiness) {
+      const row = rowById.get(collab.id);
+      const biz = row?.businesses
+        ? Array.isArray(row.businesses)
+          ? row.businesses[0]
+          : row.businesses
+        : null;
+      if (!biz) continue;
+      const loc = {
+        city: biz.city ?? "",
+        state: biz.state ?? "",
+        county: biz.county ?? "",
+        zipCode: biz.zip_code ?? "",
+        country: biz.country ?? "US",
+        latitude: biz.latitude ?? undefined,
+        longitude: biz.longitude ?? undefined,
+      };
+      const [match] = await filterByDiscoveryRadius([loc], viewer, radius);
+      if (match) result.push(collab);
+    }
+    locationFiltered = result;
+  }
+
+  return attachCollaborationInterests(locationFiltered, userId);
 }
 
 export async function getMyCollaborations(userId: string): Promise<CollaborationIdea[]> {

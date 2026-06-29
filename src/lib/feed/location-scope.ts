@@ -221,7 +221,8 @@ export function matchesAreaScope(
 
   const viewerState = normalizeLocation(viewer.state);
   const targetState = normalizeLocation(target.state);
-  if (!viewerState || !targetState) return true;
+  // If either side has no state we can't verify a city/county/state match — exclude
+  if (!viewerState || !targetState) return false;
 
   if (scope === "state") {
     return viewerState === targetState;

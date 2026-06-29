@@ -135,6 +135,13 @@ type CollaborationRow = {
         media_urls?: string[];
         rating_avg?: number;
         rating_count?: number;
+        city?: string;
+        state?: string;
+        zip_code?: string;
+        county?: string;
+        country?: string;
+        latitude?: number | null;
+        longitude?: number | null;
       }
     | {
         name: string;
@@ -142,6 +149,13 @@ type CollaborationRow = {
         media_urls?: string[];
         rating_avg?: number;
         rating_count?: number;
+        city?: string;
+        state?: string;
+        zip_code?: string;
+        county?: string;
+        country?: string;
+        latitude?: number | null;
+        longitude?: number | null;
       }[]
     | null;
 };
