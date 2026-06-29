@@ -1079,7 +1079,8 @@ export async function sendMessage(conversationId: string, body: string) {
       .eq("id", user.id)
       .single();
 
-    if (senderProfile?.role === "customer") {
+    // Trigger AI auto-reply for any sender who is NOT the business owner
+    if (user.id !== recipientId) {
       const { data: business } = await supabase
         .from("businesses")
         .select("*")
@@ -1102,6 +1103,11 @@ export async function sendMessage(conversationId: string, body: string) {
             ? (business.services as { name?: string; description?: string; price?: string }[])
             : [];
 
+          const agentInstructions = (business.agent_instructions as string | null) ?? undefined;
+          const agentTopicRules = Array.isArray(business.agent_topic_rules)
+            ? (business.agent_topic_rules as { topic: string; response: string }[])
+            : undefined;
+
           const reply = await generateVirtualAgentReplyAI(
             {
               business: {
@@ -1122,7 +1128,9 @@ export async function sendMessage(conversationId: string, body: string) {
                   price: s.price,
                 })),
               },
-              customerName: senderProfile.display_name,
+              customerName: senderProfile?.display_name ?? "Customer",
+              agentInstructions,
+              agentTopicRules,
             },
             trimmed,
           );
