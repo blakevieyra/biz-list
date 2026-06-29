@@ -696,9 +696,7 @@ export async function submitJobApplication(input: {
       });
     }
 
-    revalidatePath(`/listings/${input.businessId}`);
     revalidatePath("/dashboard/applications");
-    revalidatePath("/profile");
     return { success: true, applicationId: inserted.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to submit application." };
