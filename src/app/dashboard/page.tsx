@@ -12,6 +12,8 @@ import { getConversations } from "@/lib/data/messages";
 import { getSavedItems } from "@/lib/data/saved-items";
 import { canAccess } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
+import { getBusinessAffiliates, getMyAffiliations } from "@/lib/actions/affiliates";
+import { AffiliatesPanel } from "@/components/affiliates-panel";
 
 async function getOwnerBusiness(userId: string) {
   const supabase = await createClient();
@@ -37,7 +39,7 @@ export default async function DashboardPage() {
   const businessRow = isBusiness ? await getOwnerBusiness(userId) : null;
   const business = businessRow ? await getBusinessById(businessRow.id) : null;
 
-  const [posts, leads, latestAudit, conversations, orders, savedItems] = await Promise.all([
+  const [posts, leads, latestAudit, conversations, orders, savedItems, affiliates] = await Promise.all([
     business ? getBusinessPosts(business.id) : Promise.resolve([]),
     isBusiness && canAccess(profile.planTier, "localLeads")
       ? getLocalLeads(userId)
@@ -48,6 +50,11 @@ export default async function DashboardPage() {
     getConversations(userId),
     business ? getServiceOrdersForBusiness(business.id, userId) : Promise.resolve([]),
     getSavedItems(userId),
+    profile.role === "marketer"
+      ? getMyAffiliations()
+      : business
+        ? getBusinessAffiliates(business.id)
+        : Promise.resolve([]),
   ]);
 
   const unreadCount = conversations.reduce((n, c) => n + c.unreadCount, 0);
@@ -149,6 +156,13 @@ export default async function DashboardPage() {
             </Link>
           </Card>
         )}
+
+        {/* Affiliates panel */}
+        <AffiliatesPanel
+          affiliates={affiliates}
+          isMarketer={profile.role === "marketer"}
+          businessId={business?.id}
+        />
 
         {/* Service orders */}
         {isBusiness && business ? (() => {

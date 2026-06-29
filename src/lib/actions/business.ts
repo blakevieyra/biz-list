@@ -369,7 +369,28 @@ export async function createBusinessPost(input: {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to post." };
 
   try {
-    const { supabase, user, plan } = await requireBusinessOwner(input.businessId);
+    const { supabase, user, plan } = await requireUser();
+
+    // Allow owner OR active affiliate marketer
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("owner_id")
+      .eq("id", input.businessId)
+      .single();
+    if (!business) return { error: "Business not found." };
+
+    const isOwner = business.owner_id === user.id;
+    if (!isOwner) {
+      const { data: aff } = await supabase
+        .from("business_affiliates")
+        .select("id")
+        .eq("business_id", input.businessId)
+        .eq("marketer_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (!aff) return { error: "Only the business owner or an active affiliate marketer can post." };
+    }
+
     if (!canAccess(plan, "businessPosts")) {
       return { error: "Upgrade your plan to publish posts." };
     }
@@ -380,8 +401,9 @@ export async function createBusinessPost(input: {
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "business" && profile?.role !== "organization") {
-      return { error: "Only business accounts can publish to the feed." };
+    const allowedRoles = ["business", "organization", "marketer"];
+    if (!allowedRoles.includes(profile?.role ?? "")) {
+      return { error: "Only business, organization, or marketer accounts can publish to the feed." };
     }
 
     const title = input.title.trim().slice(0, 200);

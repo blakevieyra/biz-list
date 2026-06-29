@@ -57,6 +57,8 @@ import { displayCategoryLabel } from "@/lib/industries";
 import { ListingVirtualAgent } from "@/components/listing-virtual-agent";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { canAccess } from "@/lib/plans";
+import { AffiliateButton } from "@/components/affiliate-button";
+import type { AffiliateStatus } from "@/lib/actions/affiliates";
 
 
 
@@ -117,6 +119,15 @@ export default async function BusinessDetailPage({
 
 
   const isOwner = userId === business.ownerId;
+
+  // Marketer affiliation status
+  const { getCurrentProfile: getProf } = await import("@/lib/data");
+  const { getAffiliationStatus } = await import("@/lib/actions/affiliates");
+  const [viewerProfile, affiliationStatus] = await Promise.all([
+    userId && !isOwner ? getProf() : Promise.resolve(null),
+    userId && !isOwner ? getAffiliationStatus(business.id) : Promise.resolve(null),
+  ]);
+  const isMarketer = viewerProfile?.role === "marketer";
 
   const [senderHostedEvents, senderAttendingEvents] = userId && !isOwner
     ? await Promise.all([
@@ -251,6 +262,11 @@ export default async function BusinessDetailPage({
                 senderEvents={senderEvents}
 
               />
+
+              {/* Affiliate request button for marketers */}
+              {isMarketer && !isOwner && (
+                <AffiliateButton businessId={business.id} status={affiliationStatus} />
+              )}
 
               {/* Likes · Followers · Website · Social links */}
               <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted">

@@ -11,6 +11,7 @@ const navItems = [
   { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/jobs", label: "Jobs" },
+  { href: "/dashboard/affiliates", label: "Affiliates", marketerOnly: true },
   { href: "/dashboard/leads", label: "Leads", feature: "localLeads" as const },
   { href: "/dashboard/analytics", label: "Analytics", feature: "analytics" as const },
   { href: "/dashboard/assessment", label: "AI Audit", feature: "aiAudit" as const },
@@ -70,7 +71,12 @@ export default async function DashboardLayout({
         </div>
       </div>
 
-      <DashboardNav items={navItems} enabledFeatures={enabledFeatures} />
+      <DashboardNav
+        items={navItems.filter((item) =>
+          !("marketerOnly" in item) || profile.role === "marketer"
+        )}
+        enabledFeatures={enabledFeatures}
+      />
 
       {children}
     </div>
