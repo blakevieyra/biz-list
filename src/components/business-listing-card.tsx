@@ -203,9 +203,21 @@ export function BusinessListingCard({
                                 <p className="text-[11px] font-medium text-accent">{service.price}</p>
                               )}
                             </div>
-                            <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted">
-                              {ctaLabel}
-                            </span>
+                            {service.actionType === "link" && service.actionUrl ? (
+                              <a
+                                href={service.actionUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-accent-hover"
+                              >
+                                {service.actionLabel || ctaLabel}
+                              </a>
+                            ) : (
+                              <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted">
+                                {ctaLabel}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <ServiceListing
@@ -228,7 +240,7 @@ export function BusinessListingCard({
                                   )}
                                 </div>
                                 <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">
-                                  {ctaLabel}
+                                  {service.actionLabel || ctaLabel}
                                 </span>
                               </button>
                             )}

@@ -91,9 +91,13 @@ function ServiceOrderForm({
   const fulfillOpts = fulfillmentOptions(service.serviceType);
 
   function handleOpen() {
+    trackOfferingClick(businessId, service.name, buttonLabel.toLowerCase()).catch(() => {});
+    if (service.actionType === "link" && service.actionUrl) {
+      window.open(service.actionUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
     setOpen(true);
     if (fulfillOpts?.length) setFulfillment(fulfillOpts[0]);
-    trackOfferingClick(businessId, service.name, buttonLabel.toLowerCase()).catch(() => {});
   }
 
   function handleSubmit(e: React.FormEvent) {
