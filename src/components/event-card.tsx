@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Card, formatPostDateTime } from "@/components/ui";
 import type { BusinessEvent } from "@/lib/types";
 import { SaveButton } from "@/components/save-button";
+import { EventRsvpButton } from "@/components/event-rsvp-button";
 
 function EventImage({ imageUrl, businessMediaUrl }: { imageUrl?: string; businessMediaUrl?: string }) {
   const [src, setSrc] = useState(imageUrl || businessMediaUrl);
@@ -50,36 +51,68 @@ export function EventCard({
     .join(", ");
 
   return (
-    <Card className="overflow-hidden p-0">
-      <Link href={`/events/${event.id}`} className="block">
+    <Card className="relative overflow-hidden p-0">
+      {/* Overlay link covers the whole card; interactive elements sit above it */}
+      <Link
+        href={`/events/${event.id}`}
+        className="absolute inset-0 z-0 rounded-[inherit]"
+        aria-label={event.title}
+      />
+
+      {/* Image — not interactive, just decoration */}
+      <div className="relative z-[1] pointer-events-none">
         <EventImage imageUrl={event.imageUrl} businessMediaUrl={event.businessMediaUrl} />
-        <div className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-accent">
-            {event.businessName ?? "Local business"}
-          </p>
-          <h3 className="mt-1 font-semibold leading-snug">{event.title}</h3>
-          <p className="mt-2 text-sm text-muted">{when}</p>
-          {where && <p className="mt-1 text-sm text-muted">{where}</p>}
-          <p className="mt-3 text-xs text-muted">
-            {event.goingCount} going
-            {event.userRsvp === "going" ? " · You're going" : ""}
-          </p>
-          <p className="mt-3 text-sm font-medium text-accent">View event details →</p>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-[1] p-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-accent">
+          {event.businessName ?? "Local business"}
+        </p>
+        <h3 className="mt-1 font-semibold leading-snug">{event.title}</h3>
+
+        {/* Short description excerpt */}
+        {event.description && (
+          <p className="mt-1.5 line-clamp-2 text-sm text-muted">{event.description}</p>
+        )}
+
+        <p className="mt-2 text-sm text-muted">{when}</p>
+        {where && <p className="mt-1 text-sm text-muted">{where}</p>}
+
+        <p className="mt-2 text-xs text-muted">
+          {event.goingCount} going
+          {event.userRsvp === "going" ? " · You're going" : ""}
+        </p>
+      </div>
+
+      {/* Footer: RSVP + Save — both above the overlay */}
+      <div className="relative z-[1] flex items-center justify-between border-t border-border px-4 py-2.5 gap-3">
+        <EventRsvpButton
+          eventId={event.id}
+          initialGoing={event.userRsvp === "going"}
+          requiresAuth={!currentUserId}
+          size="sm"
+        />
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/events/${event.id}`}
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            View details →
+          </Link>
+          {currentUserId && (
+            <SaveButton
+              itemType="event"
+              itemId={event.id}
+              itemTitle={event.title}
+              itemSubtitle={when}
+              itemUrl={`/events/${event.id}`}
+              initialSaved={initialSaved}
+              size="sm"
+            />
+          )}
         </div>
-      </Link>
-      {currentUserId && (
-        <div className="flex items-center justify-end border-t border-border px-4 py-2">
-          <SaveButton
-            itemType="event"
-            itemId={event.id}
-            itemTitle={event.title}
-            itemSubtitle={when}
-            itemUrl={`/events/${event.id}`}
-            initialSaved={initialSaved}
-            size="sm"
-          />
-        </div>
-      )}
+      </div>
     </Card>
   );
 }
