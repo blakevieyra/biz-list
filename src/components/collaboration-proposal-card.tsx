@@ -133,10 +133,16 @@ export function CollaborationProposalCard({
           {/* Main content */}
           <div className="flex flex-1 flex-col px-4 py-3">
             <Link href={`/partnerships/${idea.id}`} className="group block">
-              <h3 className="text-2xl font-bold leading-snug group-hover:text-accent sm:text-3xl">
+              <h3 className="text-3xl font-bold leading-snug group-hover:text-accent sm:text-4xl">
                 {idea.title}
               </h3>
             </Link>
+
+            {idea.summary && (
+              <p className="mt-2 text-base leading-relaxed text-foreground/80 sm:text-lg">
+                {idea.summary}
+              </p>
+            )}
 
             {idea.lookingFor && (
               <p className="mt-3 text-sm">
