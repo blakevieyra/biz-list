@@ -377,6 +377,110 @@ export async function notifyJobMatchToCustomerPro(input: {
   });
 }
 
+export async function updateBusinessEvent(input: {
+  eventId: string;
+  title: string;
+  description: string;
+  location: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  category?: string;
+  purpose?: string;
+  imageUrl?: string;
+  startsAt: string;
+  endsAt?: string;
+  capacity?: number;
+}) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to update events." };
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from("business_events")
+      .select("id, business_id, businesses(owner_id)")
+      .eq("id", input.eventId)
+      .single();
+
+    if (!existing) return { error: "Event not found." };
+    const owner = Array.isArray(existing.businesses) ? existing.businesses[0] : existing.businesses;
+    if ((owner as { owner_id: string } | null)?.owner_id !== user.id) {
+      return { error: "You can only edit your own events." };
+    }
+
+    const title = input.title.trim().slice(0, 200);
+    const description = (input.description ?? "").trim().slice(0, 5000);
+    const location = input.location.trim().slice(0, 300);
+    if (!title || !location) return { error: "Title and location are required." };
+
+    const moderation = moderateMultiple({ Title: title, Description: description, Location: location });
+    if (!moderation.ok) return { error: moderation.reason };
+
+    const startsAt = new Date(input.startsAt);
+    if (Number.isNaN(startsAt.getTime())) return { error: "Invalid start date." };
+
+    const { error } = await supabase
+      .from("business_events")
+      .update({
+        title,
+        description,
+        location,
+        address: (input.address ?? "").trim().slice(0, 300),
+        city: (input.city ?? "").trim(),
+        state: (input.state ?? "").trim(),
+        zip_code: (input.zipCode ?? "").trim(),
+        category: (input.category ?? "").trim(),
+        purpose: input.purpose?.trim() || null,
+        image_url: (input.imageUrl ?? "").trim().slice(0, 500),
+        starts_at: startsAt.toISOString(),
+        ends_at: input.endsAt ? new Date(input.endsAt).toISOString() : null,
+        capacity: input.capacity ?? null,
+      })
+      .eq("id", input.eventId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/events/${input.eventId}`);
+    revalidatePath("/events");
+    revalidatePath("/dashboard/events");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update event." };
+  }
+}
+
+export async function deleteBusinessEvent(eventId: string) {
+  if (!isSupabaseConfigured()) return { error: "Connect Supabase to delete events." };
+
+  try {
+    const { supabase, user } = await requireUser();
+
+    const { data: existing } = await supabase
+      .from("business_events")
+      .select("id, businesses(owner_id)")
+      .eq("id", eventId)
+      .single();
+
+    if (!existing) return { error: "Event not found." };
+    const owner = Array.isArray(existing.businesses) ? existing.businesses[0] : existing.businesses;
+    if ((owner as { owner_id: string } | null)?.owner_id !== user.id) {
+      return { error: "You can only delete your own events." };
+    }
+
+    const { error } = await supabase.from("business_events").delete().eq("id", eventId);
+    if (error) return { error: error.message };
+
+    revalidatePath("/events");
+    revalidatePath("/dashboard/events");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete event." };
+  }
+}
+
 export async function deleteEventComment(commentId: string): Promise<{ error?: string }> {
   if (!isSupabaseConfigured()) return { error: "Not configured." };
   try {
