@@ -179,64 +179,64 @@ export function BusinessListingCard({
               <div>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Offerings</p>
                 <ul className="space-y-1">
-                  {topServices.map((service) => (
-                    <li key={service.name} onClick={(e) => e.stopPropagation()}>
-                      {isOwner ? (
-                        /* Owner sees a plain card — no order button */
-                        <div className="flex items-center gap-2 rounded-lg border border-border p-2">
-                          {service.imageUrl ? (
-                            <div className="h-8 w-8 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
-                            </div>
-                          ) : (
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-accent/40">
-                              {service.name.charAt(0)}
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
-                            {service.price && (
-                              <p className="text-[11px] font-medium text-accent">{service.price}</p>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <ServiceListing
-                          service={service}
-                          businessId={business.id}
-                          businessName={business.name}
-                          currentUserId={currentUserId}
-                          isOwner={false}
-                          renderTrigger={(onClick) => (
-                            <button
-                              type="button"
-                              onClick={onClick}
-                              className="flex w-full items-center gap-2 rounded-lg border border-border p-2 text-left transition hover:border-accent/40 hover:bg-slate-50"
-                            >
-                              {service.imageUrl ? (
-                                <div className="h-8 w-8 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
-                                </div>
-                              ) : (
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-accent/40">
-                                  {service.name.charAt(0)}
-                                </div>
+                  {topServices.map((service) => {
+                    const ctaLabel = offeringActionLabel(service.serviceType, true);
+                    const serviceIcon = service.imageUrl ? (
+                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-accent/40">
+                        {service.name.charAt(0)}
+                      </div>
+                    );
+
+                    return (
+                      <li key={service.name} onClick={(e) => e.stopPropagation()}>
+                        {isOwner ? (
+                          <div className="flex items-center gap-2 rounded-lg border border-border p-2">
+                            {serviceIcon}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
+                              {service.price && (
+                                <p className="text-[11px] font-medium text-accent">{service.price}</p>
                               )}
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
-                                {service.price && (
-                                  <p className="text-[11px] font-medium text-accent">{service.price}</p>
-                                )}
-                              </div>
-                              <span className="shrink-0 text-xs font-medium text-accent">Order →</span>
-                            </button>
-                          )}
-                        />
-                      )}
-                    </li>
-                  ))}
+                            </div>
+                            <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted">
+                              {ctaLabel}
+                            </span>
+                          </div>
+                        ) : (
+                          <ServiceListing
+                            service={service}
+                            businessId={business.id}
+                            businessName={business.name}
+                            currentUserId={currentUserId}
+                            isOwner={false}
+                            renderTrigger={(onClick) => (
+                              <button
+                                type="button"
+                                onClick={onClick}
+                                className="flex w-full items-center gap-2 rounded-lg border border-border p-2 text-left transition hover:border-accent/40 hover:bg-slate-50"
+                              >
+                                {serviceIcon}
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-xs font-medium leading-tight">{service.name}</p>
+                                  {service.price && (
+                                    <p className="text-[11px] font-medium text-accent">{service.price}</p>
+                                  )}
+                                </div>
+                                <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">
+                                  {ctaLabel}
+                                </span>
+                              </button>
+                            )}
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
