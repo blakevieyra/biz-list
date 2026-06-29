@@ -1048,7 +1048,7 @@ export async function sendMessage(conversationId: string, body: string) {
 
     const { data: conversation } = await supabase
       .from("conversations")
-      .select("participant_a, participant_b")
+      .select("participant_a, participant_b, business_id")
       .eq("id", conversationId)
       .single();
 
@@ -1079,49 +1079,75 @@ export async function sendMessage(conversationId: string, body: string) {
       .eq("id", user.id)
       .single();
 
-    // Trigger AI auto-reply for any sender who is NOT the business owner
-    if (user.id !== recipientId) {
-      const { data: business } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("owner_id", recipientId)
-        .eq("virtual_agent_enabled", true)
-        .maybeSingle();
+    // Trigger AI auto-reply: look up business via conversation.business_id first,
+    // then fall back to checking if the recipient owns a virtual-agent-enabled business.
+    // Sender must NOT be the business owner for AI to fire.
+    {
+      let business: Record<string, unknown> | null = null;
+      let businessOwnerId: string | null = null;
 
-      if (business) {
+      if (conversation.business_id) {
+        const { data: biz } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("id", conversation.business_id)
+          .maybeSingle();
+        if (biz) {
+          business = biz as Record<string, unknown>;
+          businessOwnerId = (biz as { owner_id: string }).owner_id;
+        }
+      } else if (user.id !== recipientId) {
+        const { data: biz } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("owner_id", recipientId)
+          .maybeSingle();
+        if (biz) {
+          business = biz as Record<string, unknown>;
+          businessOwnerId = recipientId;
+        }
+      }
+
+      if (business && businessOwnerId && user.id !== businessOwnerId) {
         const { data: owner } = await supabase
           .from("profiles")
           .select("plan_tier")
-          .eq("id", recipientId)
+          .eq("id", businessOwnerId)
           .maybeSingle();
 
         const { canAccess } = await import("@/lib/plans");
         const { generateVirtualAgentReplyAI } = await import("@/lib/ai/ai-services");
 
-        if (canAccess((owner?.plan_tier ?? "free") as import("@/lib/types").PlanTier, "virtualAgent")) {
-          const services = Array.isArray(business.services)
-            ? (business.services as { name?: string; description?: string; price?: string }[])
-            : [];
+        const ownerPlan = (owner?.plan_tier ?? "free") as import("@/lib/types").PlanTier;
+        const agentEnabled =
+          (business as { virtual_agent_enabled?: boolean }).virtual_agent_enabled === true ||
+          ownerPlan === "platinum";
 
-          const agentInstructions = (business.agent_instructions as string | null) ?? undefined;
-          const agentTopicRules = Array.isArray(business.agent_topic_rules)
-            ? (business.agent_topic_rules as { topic: string; response: string }[])
-            : undefined;
+        if (canAccess(ownerPlan, "virtualAgent") && agentEnabled) {
+          type BizRow = {
+            name: string; category: string; subcategory?: string; tagline?: string;
+            description?: string; city?: string; state?: string; phone?: string;
+            hours?: string; website?: string; is_hiring?: boolean;
+            services?: { name?: string; description?: string; price?: string }[];
+            agent_instructions?: string; agent_topic_rules?: { topic: string; response: string }[];
+          };
+          const biz = business as BizRow;
+          const services = Array.isArray(biz.services) ? biz.services : [];
 
           const reply = await generateVirtualAgentReplyAI(
             {
               business: {
-                name: business.name,
-                category: business.category,
-                subcategory: business.subcategory ?? "",
-                tagline: business.tagline ?? "",
-                description: business.description ?? "",
-                city: business.city ?? "",
-                state: business.state ?? "",
-                phone: business.phone ?? "",
-                hours: business.hours ?? "",
-                website: business.website ?? "",
-                isHiring: business.is_hiring ?? false,
+                name: biz.name,
+                category: biz.category,
+                subcategory: biz.subcategory ?? "",
+                tagline: biz.tagline ?? "",
+                description: biz.description ?? "",
+                city: biz.city ?? "",
+                state: biz.state ?? "",
+                phone: biz.phone ?? "",
+                hours: biz.hours ?? "",
+                website: biz.website ?? "",
+                isHiring: biz.is_hiring ?? false,
                 services: services.map((s) => ({
                   name: s.name ?? "Service",
                   description: s.description ?? "",
@@ -1129,26 +1155,26 @@ export async function sendMessage(conversationId: string, body: string) {
                 })),
               },
               customerName: senderProfile?.display_name ?? "Customer",
-              agentInstructions,
-              agentTopicRules,
+              agentInstructions: biz.agent_instructions ?? undefined,
+              agentTopicRules: Array.isArray(biz.agent_topic_rules) ? biz.agent_topic_rules : undefined,
             },
             trimmed,
           );
 
           await supabase.from("messages").insert({
             conversation_id: conversationId,
-            sender_id: recipientId,
+            sender_id: businessOwnerId,
             body: reply,
           });
 
           await createNotification(supabase, {
             userId: user.id,
             type: "message",
-            title: `Reply from ${business.name}`,
+            title: `Reply from ${biz.name}`,
             body: "Your message received an automated assistant reply.",
             link: `/messages/${conversationId}`,
-            actorName: business.name,
-            businessName: business.name,
+            actorName: biz.name,
+            businessName: biz.name,
           });
         }
       }

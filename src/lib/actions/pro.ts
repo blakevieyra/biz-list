@@ -948,3 +948,62 @@ export async function emailAuditReport(
   }
 }
 
+export async function testVirtualAgentReply(
+  customerMessage: string,
+): Promise<{ reply?: string; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { reply: "Demo AI reply: Thanks for reaching out! How can I help you today?" };
+  }
+
+  try {
+    const { supabase, user } = await requireUserWithPlan("virtualAgent");
+
+    const { data: row } = await supabase
+      .from("businesses")
+      .select("*, agent_instructions, agent_topic_rules")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (!row) return { error: "Set up your business listing first." };
+
+    const services = Array.isArray(row.services)
+      ? (row.services as { name?: string; description?: string; price?: string }[])
+      : [];
+    const agentInstructions = (row.agent_instructions as string | null) ?? undefined;
+    const agentTopicRules = Array.isArray(row.agent_topic_rules)
+      ? (row.agent_topic_rules as { topic: string; response: string }[])
+      : undefined;
+
+    const reply = await generateVirtualAgentReplyAI(
+      {
+        business: {
+          name: row.name,
+          category: row.category ?? "",
+          subcategory: row.subcategory ?? "",
+          tagline: row.tagline ?? "",
+          description: row.description ?? "",
+          city: row.city ?? "",
+          state: row.state ?? "",
+          phone: row.phone ?? "",
+          hours: row.hours ?? "",
+          website: row.website ?? "",
+          isHiring: row.is_hiring ?? false,
+          services: services.map((s) => ({
+            name: s.name ?? "Service",
+            description: s.description ?? "",
+            price: s.price,
+          })),
+        },
+        customerName: "Test Customer",
+        agentInstructions,
+        agentTopicRules,
+      },
+      customerMessage.trim(),
+    );
+
+    return { reply };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not generate reply." };
+  }
+}
+
