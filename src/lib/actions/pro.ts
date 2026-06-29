@@ -525,6 +525,7 @@ export type AgentAutomations = {
     lastPostedAt?: string;
   };
   leadOutreach?: { enabled: boolean; message: string };
+  awayReply?: { enabled: boolean; message: string };
   orderingServices?: { enabled: boolean; instructions: string };
 };
 

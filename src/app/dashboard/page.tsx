@@ -256,7 +256,7 @@ export default async function DashboardPage() {
           </div>
         </div>
         {savedItems.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {savedItems.slice(0, 9).map((item) => {
               const typeColor: Record<string, string> = {
                 listing: "bg-blue-50 text-blue-700",
@@ -276,23 +276,51 @@ export default async function DashboardPage() {
                 post: "Post",
                 person: "Person",
               };
+              const typeIcon: Record<string, string> = {
+                listing: "🏢",
+                event: "📅",
+                collaboration: "🤝",
+                proposal: "📋",
+                contract: "📝",
+                post: "💬",
+                person: "👤",
+              };
               const content = (
-                <Card>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${typeColor[item.itemType] ?? "bg-slate-100 text-slate-600"}`}>
-                        {typeLabel[item.itemType] ?? item.itemType}
-                      </span>
-                      <p className="mt-1.5 font-medium leading-snug line-clamp-2">{item.itemTitle}</p>
-                      {item.itemSubtitle && (
-                        <p className="mt-0.5 text-xs text-muted line-clamp-1">{item.itemSubtitle}</p>
-                      )}
+                <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md">
+                  {/* Image or placeholder */}
+                  {item.itemImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.itemImageUrl}
+                      alt={item.itemTitle}
+                      className="h-36 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 text-4xl">
+                      {typeIcon[item.itemType] ?? "📌"}
                     </div>
+                  )}
+                  <div className="p-4">
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${typeColor[item.itemType] ?? "bg-slate-100 text-slate-600"}`}>
+                      {typeLabel[item.itemType] ?? item.itemType}
+                    </span>
+                    <p className="mt-2 text-base font-semibold leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+                      {item.itemTitle}
+                    </p>
+                    {item.itemSubtitle && (
+                      <p className="mt-1 text-xs font-medium text-muted line-clamp-1">{item.itemSubtitle}</p>
+                    )}
+                    {item.itemDescription && (
+                      <p className="mt-1.5 text-xs text-muted line-clamp-2">{item.itemDescription}</p>
+                    )}
+                    <p className="mt-3 text-[11px] text-muted/70">
+                      Saved {new Date(item.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                    </p>
                   </div>
-                </Card>
+                </div>
               );
               return item.itemUrl ? (
-                <Link key={item.id} href={item.itemUrl} className="block hover:opacity-90 transition-opacity">
+                <Link key={item.id} href={item.itemUrl} className="block">
                   {content}
                 </Link>
               ) : (

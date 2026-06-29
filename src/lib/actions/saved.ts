@@ -9,7 +9,9 @@ export async function toggleSaveItem(input: {
   itemId: string;
   itemTitle: string;
   itemSubtitle?: string;
+  itemDescription?: string;
   itemUrl?: string;
+  itemImageUrl?: string;
 }): Promise<{ saved: boolean; error?: string }> {
   const userId = await getAuthUserId();
   if (!userId) return { saved: false, error: "Sign in to save items." };
@@ -37,7 +39,9 @@ export async function toggleSaveItem(input: {
     item_id: input.itemId,
     item_title: input.itemTitle,
     item_subtitle: input.itemSubtitle ?? null,
+    item_description: input.itemDescription ?? null,
     item_url: input.itemUrl ?? null,
+    item_image_url: input.itemImageUrl ?? null,
   });
   revalidatePath("/dashboard");
   return { saved: true };

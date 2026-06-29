@@ -9,7 +9,9 @@ export function SaveButton({
   itemId,
   itemTitle,
   itemSubtitle,
+  itemDescription,
   itemUrl,
+  itemImageUrl,
   initialSaved = false,
   className,
   size = "default",
@@ -18,7 +20,9 @@ export function SaveButton({
   itemId: string;
   itemTitle: string;
   itemSubtitle?: string;
+  itemDescription?: string;
   itemUrl?: string;
+  itemImageUrl?: string;
   initialSaved?: boolean;
   className?: string;
   size?: "default" | "sm" | "icon";
@@ -29,7 +33,7 @@ export function SaveButton({
 
   function handleToggle() {
     startTransition(async () => {
-      const result = await toggleSaveItem({ itemType, itemId, itemTitle, itemSubtitle, itemUrl });
+      const result = await toggleSaveItem({ itemType, itemId, itemTitle, itemSubtitle, itemDescription, itemUrl, itemImageUrl });
       if (result.error) return;
       setSaved(result.saved);
       router.refresh();

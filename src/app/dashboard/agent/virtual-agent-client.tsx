@@ -747,6 +747,32 @@ export default function VirtualAgentClient({
                 )}
               </div>
 
+              {/* Away reply */}
+              <div className={`rounded-xl border p-4 transition ${automations.awayReply?.enabled ? "border-accent/40 bg-accent/5" : "border-border"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Away reply</p>
+                    <p className="mt-0.5 text-xs text-muted">Automatically respond to incoming messages when you're away. The agent sends your custom message so customers always hear back.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutomation("awayReply", { enabled: !automations.awayReply?.enabled, message: automations.awayReply?.message ?? `Thanks for reaching out to ${businessName}! We're away right now but will get back to you as soon as possible. In the meantime, feel free to browse our listing for more info.` })}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${automations.awayReply?.enabled ? "bg-accent text-white" : "border border-border text-muted hover:border-accent/40"}`}
+                  >
+                    {automations.awayReply?.enabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {automations.awayReply?.enabled && (
+                  <textarea
+                    value={automations.awayReply?.message ?? ""}
+                    onChange={(e) => setAutomation("awayReply", { enabled: true, message: e.target.value })}
+                    rows={3}
+                    placeholder="Message sent when you're not available to respond…"
+                    className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-accent"
+                  />
+                )}
+              </div>
+
               {/* Ordering services */}
               <div className={`rounded-xl border p-4 transition ${automations.orderingServices?.enabled ? "border-accent/40 bg-accent/5" : "border-border"}`}>
                 <div className="flex items-start justify-between gap-3">

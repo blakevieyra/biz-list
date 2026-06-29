@@ -6,7 +6,9 @@ export type SavedItem = {
   itemId: string;
   itemTitle: string;
   itemSubtitle?: string | null;
+  itemDescription?: string | null;
   itemUrl?: string | null;
+  itemImageUrl?: string | null;
   savedAt: string;
 };
 
@@ -15,7 +17,7 @@ export async function getSavedItems(userId: string): Promise<SavedItem[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("saved_items")
-    .select("id, item_type, item_id, item_title, item_subtitle, item_url, saved_at")
+    .select("id, item_type, item_id, item_title, item_subtitle, item_description, item_url, item_image_url, saved_at")
     .eq("user_id", userId)
     .order("saved_at", { ascending: false })
     .limit(50);
@@ -25,7 +27,9 @@ export async function getSavedItems(userId: string): Promise<SavedItem[]> {
     itemId: r.item_id,
     itemTitle: r.item_title,
     itemSubtitle: r.item_subtitle,
+    itemDescription: r.item_description,
     itemUrl: r.item_url,
+    itemImageUrl: r.item_image_url,
     savedAt: r.saved_at,
   }));
 }
