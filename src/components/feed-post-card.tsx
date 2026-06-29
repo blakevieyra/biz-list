@@ -8,6 +8,7 @@ import { PostTypeBadge } from "@/components/post-media";
 import { isDirectVideoUrl, isImageUrl, isVideoUrl, youtubeEmbedUrl } from "@/lib/media/post-media";
 import type { BusinessPost, FeedPostBadge } from "@/lib/types";
 import { Card, formatPostDateTime, StarRating } from "@/components/ui";
+import { ReportButton } from "@/components/report-button";
 
 const badgeLabels: Record<FeedPostBadge, string> = {
   following: "Following",
@@ -215,6 +216,12 @@ export function FeedPostCard({
               <span className="text-xs text-muted">
                 {post.commentCount} {post.commentCount === 1 ? "comment" : "comments"}
               </span>
+              {currentUserId && currentUserId !== post.authorId && (
+                <ReportButton
+                  target={{ type: "post", id: post.id, title: post.title }}
+                  className="ml-auto text-xs text-muted hover:text-red-600 transition-colors"
+                />
+              )}
             </div>
           </div>
         </div>
