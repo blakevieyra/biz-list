@@ -151,37 +151,39 @@ function CommentItem({
               </form>
             ) : (
               <div className="mt-0.5">
-                <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
-                {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
-                <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                  <ContentLikeButton
-                    businessId={businessId}
-                    targetType="comment"
-                    targetId={comment.id}
-                    initialCount={comment.likeCount ?? 0}
-                    initialLiked={comment.likedByViewer ?? false}
-                    size="sm"
-                  />
-                  {currentUserId && (
-                    <button
-                      type="button"
-                      onClick={() => onReply(comment.id)}
-                      className="text-xs font-medium text-accent hover:underline"
-                    >
-                      Reply
-                    </button>
-                  )}
-                  {isOwn && (
-                    <>
-                      <button type="button" onClick={() => setEditing(true)} className="text-xs text-muted hover:text-foreground">
-                        Edit
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <p className="text-sm leading-relaxed text-muted">{comment.body}</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <ContentLikeButton
+                      businessId={businessId}
+                      targetType="comment"
+                      targetId={comment.id}
+                      initialCount={comment.likeCount ?? 0}
+                      initialLiked={comment.likedByViewer ?? false}
+                      size="sm"
+                    />
+                    {currentUserId && (
+                      <button
+                        type="button"
+                        onClick={() => onReply(comment.id)}
+                        className="text-xs font-medium text-accent hover:underline"
+                      >
+                        Reply
                       </button>
-                      <button type="button" onClick={handleDelete} disabled={actionPending} className="text-xs text-muted hover:text-red-600 disabled:opacity-50">
-                        Delete
-                      </button>
-                    </>
-                  )}
+                    )}
+                    {isOwn && (
+                      <>
+                        <button type="button" onClick={() => setEditing(true)} className="text-xs text-muted hover:text-foreground">
+                          Edit
+                        </button>
+                        <button type="button" onClick={handleDelete} disabled={actionPending} className="text-xs text-muted hover:text-red-600 disabled:opacity-50">
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+                {comment.attachmentUrl && <CommentAttachment url={comment.attachmentUrl} />}
               </div>
             )}
           </div>
