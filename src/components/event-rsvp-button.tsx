@@ -82,8 +82,8 @@ export function EventRsvpButton({
       <RsvpBtn
         active={going}
         pending={pendingGoing}
-        activeLabel="Going ✓"
-        inactiveLabel="I'm going"
+        activeLabel="RSVP'd ✓"
+        inactiveLabel="RSVP"
         size={size}
         variant="going"
         onClick={async () => {

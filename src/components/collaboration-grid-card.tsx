@@ -116,7 +116,7 @@ export function CollaborationGridCard({
           )}
 
           <Link href={`/partnerships/${idea.id}`} className="mt-3 block">
-            <h3 className="text-base font-semibold leading-snug group-hover:text-accent">
+            <h3 className="text-xl font-bold leading-snug group-hover:text-accent sm:text-2xl">
               {idea.title}
             </h3>
           </Link>
