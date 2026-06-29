@@ -112,37 +112,11 @@ export default async function ProfileHubPage({
         leadCount={leads.length}
         showPartnershipsTab={isBusinessAccount}
         partnershipCount={myCollaborations.length}
+        editProfileHref="/profile/edit"
       />
 
       {tab === "overview" && (
         <div className="space-y-6">
-          <Card>
-            <h2 className="font-semibold">Quick links</h2>
-            <div className="mt-3 flex flex-wrap gap-3 text-sm">
-              <Link href="/profile?tab=following" className="text-accent hover:underline">
-                {following.length} following
-              </Link>
-              {profile.role === "customer" && (
-                <Link href="/profile?tab=applications" className="text-accent hover:underline">
-                  {applications.length} applications
-                </Link>
-              )}
-              {isBusinessAccount && (
-                <Link href="/profile?tab=growth" className="text-accent hover:underline">
-                  Growth tools{leads.length > 0 ? ` · ${leads.length} leads` : ""}
-                </Link>
-              )}
-              <Link href="/profile?tab=messages" className="text-accent hover:underline">
-                Messages{unreadMessages > 0 ? ` (${unreadMessages} unread)` : ""}
-              </Link>
-              <Link href="/profile?tab=alerts" className="text-accent hover:underline">
-                Alerts{unreadAlerts > 0 ? ` (${unreadAlerts} unread)` : ""}
-              </Link>
-              <Link href="/profile?tab=plans" className="text-accent hover:underline">
-                Plans & billing
-              </Link>
-            </div>
-          </Card>
           {isBusinessAccount ? (
             <>
               <BusinessGrowthHub planTier={profile.planTier} latestAudit={latestAudit} leads={leads} />

@@ -69,6 +69,7 @@ export function ProfileHubNav({
   showPartnershipsTab = false,
   partnershipCount = 0,
   basePath = "/profile",
+  editProfileHref,
 }: {
   active: HubTab;
   followingCount: number;
@@ -80,6 +81,7 @@ export function ProfileHubNav({
   showPartnershipsTab?: boolean;
   partnershipCount?: number;
   basePath?: string;
+  editProfileHref?: string;
 }) {
   const counts: Partial<Record<string, number>> = {
     following: followingCount,
@@ -96,7 +98,7 @@ export function ProfileHubNav({
   }
 
   return (
-    <div className="mb-6 flex flex-wrap gap-2">
+    <div className="mb-6 flex flex-wrap items-center gap-2">
       {tabs
         .filter((tab) => {
           if (tab.id === "growth" && !showGrowthTab) return false;
@@ -118,6 +120,14 @@ export function ProfileHubNav({
             {(counts[tab.id] ?? 0) > 0 ? ` (${counts[tab.id]})` : ""}
           </Link>
         ))}
+      {editProfileHref && (
+        <Link
+          href={editProfileHref}
+          className="ml-auto rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/5 sm:px-4 sm:py-2 sm:text-sm"
+        >
+          Edit public profile
+        </Link>
+      )}
     </div>
   );
 }
