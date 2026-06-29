@@ -9,7 +9,6 @@ import {
 } from "@/lib/actions/social";
 import { toggleLikeBusiness } from "@/lib/actions/business";
 import type { BusinessConnectionState, BusinessEvent } from "@/lib/types";
-import { SaveButton } from "@/components/save-button";
 
 type OutreachType = "proposal" | "event" | null;
 
@@ -25,23 +24,21 @@ export function BusinessActions({
   businessId,
   ownerId,
   currentUserId,
+  viewerRole,
   initialState,
   shareTitle,
   shareUrl,
   businessName,
-  initialSaved = false,
-  listingUrl,
   senderEvents = [],
 }: {
   businessId: string;
   ownerId: string;
   currentUserId: string | null;
+  viewerRole?: string | null;
   initialState: BusinessConnectionState;
   shareTitle?: string;
   shareUrl?: string;
   businessName?: string;
-  initialSaved?: boolean;
-  listingUrl?: string;
   senderEvents?: BusinessEvent[];
 }) {
   const router = useRouter();
@@ -54,6 +51,11 @@ export function BusinessActions({
   const [outreachMsg, setOutreachMsg] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
   const isOwner = currentUserId === ownerId;
+  // Collaborate / Invite to event are B2B actions — hide them for customer-role viewers
+  const isBusinessViewer =
+    viewerRole === "business" ||
+    viewerRole === "organization" ||
+    viewerRole === "marketer";
 
   const biz = businessName ?? "this business";
 
@@ -177,20 +179,15 @@ export function BusinessActions({
             <button type="button" disabled={pending} onClick={handleMessage} className={buttonClass}>
               Message
             </button>
-            <button type="button" disabled={pending} onClick={openCollaborate} className={buttonClass}>
-              Collaborate
-            </button>
-            <button type="button" disabled={pending} onClick={openEventInvite} className={buttonClass}>
-              Invite to event
-            </button>
-            {currentUserId && (
-              <SaveButton
-                itemType="listing"
-                itemId={businessId}
-                itemTitle={businessName ?? shareTitle ?? "Business"}
-                itemUrl={listingUrl ?? shareUrl}
-                initialSaved={initialSaved}
-              />
+            {isBusinessViewer && (
+              <>
+                <button type="button" disabled={pending} onClick={openCollaborate} className={buttonClass}>
+                  Collaborate
+                </button>
+                <button type="button" disabled={pending} onClick={openEventInvite} className={buttonClass}>
+                  Invite to event
+                </button>
+              </>
             )}
             {shareUrl && (
               <button type="button" onClick={handleShare} className={buttonClass}>

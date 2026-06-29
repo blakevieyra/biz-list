@@ -40,7 +40,6 @@ import {
 } from "@/lib/data";
 
 import { getBusinessPosts, getBusinessReviews, getExistingJobApplication } from "@/lib/data/business";
-import { getSavedItemState } from "@/lib/data/saved-items";
 import { getBusinessEvents, getEventsForBusinessOwner, getUserSavedEvents } from "@/lib/data/events";
 import { EventCard } from "@/components/event-card";
 
@@ -92,7 +91,7 @@ export default async function BusinessDetailPage({
 
 
 
-  const [owner, connectionState, posts, reviews, events, isSaved, partnerBusinesses] = await Promise.all([
+  const [owner, connectionState, posts, reviews, events, partnerBusinesses] = await Promise.all([
 
     getProfileById(business.ownerId),
 
@@ -103,8 +102,6 @@ export default async function BusinessDetailPage({
     getBusinessReviews(business.id),
 
     getBusinessEvents({ businessId: business.id, userId, limit: 6 }),
-
-    userId ? getSavedItemState(userId, "listing", business.id) : Promise.resolve(false),
 
     getPartnerBusinesses(business.id, business.ownerId),
 
@@ -222,7 +219,7 @@ export default async function BusinessDetailPage({
 
                 </span>
 
-                {business.isHiring && (
+                {business.isHiring && (!viewerProfile || viewerProfile.role === "customer") && (
 
                   <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
 
@@ -247,6 +244,8 @@ export default async function BusinessDetailPage({
 
                 currentUserId={userId}
 
+                viewerRole={viewerProfile?.role}
+
                 initialState={connectionState}
 
                 shareTitle={business.name}
@@ -254,10 +253,6 @@ export default async function BusinessDetailPage({
                 shareUrl={shareUrl}
 
                 businessName={business.name}
-
-                initialSaved={isSaved}
-
-                listingUrl={shareUrl}
 
                 senderEvents={senderEvents}
 
@@ -671,7 +666,7 @@ export default async function BusinessDetailPage({
 
             )}
 
-            {business.isHiring && !isOwner && (
+            {business.isHiring && !isOwner && viewerProfile?.role === "customer" && (
 
               <JobApplySection
 
