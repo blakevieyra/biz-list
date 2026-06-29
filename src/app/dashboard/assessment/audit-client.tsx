@@ -74,7 +74,7 @@ function SectionCard({ section }: { section: ComprehensiveAuditSection }) {
   const c = scoreColor(section.score);
   const [open, setOpen] = useState(false);
   return (
-    <div className={`rounded-xl border p-4 ${c.ring}`}>
+    <div className={`audit-section rounded-xl border p-4 ${c.ring}`}>
       <button
         type="button"
         className="flex w-full items-center justify-between gap-4 text-left"
@@ -84,12 +84,12 @@ function SectionCard({ section }: { section: ComprehensiveAuditSection }) {
           <span className={`text-2xl font-bold ${c.text}`}>{section.score}</span>
           <div>
             <p className="font-semibold">{section.label}</p>
-            <p className="text-xs text-muted">{section.summary}</p>
+            <p className="audit-section-label text-xs text-muted">{section.summary}</p>
           </div>
         </div>
-        <span className="shrink-0 text-muted print:hidden">{open ? "▲" : "▼"}</span>
+        <span className="audit-section-toggle shrink-0 text-muted">{open ? "▲" : "▼"}</span>
       </button>
-      <div className={`mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-3 ${open ? "" : "hidden print:grid"}`}>
+      <div className={`audit-section-body mt-4 gap-4 border-t border-border pt-4 sm:grid-cols-3 ${open ? "grid" : "hidden"}`}>
         <div>
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
           <ul className="space-y-1">
@@ -167,11 +167,16 @@ function ReportView({
             margin-bottom: 20px;
           }
 
-          details { display: block !important; }
-          details summary { pointer-events: none; }
-          details > div { display: block !important; }
+          /* Force all accordion sections open */
+          .audit-section-body { display: grid !important; }
+          .audit-section-toggle { display: none !important; }
+          .audit-section-label { font-size: 10px !important; }
+
+          /* Section headers are screen-only UI */
+          .audit-phase-heading { display: none !important; }
 
           * { page-break-inside: avoid; }
+          .audit-section { page-break-inside: avoid; break-inside: avoid; }
         }
 
         @media screen { .print-header { display: none; } }
@@ -247,14 +252,14 @@ function ReportView({
       </Card>
 
       <div className="mt-6">
-        <h2 className="mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
+        <h2 className="audit-phase-heading mb-3 font-semibold text-foreground/70">Internal Audit — tap any section to expand</h2>
         <div className="space-y-3">
           {internalSections.map((s) => <SectionCard key={s.id} section={s} />)}
         </div>
       </div>
 
       <div className="mt-6">
-        <h2 className="mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
+        <h2 className="audit-phase-heading mb-3 font-semibold text-foreground/70">External Audit — tap any section to expand</h2>
         <div className="space-y-3">
           {externalSections.map((s) => <SectionCard key={s.id} section={s} />)}
         </div>

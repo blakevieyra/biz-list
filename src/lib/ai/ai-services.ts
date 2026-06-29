@@ -296,7 +296,7 @@ function buildProfileFallback(auditData: Record<string, string>): ComprehensiveA
         id: "credentials", label: "Ownership & Credibility", phase: "internal", score: 40,
         summary: `${name} ownership and professional background are not prominently featured — a critical gap for building trust with new customers discovering the business in ${location}.`,
         strengths: [`Active ${category} operations imply hands-on expertise and owner commitment.`, hasServices ? `Defined service menu (${auditData.services.slice(0, 60)}) demonstrates operational knowledge.` : "Business is actively serving customers, implying established expertise."],
-        gaps: ["No owner bio, professional credentials, or About page found publicly — new customers cannot vet who they're doing business with.", "No certifications, awards, culinary training, or professional affiliations visible."],
+        gaps: ["No owner bio, professional credentials, or About page found publicly — new customers cannot vet who they're doing business with.", "No certifications, awards, industry training, or professional affiliations visible."],
         actions: [`Add an 'About' page or owner story to your website and BizList profile — describe your background, training, and what makes ${name} different (+18 pts on next audit).`, "List any certifications, awards, years of experience, or professional affiliations prominently across all channels (+12 pts on next audit)."],
       },
       {
