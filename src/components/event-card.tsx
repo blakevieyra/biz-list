@@ -78,7 +78,9 @@ export function EventCard({
         <p className="text-xs font-medium uppercase tracking-wide text-accent">
           {event.businessName ?? "Local business"}
         </p>
-        <h3 className="mt-1 font-semibold leading-snug">{event.title}</h3>
+        <Link href={`/events/${event.id}`} className="mt-1 block font-semibold leading-snug hover:text-accent">
+          {event.title}
+        </Link>
 
         <p className="mt-2 text-sm text-muted">{when}</p>
         {where && <p className="mt-1 text-sm text-muted">{where}</p>}
