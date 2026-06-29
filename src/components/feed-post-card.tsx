@@ -92,80 +92,85 @@ export function FeedPostCard({
   })() : null;
   const isDirectVideo = postVideoSrc ? isDirectVideoUrl(postVideoSrc) : false;
 
+  const hasStats =
+    (post.businessFollowerCount ?? 0) > 0 || (post.businessLikeCount ?? 0) > 0;
+
   return (
     <Card className="overflow-hidden p-0">
-      {/*
-        2/3 business content · 1/3 comments side-by-side.
-        The left column drives card height — no constraints, grows with content.
-        The right column stretches via CSS grid align-stretch and scrolls internally.
-      */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]">
 
-        {/* ── Left: business content (2/3) ── */}
+        {/* ── Left: business content ── */}
         <div className="flex min-w-0 flex-col border-b border-border lg:border-b-0 lg:border-r">
 
-          {/* Header row: photo (left) + business meta (right), photo height = meta height only */}
+          {/* Business identity header */}
           <div className="flex border-b border-border">
+            {/* Photo — taller and wider for more visual impact */}
             <Link
               href={`/listings/${post.businessId}`}
-              className="relative block w-24 shrink-0 self-stretch overflow-hidden bg-slate-100 sm:w-32"
+              className="relative block w-32 shrink-0 self-stretch overflow-hidden bg-slate-100 sm:w-40"
             >
               <LazyAvatar fill src={avatarSrc} alt={post.businessName ?? "Business"} />
             </Link>
 
-            <div className="flex min-w-0 flex-1 flex-col justify-center p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <PostTypeBadge type={post.postType} />
-                    {post.feedBadge && (
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-accent">
-                        {badgeLabels[post.feedBadge]}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <Link
-                      href={`/listings/${post.businessId}`}
-                      className="text-base font-bold text-accent hover:underline sm:text-xl"
-                    >
-                      {post.businessName ?? "Local business"}
-                    </Link>
-                    {(post.businessRatingCount ?? 0) > 0 && (
-                      <StarRating
-                        rating={post.businessRatingAvg ?? 0}
-                        count={post.businessRatingCount}
-                        size="md"
-                      />
-                    )}
-                  </div>
-                  {(post.businessCategory || (post.businessFollowerCount ?? 0) > 0 || (post.businessLikeCount ?? 0) > 0) && (
-                    <p className="text-sm font-medium text-muted">
-                      {post.businessCategory && <span>{post.businessCategory}</span>}
-                      {post.businessCategory && ((post.businessFollowerCount ?? 0) > 0 || (post.businessLikeCount ?? 0) > 0) && <span> · </span>}
-                      {(post.businessLikeCount ?? 0) > 0 && (
-                        <span className="text-xs">{post.businessLikeCount} {post.businessLikeCount === 1 ? "like" : "likes"}</span>
-                      )}
-                      {(post.businessLikeCount ?? 0) > 0 && (post.businessFollowerCount ?? 0) > 0 && (
-                        <span className="text-xs"> · </span>
-                      )}
-                      {(post.businessFollowerCount ?? 0) > 0 && (
-                        <span className="text-xs">{post.businessFollowerCount} {post.businessFollowerCount === 1 ? "follower" : "followers"}</span>
-                      )}
-                    </p>
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-1 p-3">
+              {/* Top row: badges + date */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <PostTypeBadge type={post.postType} />
+                  {post.feedBadge && (
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-accent">
+                      {badgeLabels[post.feedBadge]}
+                    </span>
                   )}
                 </div>
-                <span className="shrink-0 text-right text-xs leading-snug text-muted">
+                <span className="shrink-0 text-right text-[11px] leading-snug text-muted">
                   {formatPostDateTime(post.createdAt)}
                 </span>
+              </div>
+
+              {/* Business name — prominent */}
+              <Link
+                href={`/listings/${post.businessId}`}
+                className="text-lg font-bold leading-tight text-foreground hover:text-accent sm:text-xl"
+              >
+                {post.businessName ?? "Local business"}
+              </Link>
+
+              {/* Rating row */}
+              {(post.businessRatingCount ?? 0) > 0 && (
+                <StarRating
+                  rating={post.businessRatingAvg ?? 0}
+                  count={post.businessRatingCount}
+                  size="md"
+                />
+              )}
+
+              {/* Category + stats */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                {post.businessCategory && (
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-foreground/70">
+                    {post.businessCategory}
+                  </span>
+                )}
+                {hasStats && (
+                  <span className="text-muted">
+                    {(post.businessFollowerCount ?? 0) > 0 && (
+                      <>{post.businessFollowerCount} {post.businessFollowerCount === 1 ? "follower" : "followers"}</>
+                    )}
+                    {(post.businessFollowerCount ?? 0) > 0 && (post.businessLikeCount ?? 0) > 0 && " · "}
+                    {(post.businessLikeCount ?? 0) > 0 && (
+                      <>{post.businessLikeCount} {post.businessLikeCount === 1 ? "like" : "likes"}</>
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Post content — full width below the header */}
-          <div className="flex min-w-0 flex-1 flex-col p-4">
-            <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">{post.body}</p>
+          {/* Post content */}
+          <div className="flex min-w-0 flex-1 flex-col p-3">
+            <h3 className="text-xl font-bold leading-snug">{post.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed">{post.body}</p>
 
             {postMediaSrc && postMediaSrc !== avatarSrc && (
               <div className="mt-3 overflow-hidden rounded-lg border border-border bg-slate-100">
@@ -197,7 +202,7 @@ export function FeedPostCard({
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/60 pt-2.5">
               <ContentLikeButton
                 businessId={post.businessId}
                 targetType="post"
@@ -209,16 +214,13 @@ export function FeedPostCard({
               <span className="text-xs text-muted">
                 {post.commentCount} {post.commentCount === 1 ? "comment" : "comments"}
               </span>
-              {(post.businessLikeCount ?? 0) > 0 && (
-                <span className="text-xs text-muted">{post.businessLikeCount} business likes</span>
-              )}
             </div>
           </div>
         </div>
 
-        {/* ── Right: comments (1/3) — height set by grid row, scrolls internally ── */}
+        {/* ── Right: comments ── */}
         <div className="flex flex-col bg-slate-50/60">
-          <p className="shrink-0 border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted">
+          <p className="shrink-0 border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
             Comments
           </p>
           <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
