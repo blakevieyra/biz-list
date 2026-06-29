@@ -190,45 +190,30 @@ export default async function BusinessDetailPage({
 
             <div className="min-w-0">
 
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{business.name}</h1>
+              {/* Name + rating inline */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{business.name}</h1>
+                <ListingRatingHeader
+                  ratingAvg={business.ratingAvg}
+                  ratingCount={business.ratingCount}
+                  showLeaveReview={Boolean(userId && !isOwner)}
+                />
+              </div>
 
               {business.tagline && (
-
                 <p className="mt-0.5 text-sm text-muted">{business.tagline}</p>
-
               )}
 
-              {/* Rating + category + hiring */}
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
-
-                <ListingRatingHeader
-
-                  ratingAvg={business.ratingAvg}
-
-                  ratingCount={business.ratingCount}
-
-                  showLeaveReview={Boolean(userId && !isOwner)}
-
-                />
-
-                <span className="text-border/60 select-none">·</span>
-
+              {/* Category + hiring — own row under name */}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-accent">
-
                   {displayCategoryLabel(business.category, business.subcategory)}
-
                 </span>
-
                 {business.isHiring && (!viewerProfile || viewerProfile.role === "customer") && (
-
                   <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
-
                     Now hiring
-
                   </span>
-
                 )}
-
               </div>
 
             </div>
