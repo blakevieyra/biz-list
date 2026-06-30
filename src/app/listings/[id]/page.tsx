@@ -166,14 +166,38 @@ export default async function BusinessDetailPage({
 
         {cover ? (
 
-          <div className="aspect-[3/1] max-h-80 w-full overflow-hidden bg-slate-100">
+          <div className="relative aspect-[3/1] max-h-80 w-full overflow-hidden bg-slate-100">
 
             {/* eslint-disable-next-line @next/next/no-img-element */}
 
             <img src={cover} alt="" className="h-full w-full object-cover" />
 
+            {isOwner && (
+              <Link
+                href="/dashboard/profile#photos"
+                className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M13.586 3.586a2 2 0 1 1 2.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
+                </svg>
+                Edit cover photo
+              </Link>
+            )}
+
           </div>
 
+        ) : isOwner ? (
+          <div className="flex aspect-[3/1] max-h-80 w-full items-center justify-center bg-slate-100">
+            <Link
+              href="/dashboard/profile#photos"
+              className="flex items-center gap-2 rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm text-muted hover:border-accent/50 hover:text-accent"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path fillRule="evenodd" d="M1 8a2 2 0 0 1 2-2h.93a2 2 0 0 0 1.664-.89l.812-1.22A2 2 0 0 1 8.07 3h3.86a2 2 0 0 1 1.664.89l.812 1.22A2 2 0 0 0 16.07 6H17a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8Zm13.5 3a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM10 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+              </svg>
+              Add cover photo
+            </Link>
+          </div>
         ) : null}
 
 
