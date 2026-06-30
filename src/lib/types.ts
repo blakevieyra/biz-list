@@ -88,7 +88,7 @@ export interface UserProfile {
   targetJobTitles: string[];
   jobAlertOptIn: boolean;
   followDigestFrequency: FollowDigestFrequency;
-  forumInterests: ForumCategory[];
+  forumInterests: string[];
   discoveryRadius: DiscoveryRadius;
   createdAt: string;
   avatarUrl?: string;
@@ -421,7 +421,7 @@ export interface LocalLead {
   bio: string;
   interestTags: string[];
   industryInterests?: string[];
-  forumInterests: ForumCategory[];
+  forumInterests: string[];
   matchScore: number;
   matchReasons: string[];
   leadSource?: "follower" | "interest" | "seeking" | "local";

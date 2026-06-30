@@ -82,7 +82,7 @@ export async function saveProfile(input: {
   state: string;
   zipCode?: string;
   country?: string;
-  forumInterests: ForumCategory[];
+  forumInterests: string[];
   interestTags?: string[];
   industryInterests?: string[];
   headline?: string;
@@ -263,7 +263,7 @@ export async function updateUserProfile(input: {
   isSeekingWork?: boolean;
   interestTags?: string[];
   industryInterests?: string[];
-  forumInterests?: ForumCategory[];
+  forumInterests?: string[];
   discoveryRadius?: DiscoveryRadius;
   avatarUrl?: string | null;
 }) {

@@ -214,7 +214,7 @@ export function ProfileCreateWizard({
         state: form.state.trim(),
         zipCode: form.zipCode.trim(),
         country: form.country.trim() || "US",
-        forumInterests: form.eventInterests as never,
+        forumInterests: form.eventInterests,
         interestTags: form.interestTags,
         industryInterests: form.industryInterests,
         headline: form.headline.trim(),

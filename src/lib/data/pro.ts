@@ -21,7 +21,7 @@ function scoreLeadMatch(
     headline?: string;
     interest_tags: string[];
     industry_interests: string[];
-    forum_interests: ForumCategory[];
+    forum_interests: string[];
     city: string;
     state: string;
     is_seeking_work?: boolean;
@@ -116,7 +116,7 @@ function scoreLeadMatch(
   for (const interest of customer.forum_interests) {
     if (interest === "local" || interest === "partnerships" || interest === "hiring") {
       score += 10;
-      reasons.push(`Active in ${FORUM_CATEGORY_LABELS[interest]}`);
+      reasons.push(`Active in ${FORUM_CATEGORY_LABELS[interest as ForumCategory]}`);
       break;
     }
   }

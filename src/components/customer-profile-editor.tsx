@@ -57,7 +57,7 @@ export function CustomerProfileEditor({ profile }: { profile: UserProfile }) {
           .map((s) => s.trim())
           .filter(Boolean),
         industryInterests: form.industryInterests,
-        forumInterests: form.eventInterests as never,
+        forumInterests: form.eventInterests,
         discoveryRadius: form.discoveryRadius,
         avatarUrl: form.avatarUrl || null,
       });

@@ -31,7 +31,7 @@ type ProfileRow = {
   latitude?: number | null;
   longitude?: number | null;
   discovery_radius?: DiscoveryRadius;
-  forum_interests: ForumCategory[];
+  forum_interests: string[];
   interest_tags?: string[];
   industry_interests?: string[];
   headline?: string;
