@@ -23,11 +23,9 @@ const intents = Object.keys(INTENT_LABELS) as BusinessIntent[];
 export function BusinessProfileEditor({
   business,
   displayName,
-  avatarUrl,
 }: {
   business: BusinessProfile;
   displayName: string;
-  avatarUrl?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -36,7 +34,6 @@ export function BusinessProfileEditor({
   const parsedCategory = parseStoredCategory(business.category, business.subcategory);
   const [form, setForm] = useState({
     displayName,
-    avatarUrl: avatarUrl ?? "",
     name: business.name,
     tagline: business.tagline,
     description: business.description,
@@ -92,7 +89,6 @@ export function BusinessProfileEditor({
           services,
           mediaUrls: form.mediaUrls,
           intents: form.intents,
-          avatarUrl: form.avatarUrl || null,
         });
 
         if (result.error) {
@@ -137,12 +133,6 @@ export function BusinessProfileEditor({
             label="Your display name"
             value={form.displayName}
             onChange={(v) => setForm({ ...form, displayName: v })}
-          />
-          <ImageUpload
-            label="Business logo / avatar"
-            hint="Shown as a circle next to your business name on the listing. Separate from your cover photo."
-            existingUrls={form.avatarUrl ? [form.avatarUrl] : []}
-            onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[urls.length - 1] ?? "" })}
           />
           <Field
             label="Business name"
@@ -195,7 +185,7 @@ export function BusinessProfileEditor({
       <Card>
         <ImageUpload
           label="Business photos"
-          hint="Upload product shots, storefront photos, or team images. The first photo is your directory cover."
+          hint="The first photo is your main cover image shown at the top of your listing. Add more photos for your gallery."
           existingUrls={form.mediaUrls}
           onUploaded={(mediaUrls) => setForm({ ...form, mediaUrls })}
         />

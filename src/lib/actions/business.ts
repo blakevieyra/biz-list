@@ -271,7 +271,6 @@ export async function saveBusinessDashboardProfile(input: {
   services: BusinessService[];
   mediaUrls: string[];
   intents: BusinessIntent[];
-  avatarUrl?: string | null;
 }) {
   if (!isSupabaseConfigured()) return { error: "Connect Supabase to update profile." };
 
@@ -314,7 +313,6 @@ export async function saveBusinessDashboardProfile(input: {
         country: location.country,
         latitude: geo?.latitude ?? null,
         longitude: geo?.longitude ?? null,
-        ...(input.avatarUrl !== undefined ? { avatar_url: input.avatarUrl } : {}),
       })
       .eq("id", user.id);
 
