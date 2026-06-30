@@ -70,42 +70,63 @@ export function BusinessProfileEditor({
     setSaved(false);
 
     startTransition(async () => {
-      const services = form.services.filter((s) => s.name.trim()) as BusinessService[];
-      const result = await saveBusinessDashboardProfile({
-        businessId: business.id,
-        displayName: form.displayName,
-        name: form.name,
-        tagline: form.tagline,
-        description: form.description,
-        category: form.category,
-        subcategory: form.subcategory,
-        city: form.city,
-        state: form.state,
-        zipCode: form.zipCode,
-        country: form.country,
-        website: form.website,
-        socialLinks: form.socialLinks,
-        phone: form.phone,
-        hours: form.hours,
-        importantInfo: form.importantInfo,
-        services,
-        mediaUrls: form.mediaUrls,
-        intents: form.intents,
-        avatarUrl: form.avatarUrl || null,
-      });
+      try {
+        const services = form.services.filter((s) => s.name.trim()) as BusinessService[];
+        const result = await saveBusinessDashboardProfile({
+          businessId: business.id,
+          displayName: form.displayName,
+          name: form.name,
+          tagline: form.tagline,
+          description: form.description,
+          category: form.category,
+          subcategory: form.subcategory,
+          city: form.city,
+          state: form.state,
+          zipCode: form.zipCode,
+          country: form.country,
+          website: form.website,
+          socialLinks: form.socialLinks,
+          phone: form.phone,
+          hours: form.hours,
+          importantInfo: form.importantInfo,
+          services,
+          mediaUrls: form.mediaUrls,
+          intents: form.intents,
+          avatarUrl: form.avatarUrl || null,
+        });
 
-      if (result.error) {
-        setError(result.error);
-        return;
+        if (result.error) {
+          setError(result.error);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+
+        setSaved(true);
+        router.refresh();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "An unexpected error occurred. Please try again.";
+        setError(msg);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
-
-      setSaved(true);
-      router.refresh();
     });
   }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      {saved && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          Profile saved.{" "}
+          <Link href={`/listings/${business.id}`} className="font-medium underline">
+            View public listing
+          </Link>
+        </div>
+      )}
+
       <Card>
         <h2 className="font-semibold">Listing details</h2>
         <p className="mt-1 text-sm text-muted">
