@@ -216,6 +216,14 @@ export default async function BusinessDetailPage({
 
               {/* Name + rating inline */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                {owner?.avatarUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={owner.avatarUrl}
+                    alt={business.name}
+                    className="h-10 w-10 shrink-0 rounded-full border-2 border-white object-cover shadow-sm sm:h-12 sm:w-12"
+                  />
+                )}
                 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{business.name}</h1>
                 <ListingRatingHeader
                   ratingAvg={business.ratingAvg}

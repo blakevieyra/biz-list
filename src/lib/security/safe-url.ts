@@ -7,10 +7,18 @@ export function isSafeExternalUrl(url: string): boolean {
   }
 }
 
+export function normalizeExternalUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed.startsWith("http://")) return trimmed.replace("http://", "https://");
+  if (!trimmed.startsWith("https://")) return `https://${trimmed}`;
+  return trimmed;
+}
+
 export function getSafeExternalUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  const trimmed = url.trim();
-  return isSafeExternalUrl(trimmed) ? trimmed : null;
+  const normalized = normalizeExternalUrl(url.trim());
+  return isSafeExternalUrl(normalized) ? normalized : null;
 }
 
 export function sanitizeMediaUrls(urls: string[] | undefined, max = 10): string[] {

@@ -139,10 +139,10 @@ export function BusinessProfileEditor({
             onChange={(v) => setForm({ ...form, displayName: v })}
           />
           <ImageUpload
-            label="Profile photo (optional)"
-            hint="Shown next to your name on posts, comments, and in the directory."
+            label="Business logo / avatar"
+            hint="Shown as a circle next to your business name on the listing. Separate from your cover photo."
             existingUrls={form.avatarUrl ? [form.avatarUrl] : []}
-            onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? "" })}
+            onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[urls.length - 1] ?? "" })}
           />
           <Field
             label="Business name"
