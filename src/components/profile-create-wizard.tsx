@@ -122,9 +122,9 @@ export function ProfileCreateWizard({
     () =>
       isBusiness
         ? [
-            { title: "Listings listing", body: "Your business appears in search with photos, services, and goals." },
-            { title: "Post updates", body: "Share news on your profile and in the directory feed for others to follow." },
-            { title: "Connect locally", body: "Follow businesses, message owners, start discussions, and propose collaborations." },
+            { title: "You're listed", body: "Your business is now searchable in the directory with your photos, services, and goals." },
+            { title: "Post updates", body: "Share deals, news, and announcements on your profile for followers to see in their feed." },
+            { title: "Connect locally", body: "Message other owners, propose collaborations, and grow your local network." },
           ]
         : [
             { title: "Discover businesses", body: "Browse the directory, follow organizations, and message them directly." },
@@ -257,9 +257,9 @@ export function ProfileCreateWizard({
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12 sm:px-6">
         <Card>
           <p className="text-sm font-semibold uppercase tracking-wide text-accent">You&apos;re in</p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Welcome to BizList</h1>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Welcome to AllConnect</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-            Your profile is live. Here&apos;s what you can do next on BizList:
+            Your profile is live. Here&apos;s what you can do next:
           </p>
 
           <ul className="mt-6 space-y-3">
