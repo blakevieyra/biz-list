@@ -23,9 +23,11 @@ const intents = Object.keys(INTENT_LABELS) as BusinessIntent[];
 export function BusinessProfileEditor({
   business,
   displayName,
+  avatarUrl,
 }: {
   business: BusinessProfile;
   displayName: string;
+  avatarUrl?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -34,6 +36,7 @@ export function BusinessProfileEditor({
   const parsedCategory = parseStoredCategory(business.category, business.subcategory);
   const [form, setForm] = useState({
     displayName,
+    avatarUrl: avatarUrl ?? "",
     name: business.name,
     tagline: business.tagline,
     description: business.description,
@@ -88,6 +91,7 @@ export function BusinessProfileEditor({
         services,
         mediaUrls: form.mediaUrls,
         intents: form.intents,
+        avatarUrl: form.avatarUrl || null,
       });
 
       if (result.error) {
@@ -112,6 +116,12 @@ export function BusinessProfileEditor({
             label="Your display name"
             value={form.displayName}
             onChange={(v) => setForm({ ...form, displayName: v })}
+          />
+          <ImageUpload
+            label="Profile photo (optional)"
+            hint="Shown next to your name on posts, comments, and in the directory."
+            existingUrls={form.avatarUrl ? [form.avatarUrl] : []}
+            onUploaded={(urls) => setForm({ ...form, avatarUrl: urls[0] ?? "" })}
           />
           <Field
             label="Business name"

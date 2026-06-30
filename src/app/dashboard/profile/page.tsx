@@ -50,7 +50,7 @@ export default async function DashboardProfilePage() {
             <p className="mt-1 text-sm text-muted">Edit your public listing, photos, services, and directory details.</p>
           </div>
           {business ? (
-            <BusinessProfileEditor business={business} displayName={profile.displayName} />
+            <BusinessProfileEditor business={business} displayName={profile.displayName} avatarUrl={profile.avatarUrl} />
           ) : (
             <p className="text-sm text-muted">
               You don&apos;t have a business listing yet.{" "}
