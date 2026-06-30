@@ -257,9 +257,9 @@ export function ProfileCreateWizard({
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12 sm:px-6">
         <Card>
           <p className="text-sm font-semibold uppercase tracking-wide text-accent">You&apos;re in</p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Welcome to AllConnect</h1>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Welcome to BizList</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-            Your profile is live. Here&apos;s what you can do next:
+            Your profile is live. Here&apos;s what you can do next on BizList:
           </p>
 
           <ul className="mt-6 space-y-3">
